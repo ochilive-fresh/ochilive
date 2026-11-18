@@ -1,15 +1,11 @@
 ﻿import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
-import LandingAnimation from '../components/LandingAnimation';
-import LandingSidebar from '../components/LandingSidebar';
 import LiveActivityFeed from '../components/LiveActivityFeed';
-import LiveChatPanel from '../components/LiveChatPanel';
 import HeroPanel from '../components/HeroPanel';
 import CreatorCard from '../components/CreatorCard';
 import RotatingHeroText from '../components/RotatingHeroText';
 import RotatingSubheading from '../components/RotatingSubheading';
-import { AnimatedCounter, StatCounter } from '../components/AnimatedCounter';
 import CinematicReel from '../components/CinematicReel';
 import screenLogo from '../assets/animations/screen.png';
 
@@ -107,7 +103,7 @@ const steps = [
 const creatorFeatures = [
   { title: 'Ticketed Shows', text: 'Sell tickets to exclusive live performances.' },
   { title: 'Fan Support', text: 'Receive tips, gifts, and subscriptions during shows.' },
-  { title: 'Audience Analytics', text: 'Understand whoâ€™s watching and where theyâ€™re from.' },
+  { title: 'Audience Analytics', text: "Understand who's watching and where they're from." },
   { title: 'Creator Dashboard', text: 'Manage shows, earnings, and community in one place.' },
 ];
 
@@ -118,14 +114,8 @@ const audienceFeatures = [
   { title: 'Multi-device', text: 'Watch on phone, tablet, or TV.' },
 ];
 
-const globalStats = [
-  { value: '50', label: 'Countries', suffix: '+' },
-  { value: '20', label: 'Languages', suffix: '+' },
-  { value: '1000000', label: 'Laughs per day', suffix: '+' },
-];
-
 const testimonials = [
-  { quote: 'The audience interaction makes it feel like Iâ€™m actually in the room.', name: 'David K.', role: 'Viewer' },
+  { quote: "The audience interaction makes it feel like I'm actually in the room.", name: 'David K.', role: 'Viewer' },
   { quote: 'I made more in one month on Ochi than I did in 3 months touring.', name: 'Sarah L.', role: 'Creator' },
   { quote: 'Finally, a platform that treats comedy like a real profession.', name: 'Tunde A.', role: 'Producer' },
 ];
@@ -242,7 +232,9 @@ const PrimaryBtn = ({ children, onClick }) => (
       className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
     />
     <span className="relative">{children}</span>
-    <span className="relative ml-2 transition-transform duration-300 group-hover:translate-x-1">â†’</span>
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="relative ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1">
+      <path d="M3.5 10h13m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   </button>
 );
 
@@ -354,11 +346,9 @@ export default function LandingPage() {
         <div className="absolute inset-0 opacity-[0.05] grid-pan bg-[linear-gradient(rgba(148,163,184,0.35)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.35)_1px,transparent_1px)] bg-[size:44px_44px]" />
       </div>
 
-      <LandingSidebar />
-
       {/* ============ HEADER ============ */}
-      <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-900/80 bg-[var(--ochi-bg)]/70 backdrop-blur-xl md:sticky">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-4">
+      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[var(--ochi-bg)]/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-4">
             <div className="relative">
               <img
@@ -395,7 +385,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main className="pt-20 md:pt-0">
+      <main>
         {/* ============ LIVE ACTIVITY FEED ============ */}
         <LiveActivityFeed />
 
@@ -530,13 +520,16 @@ export default function LandingPage() {
                     <Eyebrow>{v.audience}</Eyebrow>
                     <h3 className="mt-4 text-2xl font-semibold tracking-tight">{v.title}</h3>
                     <p className="mt-4 flex-1 text-sm leading-relaxed text-slate-400">{v.text}</p>
-                    <a
-                      href="#"
+                    <button
+                      type="button"
+                      onClick={() => navigate(v.audience === 'For Creators' ? '/signup' : '/discover')}
                       className="group/link mt-8 inline-flex items-center text-sm font-semibold text-pink-300 transition hover:text-rose-300"
                     >
                       {v.cta}
-                      <span className="ml-2 transition-transform duration-300 group-hover/link:translate-x-1">â†’</span>
-                    </a>
+                      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="ml-2 h-4 w-4 transition-transform duration-300 group-hover/link:translate-x-1">
+                        <path d="M3.5 10h13m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
                   </Panel>
                 </Reveal>
               ))}
@@ -607,13 +600,13 @@ export default function LandingPage() {
                 <span className="italic text-[var(--ochi-accent)]">Designed for growth.</span>
               </h2>
               <p className="mt-6 max-w-lg text-base leading-relaxed text-slate-400">
-                Ochi Live gives you the tools to build a sustainable comedy career â€” without middlemen.
+                Ochi Live gives you the tools to build a sustainable comedy career - without middlemen.
               </p>
               <blockquote className="mt-10 rounded-r-xl border-l-2 border-[var(--ochi-accent)] bg-slate-950/95 py-4 pl-5 pr-4 text-slate-300 backdrop-blur-sm">
                 <p className="text-lg italic leading-relaxed">
-                  â€œOchi Live helped me sell out my first virtual tour and connect with fans in 12 countries.â€
+                  "Ochi Live helped me sell out my first virtual tour and connect with fans in 12 countries."
                 </p>
-                <footer className="mt-3 text-sm text-slate-500">â€” Amina B., Stand-up Comedian</footer>
+                <footer className="mt-3 text-sm text-slate-500">- Amina B., Stand-up Comedian</footer>
               </blockquote>
               <div className="mt-10">
                 <PrimaryBtn onClick={() => navigate('/signup')}>Start Performing</PrimaryBtn>
@@ -639,7 +632,7 @@ export default function LandingPage() {
             <SectionHeader
               eyebrow="For Audiences"
               title="Never miss a moment of laughter."
-              sub="From 2am sets in New York to primetime shows in Lagos â€” comedy happens 24/7."
+              sub="From 2am sets in New York to primetime shows in Lagos - comedy happens 24/7."
             />
             <ul className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {audienceFeatures.map((f, i) => (
@@ -760,13 +753,13 @@ export default function LandingPage() {
                         </svg>
                       ))}
                     </div>
-                    <p className="mt-4 flex-1 text-base leading-relaxed text-slate-300">â€œ{t.quote}â€</p>
+                    <p className="mt-4 flex-1 text-base leading-relaxed text-slate-300">"{t.quote}"</p>
                     <footer className="mt-6 flex items-center gap-3 text-sm text-slate-500">
                       <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-rose-500/40 to-pink-500/20 text-xs font-semibold text-rose-100">
                         {t.name.split(' ').map((s) => s[0]).join('')}
                       </span>
                       <span>
-                        <span className="text-slate-300">{t.name}</span> â€” {t.role}
+                        <span className="text-slate-300">{t.name}</span> - {t.role}
                       </span>
                     </footer>
                   </Panel>
@@ -805,7 +798,7 @@ export default function LandingPage() {
                 <span className="italic text-[var(--ochi-accent)]">Secure platform.</span>
               </h2>
               <p className="mt-6 max-w-md text-base leading-relaxed text-slate-400">
-                We take your experience and data seriously â€” from the first tap to the final bow.
+                We take your experience and data seriously - from the first tap to the final bow.
               </p>
             </Reveal>
             <ul className="grid gap-4 self-center">
@@ -843,7 +836,7 @@ export default function LandingPage() {
                     <span className="italic shimmer-text">Stay for the stage.</span>
                   </h2>
                   <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-slate-400">
-                    Join the worldâ€™s fastest-growing community for live comedy â€” whether youâ€™re here to laugh or to perform.
+                    Join the world's fastest-growing community for live comedy - whether you're here to laugh or to perform.
                   </p>
                   <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
                     <PrimaryBtn onClick={() => navigate('/signup')}>Create Free Account</PrimaryBtn>
@@ -866,7 +859,7 @@ export default function LandingPage() {
                 ochi<span className="text-[var(--ochi-accent)]">.</span>live
               </a>
               <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-500">
-                The global stage for live comedy. Watch, perform, and connect â€” anywhere in the world.
+                The global stage for live comedy. Watch, perform, and connect - anywhere in the world.
               </p>
               <ul className="mt-6 flex gap-5 text-sm text-slate-500">
                 {['Instagram', 'X', 'TikTok', 'YouTube'].map((s) => (
@@ -892,7 +885,7 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="mt-16 flex flex-col items-start justify-between gap-3 border-t border-slate-900 pt-8 text-xs text-slate-600 sm:flex-row sm:items-center">
-            <span>Â© 2026 Ochi Live, Inc. All rights reserved.</span>
+            <span>(c) 2026 Ochi Live, Inc. All rights reserved.</span>
             <span>Made for the global stage.</span>
           </div>
         </div>
@@ -901,5 +894,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-

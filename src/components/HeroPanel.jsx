@@ -124,7 +124,10 @@ export default function HeroPanel() {
 
               {/* Host Info */}
               <p className="text-sm sm:text-base text-slate-100 font-semibold drop-shadow-md flex items-center gap-2">
-                <span className="text-lg">ðŸŽ¤</span>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-5 w-5 text-[var(--ochi-accent)]">
+                  <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
                 Dave Chappelle & Friends
               </p>
             </div>
@@ -135,7 +138,7 @@ export default function HeroPanel() {
                 Watch Now
               </button>
               <span className="hidden sm:inline text-xs text-slate-300">
-                No payment required â€¢ Start free
+                No payment required. Start free.
               </span>
             </div>
           </div>
@@ -149,7 +152,7 @@ export default function HeroPanel() {
         {/* Floating Badge - Engagement Indicator */}
         <div className="absolute top-6 right-6 lg:top-8 lg:right-8 z-20 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-2 group-hover:translate-x-0">
           <div className="text-xs font-bold text-rose-300 bg-rose-500/20 px-3 py-1.5 rounded-full border border-rose-400/30 backdrop-blur-sm flex items-center gap-1.5 animate-pulse">
-            <span>âœ¨</span>
+            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
             Trending Now
           </div>
         </div>
@@ -209,5 +212,4 @@ export default function HeroPanel() {
     </div>
   );
 }
-
 

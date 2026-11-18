@@ -1,14 +1,15 @@
 ﻿import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const activities = [
-  { id: 1, type: 'live', user: 'Sarah L.', action: 'just started live', icon: 'ðŸŽ¤' },
-  { id: 2, type: 'watch', count: '1,240', action: 'people watching now', icon: 'ðŸ‘ï¸' },
-  { id: 3, type: 'join', user: 'Marcus B.', action: 'joined the stream', icon: 'âœ‹' },
-  { id: 4, type: 'gift', user: 'Tunde', action: 'sent a gift ðŸŽ', icon: 'ðŸŽ' },
-  { id: 5, type: 'stream', time: '2:30', action: 'New performance starts in', icon: 'â±ï¸' },
-  { id: 6, type: 'live', user: 'Alex K.', action: 'now performing', icon: 'ðŸŽ­' },
-  { id: 7, type: 'milestone', count: '500+', action: 'creators on platform', icon: 'ðŸŒŸ' },
-  { id: 8, type: 'watch', count: '50K+', action: 'viewers online', icon: 'ðŸ“Š' },
+  { id: 1, type: 'live', user: 'Sarah L.', action: 'just started live' },
+  { id: 2, type: 'watch', count: '1,240', action: 'people watching now' },
+  { id: 3, type: 'join', user: 'Marcus B.', action: 'joined the stream' },
+  { id: 4, type: 'gift', user: 'Tunde', action: 'sent a gift' },
+  { id: 5, type: 'stream', time: '2:30', action: 'New performance starts in' },
+  { id: 6, type: 'live', user: 'Alex K.', action: 'now performing' },
+  { id: 7, type: 'milestone', count: '500+', action: 'creators on platform' },
+  { id: 8, type: 'watch', count: '50K+', action: 'viewers online' },
 ];
 
 export default function LiveActivityFeed() {
@@ -55,7 +56,7 @@ export default function LiveActivityFeed() {
   }, [activeIndex]);
 
   return (
-    <div className={`fixed bottom-8 right-8 z-50 w-80 max-w-[calc(100vw-2rem)] transition-all duration-300 ${
+    <div className={`fixed bottom-8 right-8 z-50 hidden w-80 max-w-[calc(100vw-2rem)] transition-all duration-300 md:block ${
       isClosing ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'
     } ${!isVisible ? 'hidden' : ''}`}>
       {/* Container */}
@@ -103,7 +104,7 @@ export default function LiveActivityFeed() {
 
               <div className="flex items-start gap-3">
                 {/* Icon */}
-                <div className="mt-0.5 text-lg flex-shrink-0">{activity.icon}</div>
+                <span aria-hidden="true" className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-[var(--ochi-accent)]" />
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
@@ -160,12 +161,11 @@ export default function LiveActivityFeed() {
 
         {/* Footer */}
         <div className="mt-4 pt-4 border-t border-slate-700/30">
-          <button className="w-full rounded-lg bg-[var(--ochi-accent)]/10 border border-[var(--ochi-accent)]/30 px-3 py-2 text-xs font-semibold text-[var(--ochi-accent)] transition-all duration-300 hover:border-[var(--ochi-accent)]/60 hover:bg-[var(--ochi-accent)]/20">
+          <Link to="/signup" className="block w-full rounded-lg border border-[var(--ochi-accent)]/30 bg-[var(--ochi-accent)]/10 px-3 py-2 text-center text-xs font-semibold text-[var(--ochi-accent)] transition-all duration-300 hover:border-[var(--ochi-accent)]/60 hover:bg-[var(--ochi-accent)]/20">
             Join the Action
-          </button>
+          </Link>
         </div>
       </div>
     </div>
   );
 }
-

@@ -8,16 +8,15 @@ export default {
     extend: {
       colors: {
         ochi: {
-          bg: '#060712',
-          surface: '#121a2c',
-          accent: '#7d5f79',
-          muted: '#7f8a9d',
-          text: '#e7e9ef',
-          accentSoft: '#645d7a',
+          bg: '#0b0c10',
+          surface: '#15171d',
+          accent: '#b9412e',
+          muted: '#a4a5ad',
+          text: '#f4f1eb',
+          accentSoft: '#ffab98',
         },
       },
     },
   },
   plugins: [],
 }
-

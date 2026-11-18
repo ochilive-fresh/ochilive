@@ -142,22 +142,24 @@ export default function DashboardShell({
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="fixed inset-x-0 top-0 z-40 bg-slate-950/95 backdrop-blur-xl">
+    <div className="min-h-screen bg-[var(--ochi-bg)] text-[var(--ochi-text)]">
+      <div className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.06] bg-[var(--ochi-bg)]/95 backdrop-blur-xl">
         {isHome ? (
           <div className="mx-auto max-w-6xl px-2 py-2 sm:px-6">
-            <div className="rounded-full bg-slate-900/70 px-2 py-1.5 shadow-sm backdrop-blur-sm sm:px-3 sm:py-2">
+            <div className="rounded-2xl border border-white/[0.06] bg-[var(--ochi-surface)]/90 px-2 py-1.5 shadow-sm backdrop-blur-sm sm:px-3 sm:py-2">
               <div className="flex items-center justify-between gap-2 sm:gap-3">
+                <Link to="/home" className="flex min-w-0 items-center gap-2 rounded-xl px-2 py-1" aria-label="Ochi Live home">
+                  <img src={screenLogo} alt="" className="h-8 w-8 rounded-lg object-cover sm:h-9 sm:w-9" />
+                  <span className="text-sm font-bold tracking-tight text-white">ochi<span className="text-[var(--ochi-accent)]">.</span>live</span>
+                </Link>
+
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <Link to="/notifications" className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-950/80 text-slate-200 transition hover:bg-slate-800 sm:h-9 sm:w-9" aria-label="Notifications">
+                  <Link to="/notifications" className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.04] text-slate-300 transition hover:bg-white/[0.08] hover:text-white sm:h-10 sm:w-10" aria-label="Notifications">
                     <Icon name="bell" className="h-4 w-4" />
                   </Link>
-                </div>
-
-                <div className="flex flex-1 justify-end">
                   <Link
                     to="/discover?focus=search"
-                    className="group inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-950/80 text-slate-400 shadow-sm transition hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-rose-400/40 sm:h-10 sm:w-10"
+                    className="group inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.04] text-slate-300 shadow-sm transition hover:bg-white/[0.08] hover:text-white focus:outline-none focus:ring-2 focus:ring-[var(--ochi-accent)]/40 sm:h-10 sm:w-10"
                     aria-label="Search creators and content"
                     title="Search"
                   >
@@ -168,8 +170,8 @@ export default function DashboardShell({
             </div>
           </div>
         ) : (
-          <div className="fixed inset-x-0 top-0 z-40 border-b border-slate-900/70 bg-slate-950/90 backdrop-blur-xl">
-            <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2 sm:px-6">
+          <div className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.06] bg-[var(--ochi-bg)]/95 backdrop-blur-xl">
+            <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-6">
               {showBack ? (
                 <button
                   type="button"
@@ -182,9 +184,13 @@ export default function DashboardShell({
                     <path d="m15 5-7 7 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
-              ) : <span />}
+              ) : <span className="hidden sm:block" />}
+              <div className="min-w-0 flex-1">
+                <h1 className="truncate text-sm font-semibold text-white sm:text-base">{title}</h1>
+                {subtitle ? <p className="hidden truncate text-xs text-slate-400 sm:block">{subtitle}</p> : null}
+              </div>
               {isProfileToolbarRoute ? (
-                <div className="flex w-full items-center justify-end gap-3">
+                <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
                   <Link
                     to="/upload"
                     className="group inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-rose-300/60 bg-gradient-to-br from-rose-500 to-amber-500 px-3 text-white shadow-[0_8px_22px_-8px_rgba(244,63,94,0.85)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-8px_rgba(244,63,94,0.95)] focus:outline-none focus:ring-2 focus:ring-rose-300/50"
@@ -204,8 +210,8 @@ export default function DashboardShell({
                   </Link>
                 </div>
               ) : showSearch ? (
-                <div className="flex w-full items-center justify-end">
-                  <div className="flex w-full max-w-xl items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-2 shadow-[0_8px_30px_rgba(15,23,42,0.32)]">
+                <div className="flex min-w-0 flex-1 items-center justify-end">
+                  <div className="flex w-full max-w-xl min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-[var(--ochi-surface)] px-2.5 py-2 shadow-[0_8px_30px_rgba(15,23,42,0.32)] sm:gap-3 sm:px-3">
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-slate-500" aria-hidden="true">
                       <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="2" />
                       <path d="m16 16 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -217,7 +223,7 @@ export default function DashboardShell({
                       onChange={(event) => onSearchChange?.(event.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder={searchPlaceholder}
-                      className="w-full bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
+                      className="min-w-0 w-full bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -227,19 +233,19 @@ export default function DashboardShell({
         )}
       </div>
 
-      <main className="mx-auto max-w-6xl px-3 pb-24 pt-20 sm:px-6 sm:pb-28 sm:pt-24">
+      <main className="mx-auto max-w-6xl px-3 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-20 sm:px-6 sm:pb-28 sm:pt-24">
         <div className="space-y-4 sm:space-y-6">{children}</div>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-slate-950/98 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+      <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/[0.08] bg-[var(--ochi-bg)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
         <div className="mx-auto grid max-w-6xl grid-cols-5 items-stretch px-1 py-1.5 sm:flex sm:items-center sm:justify-center sm:gap-6 sm:px-6 sm:py-1.5">
           {navItems.map((item) => {
             const colorMap = {
-              home: 'text-amber-400',
-              search: 'text-rose-300',
-              upload: 'text-amber-400',
-              message: 'text-violet-300',
-              user: 'text-sky-300',
+              home: 'text-slate-400',
+              search: 'text-slate-400',
+              upload: 'text-slate-400',
+              message: 'text-slate-400',
+              user: 'text-slate-400',
               activity: 'text-slate-400',
             };
 
@@ -249,13 +255,13 @@ export default function DashboardShell({
                 to={item.path}
                 className={({ isActive }) =>
                   `group relative flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 py-1.5 text-[10px] font-medium transition-colors sm:min-h-0 sm:flex-row sm:gap-1 sm:px-3 sm:py-2 sm:text-sm ${
-                    isActive ? 'font-semibold text-white' : 'text-slate-400 hover:text-slate-200'
+                    isActive ? 'font-semibold text-[var(--ochi-accent)]' : 'text-slate-400 hover:text-slate-200'
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <span className={`inline-flex h-7 w-7 items-center justify-center ${isActive ? 'text-white' : colorMap[item.icon]}`}>
+                    <span className={`inline-flex h-7 w-7 items-center justify-center ${isActive ? 'text-[var(--ochi-accent)]' : colorMap[item.icon]}`}>
                       <Icon name={item.icon} className="h-5 w-5 transition-transform group-active:scale-90" />
                     </span>
                     <span className="truncate leading-4">{item.label}</span>
@@ -264,7 +270,7 @@ export default function DashboardShell({
                         {messageUnreadCount > 9 ? '9+' : messageUnreadCount}
                       </span>
                     )}
-                    <span className={`absolute bottom-0 h-0.5 rounded-full bg-rose-300 transition-all duration-200 sm:hidden ${isActive ? 'w-5 opacity-100' : 'w-0 opacity-0'}`} />
+                    <span className={`absolute bottom-0 h-0.5 rounded-full bg-[var(--ochi-accent)] transition-all duration-200 sm:hidden ${isActive ? 'w-5 opacity-100' : 'w-0 opacity-0'}`} />
                   </>
                 )}
               </NavLink>

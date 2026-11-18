@@ -1,12 +1,10 @@
 ﻿import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import BrandedLoader from '../components/BrandedLoader';
-import screenLogo from '../assets/animations/screen.png';
 
-const AuthSparkIcon = ({ className = 'text-rose-300' }) => (
+const _AuthSparkIcon = ({ className = 'text-rose-300' }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
     <path d="M12 2v4" />
     <path d="M12 18v4" />
@@ -61,18 +59,18 @@ const getPasswordStrength = (password) => {
   const score = password ? Math.round((passedCount / checks.length) * 100) : 0;
 
   if (!password) {
-    return { score, label: 'Use 8+ characters, plus uppercase, lowercase, a number, and a symbol.', barClass: 'bg-slate-950', textClass: 'text-slate-400' };
+    return { score, label: 'At least 8 characters', barClass: 'bg-slate-700', textClass: 'text-slate-500' };
   }
 
   if (score < 40) {
-    return { score, label: 'Needs more strength', barClass: 'bg-rose-500', textClass: 'text-rose-300' };
+    return { score, label: 'Add a few more character types', barClass: 'bg-[var(--ochi-accent)]', textClass: 'text-[var(--ochi-accent-light)]' };
   }
 
   if (score < 80) {
-    return { score, label: 'Good password', barClass: 'bg-amber-500', textClass: 'text-amber-300' };
+    return { score, label: 'Good', barClass: 'bg-amber-500', textClass: 'text-amber-300' };
   }
 
-  return { score, label: 'Strong password', barClass: 'bg-emerald-500', textClass: 'text-emerald-300' };
+  return { score, label: 'Strong', barClass: 'bg-emerald-500', textClass: 'text-emerald-300' };
 };
 
 function SignUpPage() {
@@ -192,52 +190,22 @@ function SignUpPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[var(--ochi-bg)] text-[var(--ochi-text)]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,63,94,0.24),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(56,189,248,0.12),transparent_24%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(130deg,rgba(255,255,255,0.04),transparent_50%,rgba(244,63,94,0.08))]" />
+    <div className="min-h-screen bg-[var(--ochi-bg)] text-[var(--ochi-text)]">
 
       <Navbar />
       <BrandedLoader isVisible={transitioning} label="Creating your account..." />
 
-      <main className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center px-2.5 py-2.5 sm:px-6 sm:py-5 lg:px-8 lg:py-8">
-        <div className="grid w-full gap-3 sm:gap-5 lg:grid-cols-[1.02fr_0.98fr] lg:gap-8">
-          <section className="order-1 rounded-[30px] border-[2.5px] border-white/10 bg-slate-950/90 p-4 shadow-[0_24px_90px_-34px_rgba(2,6,23,0.95)] backdrop-blur-2xl sm:order-2 sm:rounded-[34px] sm:p-7 lg:p-10">
-            <div className="mb-3 flex items-center justify-between rounded-2xl border-[2.5px] border-white/10 bg-white/[0.04] px-3 py-2 sm:px-4 sm:py-2.5">
-              <div className="flex items-center gap-3">
-                <img src={screenLogo} alt="Ochi Live logo" className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-rose-500/20 sm:h-12 sm:w-12" />
-                <div>
-                  <p className="text-base font-semibold text-white">Ochi Live</p>
-                  <p className="text-sm text-slate-400">Create your stage</p>
-                </div>
-              </div>
+      <main className="relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
+        <section className="w-full max-w-[440px] rounded-2xl border border-white/[0.08] bg-[var(--ochi-surface)]/90 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.3)] sm:rounded-3xl sm:p-8">
+            <div className="mb-7">
+              {pendingEmail ? <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--ochi-accent)]">Email verification</p> : null}
+              <h1 className={`${pendingEmail ? 'mt-2' : ''} text-2xl font-semibold tracking-tight text-white sm:text-[28px]`}>{pendingEmail ? 'Check your email' : 'Create account'}</h1>
+              {pendingEmail ? <p className="mt-1.5 text-sm text-slate-400">Code sent to {pendingEmail}.</p> : null}
             </div>
 
-            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3 text-slate-400">
-                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-rose-500/10 text-rose-300 shadow-sm shadow-rose-500/10">
-                  <AuthSparkIcon className="h-5 w-5" />
-                </span>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400 sm:text-sm">Create account</p>
-                  <h2 className="mt-1 text-lg font-semibold text-white sm:text-xl">Start your Ochi journey</h2>
-                </div>
-              </div>
-              <Link to="/login" className="text-sm font-medium text-rose-300 transition hover:text-rose-200">
-                Sign in instead
-              </Link>
-            </div>
-
-            <p className="mt-2 text-sm leading-5 text-slate-400">
-              Fast sign-up with short, secure steps.
-            </p>
-
-            <form onSubmit={pendingEmail ? handleOtpSubmit : handleSubmit} className="mt-3 space-y-2.5 sm:mt-5 sm:space-y-3">
+            <form onSubmit={pendingEmail ? handleOtpSubmit : handleSubmit} className="space-y-4">
               {pendingEmail ? (
-                <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-slate-200">
-                  <p className="font-medium text-white">Verification step</p>
-                  <p className="mt-1 text-slate-300">Use the 6-digit code for <span className="font-medium text-rose-300">{pendingEmail}</span>.</p>
-                  <p className="mt-1 text-xs text-slate-400">A verification code will be sent to this email address.</p>
-                </div>
+                <p className="text-sm text-slate-400">Enter the 6-digit verification code.</p>
               ) : null}
 
               {!pendingEmail ? (
@@ -249,20 +217,21 @@ function SignUpPage() {
                       type="text"
                       value={form.username}
                       onChange={handleChange}
-                      placeholder="your_creator_name"
+                      autoComplete="username"
+                      placeholder="Username"
                       pattern="[a-z0-9_]{3,24}"
-                      className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-950/80 px-4 py-3.5 text-sm text-white outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-500/20"
+                      className="mt-2.5 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-[var(--ochi-accent)]/70 focus:bg-black/30 focus:ring-2 focus:ring-[var(--ochi-accent)]/15"
                       required
                     />
                     {usernameStatus.message ? (
-                      <p className={`mt-2 text-xs ${usernameStatus.state === 'available' ? 'text-emerald-300' : usernameStatus.state === 'checking' ? 'text-slate-400' : 'text-rose-300'}`}>
+                      <p className={`mt-2 text-xs ${usernameStatus.state === 'available' ? 'text-emerald-300' : usernameStatus.state === 'checking' ? 'text-slate-400' : 'text-[var(--ochi-accent-light)]'}`}>
                         {usernameStatus.message}
                       </p>
                     ) : null}
                     {usernameStatus.suggestions.length ? (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {usernameStatus.suggestions.map((suggestion) => (
-                          <button key={suggestion} type="button" onClick={() => setForm((prev) => ({ ...prev, username: suggestion }))} className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300 transition hover:border-rose-400 hover:text-white">
+                          <button key={suggestion} type="button" onClick={() => setForm((prev) => ({ ...prev, username: suggestion }))} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-slate-300 transition hover:border-white/20 hover:text-white">
                             @{suggestion}
                           </button>
                         ))}
@@ -277,8 +246,9 @@ function SignUpPage() {
                       type="email"
                       value={form.email}
                       onChange={handleChange}
+                      autoComplete="email"
                       placeholder="you@example.com"
-                      className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-950/80 px-4 py-3.5 text-sm text-white outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-500/20"
+                      className="mt-2.5 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-[var(--ochi-accent)]/70 focus:bg-black/30 focus:ring-2 focus:ring-[var(--ochi-accent)]/15"
                       required
                     />
                   </label>
@@ -291,20 +261,21 @@ function SignUpPage() {
                         type={showPassword ? 'text' : 'password'}
                         value={form.password}
                         onChange={handleChange}
-                        placeholder="Create a secure password"
-                        className="w-full rounded-lg border border-slate-800 bg-slate-950/80 px-3.5 py-3 pr-16 text-sm text-white outline-none transition-all duration-300 placeholder:text-slate-500 focus:border-rose-400 focus:bg-slate-950 focus:shadow-[0_0_0_3px_rgba(244,63,94,0.16)] focus:ring-2 focus:ring-rose-500/20 sm:px-4 sm:py-3.5"
+                        autoComplete="new-password"
+                        placeholder="Password"
+                        className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3.5 pr-16 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-[var(--ochi-accent)]/70 focus:bg-black/30 focus:ring-2 focus:ring-[var(--ochi-accent)]/15"
                         required
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-rose-300 transition hover:text-rose-200"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md px-1 text-xs font-medium text-slate-400 transition hover:text-white"
                       >
                         {showPassword ? 'Hide' : 'Show'}
                       </button>
                     </div>
-                    <div className="mt-3 space-y-2">
-                      <div className="h-2 overflow-hidden rounded-full bg-slate-950">
+                    <div className="mt-2.5 space-y-1.5">
+                      <div className="h-1 overflow-hidden rounded-full bg-black/40">
                         <div className={`h-full rounded-full transition-all duration-300 ${passwordStrength.barClass}`} style={{ width: `${passwordStrength.score}%` }} />
                       </div>
                       <p className={`text-[11px] sm:text-xs ${passwordStrength.textClass}`}>{passwordStrength.label}</p>
@@ -319,8 +290,10 @@ function SignUpPage() {
                     type="text"
                     value={otpCode}
                     onChange={(event) => setOtpCode(event.target.value)}
-                    placeholder="Enter the 6-digit code"
-                    className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-950/80 px-4 py-3.5 text-sm text-white outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-500/20"
+                    placeholder="6-digit code"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    className="mt-2.5 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-[var(--ochi-accent)]/70 focus:bg-black/30 focus:ring-2 focus:ring-[var(--ochi-accent)]/15"
                     required
                   />
                 </label>
@@ -328,15 +301,7 @@ function SignUpPage() {
 
               {message ? (
                 <div className={`rounded-lg border px-4 py-3 text-sm ${message.toLowerCase().includes('success') || message.toLowerCase().includes('successful') ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-rose-500/30 bg-rose-500/10 text-rose-300'}`}>
-                  <div className="flex items-start gap-2">
-                    <span className="mt-0.5 text-base">{message.toLowerCase().includes('success') || message.toLowerCase().includes('successful') ? 'âœ“' : '!'}</span>
-                    <div>
-                      <p>{message}</p>
-                      {!message.toLowerCase().includes('success') && !message.toLowerCase().includes('successful') ? (
-                        <p className="mt-1 text-xs text-rose-200/80">Please review your details and try again in a moment.</p>
-                      ) : null}
-                    </div>
-                  </div>
+                  <p>{message}</p>
                 </div>
               ) : null}
 
@@ -348,7 +313,7 @@ function SignUpPage() {
                     setOtpCode('');
                     setMessage('');
                   }}
-                  className="text-sm font-medium text-slate-400 transition hover:text-slate-200"
+                  className="text-sm font-medium text-slate-400 transition hover:text-white"
                 >
                   Use a different email
                 </button>
@@ -357,74 +322,29 @@ function SignUpPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 w-full rounded-full bg-[var(--ochi-accent)] px-5 py-3 text-sm font-semibold text-[var(--ochi-bg)] shadow-[0_12px_35px_-12px_rgba(244,63,94,0.6)] transition duration-300 hover:-translate-y-0.5 hover:bg-rose-400 disabled:cursor-not-allowed disabled:opacity-70 sm:py-3.5"
+                className="w-full rounded-xl bg-[var(--ochi-accent-strong)] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--ochi-accent-strong)]/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-rose-300">
-                  <AuthSparkIcon className="h-4 w-4" />
-                </span>
                 {loading ? (pendingEmail ? 'Verifying code...' : 'Creating account...') : pendingEmail ? 'Verify & continue' : 'Create account'}
               </button>
             </form>
 
-            <div className="mt-3 flex items-center gap-3 text-sm text-slate-500 sm:mt-4">
-              <div className="h-px flex-1 bg-slate-800" />
-              <span className="text-slate-400">Other options</span>
-              <div className="h-px flex-1 bg-slate-800" />
-            </div>
-
-            <button type="button" onClick={handleGoogleSignup} className="mt-3 flex w-full items-center justify-center gap-3 rounded-full border-[2.5px] border-slate-700 bg-slate-950/70 px-4 py-3 text-sm font-medium text-slate-200 transition duration-300 hover:-translate-y-0.5 hover:border-rose-400 hover:bg-slate-950/80 hover:text-white sm:mt-5">
-              <span className="text-base">G</span>
-              Google sign-up
-            </button>
-
-            <p className="mt-4 text-sm text-slate-400 sm:mt-6">
-              Already have an account?{' '}
-              <Link className="font-medium text-rose-300 transition hover:text-rose-200" to="/login">
-                Log in here
-              </Link>
-            </p>
-          </section>
-
-          <section className="order-2 rounded-[28px] border-[2.5px] border-white/10 bg-slate-950/60 p-4 shadow-[0_28px_100px_-30px_rgba(244,63,94,0.35)] backdrop-blur-2xl transition duration-500 hover:shadow-[0_32px_110px_-24px_rgba(244,63,94,0.24)] sm:order-1 sm:rounded-[32px] sm:p-7 lg:p-10">
-            <div className="flex items-center gap-3 text-slate-400">
-              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-rose-500/10 text-rose-300 shadow-sm shadow-rose-500/10">
-                <AuthSparkIcon className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-rose-300 sm:text-[11px]">
-                  Creator-ready
-                </p>
-                <p className="mt-1 text-sm text-slate-400">Quick, polished onboarding.</p>
-              </div>
-            </div>
-            <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white sm:mt-6 sm:text-4xl lg:text-5xl">
-              Join the next generation of live entertainment.
-            </h1>
-            <p className="mt-3 max-w-xl text-sm leading-5 text-slate-300 sm:mt-4">
-              Fast onboarding for creators and fans.
-            </p>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {[
-                'Creator rooms',
-                'Live chat',
-              ].map((item) => (
-                <div key={item} className="flex items-start gap-3 rounded-xl border-[2.5px] border-slate-800/70 bg-slate-950/65 p-3.5">
-                  <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-rose-500/10 text-rose-300">
-                    ◆
-                  </div>
-                  <p className="text-sm leading-6 text-slate-300">{item}</p>
+            {!pendingEmail ? (
+              <>
+                <div className="my-5 flex items-center gap-3 text-xs text-slate-500">
+                  <div className="h-px flex-1 bg-white/[0.08]" />
+                  or
+                  <div className="h-px flex-1 bg-white/[0.08]" />
                 </div>
-              ))}
-            </div>
-          </section>
-        </div>
+                <button type="button" onClick={handleGoogleSignup} className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white">
+                  <span aria-hidden="true" className="font-semibold">G</span>
+                  Continue with Google
+                </button>
+              </>
+            ) : null}
+        </section>
       </main>
-
-      <Footer />
     </div>
   );
 }
 
 export default SignUpPage;
-

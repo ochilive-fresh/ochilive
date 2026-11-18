@@ -3,42 +3,55 @@
 @tailwind utilities;
 
 :root {
-  --ochi-bg: #060712;
-  --ochi-surface: #121a2c;
-  --ochi-accent: #7d5f79;
-  --ochi-accent-10: rgba(125, 95, 121, 0.1);
-  --ochi-accent-20: rgba(125, 95, 121, 0.2);
-  --ochi-accent-30: rgba(125, 95, 121, 0.3);
-  --ochi-accent-40: rgba(125, 95, 121, 0.4);
-  --ochi-accent-80: rgba(125, 95, 121, 0.8);
-  --ochi-muted: #7f8a9d;
-  --ochi-text: #e7e9ef;
+  color-scheme: dark;
+  --ochi-bg: #0b0c10;
+  --ochi-surface: #15171d;
+  --ochi-surface-raised: #1d2027;
+  --ochi-accent: #ff795e;
+  --ochi-accent-strong: #b9412e;
+  --ochi-accent-light: #ffab98;
+  --ochi-accent-10: rgba(255, 121, 94, 0.1);
+  --ochi-accent-15: rgba(255, 121, 94, 0.15);
+  --ochi-accent-20: rgba(255, 121, 94, 0.2);
+  --ochi-accent-30: rgba(255, 121, 94, 0.3);
+  --ochi-accent-40: rgba(255, 121, 94, 0.4);
+  --ochi-accent-80: rgba(255, 121, 94, 0.8);
+  --ochi-muted: #a4a5ad;
+  --ochi-text: #f4f1eb;
 }
 
-/* Mature palette overrides for existing Tailwind rose/pink utilities */
+/* Keep legacy rose/pink utilities aligned with the stage-inspired palette. */
 .bg-rose-500,
 .bg-pink-500,
 .bg-rose-600,
 .bg-pink-600 {
-  background-color: var(--ochi-accent) !important;
+  background-color: var(--ochi-accent-strong) !important;
 }
 .bg-rose-500\/10,
-.bg-pink-500\/10,
-.bg-rose-500\/15,
-.bg-rose-500\/20,
-.bg-rose-500\/30,
-.bg-rose-500\/40,
-.bg-pink-500\/15,
-.bg-pink-500\/20,
-.bg-pink-500\/30,
-.bg-pink-500\/40 {
+.bg-pink-500\/10 {
   background-color: var(--ochi-accent-10) !important;
 }
-.text-rose-300,
-.text-pink-300,
-.text-rose-200,
-.text-pink-200,
-.text-rose-100 {
+.bg-rose-500\/15,
+.bg-pink-500\/15 {
+  background-color: var(--ochi-accent-15) !important;
+}
+.bg-rose-500\/20,
+.bg-pink-500\/20 {
+  background-color: var(--ochi-accent-20) !important;
+}
+.bg-rose-500\/30,
+.bg-pink-500\/30 {
+  background-color: var(--ochi-accent-30) !important;
+}
+.bg-rose-500\/40,
+.bg-pink-500\/40 {
+  background-color: var(--ochi-accent-40) !important;
+}
+.text-rose-300:not(.text-transparent),
+.text-pink-300:not(.text-transparent),
+.text-rose-200:not(.text-transparent),
+.text-pink-200:not(.text-transparent),
+.text-rose-100:not(.text-transparent) {
   color: var(--ochi-accent) !important;
 }
 .border-rose-400\/30,
@@ -65,19 +78,28 @@
 .hover\:border-pink-400:hover {
   border-color: var(--ochi-accent-20) !important;
 }
+.bg-ochi-accent {
+  background-color: var(--ochi-accent-strong) !important;
+}
+.text-ochi-accent {
+  color: var(--ochi-accent) !important;
+}
+.border-ochi-accent {
+  border-color: var(--ochi-accent-strong) !important;
+}
 .from-rose-500 {
-  --tw-gradient-from: var(--ochi-accent);
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(125, 95, 121, 0));
+  --tw-gradient-from: var(--ochi-accent-strong);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(185, 65, 46, 0));
 }
 .to-rose-500 {
-  --tw-gradient-to: var(--ochi-accent);
+  --tw-gradient-to: var(--ochi-accent-strong);
 }
 .from-pink-500 {
-  --tw-gradient-from: var(--ochi-accent);
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(125, 95, 121, 0));
+  --tw-gradient-from: var(--ochi-accent-strong);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(185, 65, 46, 0));
 }
 .to-pink-500 {
-  --tw-gradient-to: var(--ochi-accent);
+  --tw-gradient-to: var(--ochi-accent-strong);
 }
 .via-rose-300 {
   --tw-gradient-stops: var(--tw-gradient-from), var(--ochi-accent), var(--tw-gradient-to, rgba(125, 95, 121, 0));
@@ -94,8 +116,8 @@ html, body, #root {
   width: 100%;
   overflow-x: hidden;
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: radial-gradient(circle at top, rgba(125,95,121,0.12), transparent 20%),
-    linear-gradient(180deg, #05060f 0%, #060712 100%);
+  background: radial-gradient(ellipse at 50% -18%, rgba(255, 118, 91, 0.1), transparent 42%),
+    linear-gradient(180deg, #0b0c10 0%, #0e1015 100%);
   color: var(--ochi-text);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -103,13 +125,8 @@ html, body, #root {
   text-rendering: optimizeLegibility;
 }
 
-html, body {
-  overscroll-behavior: none;
-}
-
 body {
   line-height: 1.5;
-  overscroll-behavior-y: none;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -129,7 +146,7 @@ a {
 }
 
 a:hover {
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 button,
@@ -146,8 +163,21 @@ textarea {
 }
 
 ::selection {
-  background: rgba(125,95,121,0.28);
+  background: rgba(255, 118, 91, 0.3);
   color: white;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ochi-accent-light);
+  outline-offset: 3px;
 }
 
 .page-transition {
@@ -172,8 +202,7 @@ textarea {
   transition: transform 180ms ease, background-color 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
-.page-card:hover,
-.page-section:hover {
+.page-card:hover {
   transform: translateY(-2px);
 }
 
@@ -183,10 +212,6 @@ textarea {
 }
 
 .page-card {
-  will-change: transform, box-shadow;
-}
-
-.page-section {
   will-change: transform, box-shadow;
 }
 
@@ -205,16 +230,9 @@ textarea {
   }
 }
 
-/* Global scrollbar removal for a cleaner premium UI */
 * {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
-}
-
-*::-webkit-scrollbar {
-  width: 0 !important;
-  height: 0 !important;
-  display: none !important;
+  scrollbar-color: #3a3b43 transparent;
+  scrollbar-width: thin;
 }
 
 /* Helpers */
@@ -230,3 +248,13 @@ textarea {
   scroll-behavior: smooth;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
