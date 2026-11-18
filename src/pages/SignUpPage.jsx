@@ -3,20 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import BrandedLoader from '../components/BrandedLoader';
-
-const _AuthSparkIcon = ({ className = 'text-rose-300' }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-    <path d="M12 2v4" />
-    <path d="M12 18v4" />
-    <path d="M4.93 4.93l2.83 2.83" />
-    <path d="M16.24 16.24l2.83 2.83" />
-    <path d="M2 12h4" />
-    <path d="M18 12h4" />
-    <path d="M4.93 19.07l2.83-2.83" />
-    <path d="M16.24 7.76l2.83-2.83" />
-    <circle cx="12" cy="12" r="4" strokeWidth="2.2" fill="currentColor" fillOpacity="0.06" />
-  </svg>
-);
+import { persistSession } from '../utils/session';
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 
@@ -43,8 +30,6 @@ const getErrorMessage = (error) => {
 
   return 'Unable to create your account right now. Please check that the backend is running and try again.';
 };
-
-import { persistSession } from '../utils/session';
 
 const getPasswordStrength = (password) => {
   const checks = [
@@ -76,12 +61,10 @@ const getPasswordStrength = (password) => {
 function SignUpPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', username: '', password: '' });
-  const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState('');
   const [usernameStatus, setUsernameStatus] = useState({ state: 'idle', message: '', suggestions: [] });
   const passwordStrength = getPasswordStrength(form.password);
 
@@ -130,35 +113,13 @@ function SignUpPage() {
 
     try {
       const response = await axios.post(buildApiUrl('/auth/register'), form);
-      const data = response?.data || {};
-
-      if (data.emailDeliveryFailed) {
-        setPendingEmail('');
-        setOtpCode('');
-        setMessage(data.message || 'Verification email delivery failed. Please request a new code later.');
-        setLoading(false);
-        return;
-      }
-
-      setPendingEmail(data.email || form.email);
-      setMessage(data.message || 'Verification code sent.');
-      setLoading(false);
+      persistSession(response.data.token, response.data.user);
+      setTransitioning(true);
+      window.setTimeout(() => {
+        navigate('/home');
+      }, 1800);
     } catch (error) {
-      const status = error?.response?.status;
-      const message = error?.response?.data?.message || error?.message;
-
-      if (status === 503 && message && message.includes('verification email')) {
-        setPendingEmail('');
-        setOtpCode('');
-        setMessage('Signup is ready, but email delivery is unavailable right now. Please retry after the mail service is configured.');
-      } else if (status === 500 && message && message.includes('verification email')) {
-        setPendingEmail('');
-        setOtpCode('');
-        setMessage('Signup is ready, but email delivery is unavailable right now. Please try again shortly.');
-      } else {
-        setMessage(getErrorMessage(error));
-      }
-
+      setMessage(getErrorMessage(error));
       setLoading(false);
       window.setTimeout(() => {
         setLoading(false);
@@ -170,25 +131,6 @@ function SignUpPage() {
     window.location.assign(buildApiUrl('/auth/google/start'));
   };
 
-  const handleOtpSubmit = async (event) => {
-    event.preventDefault();
-    setLoading(true);
-    setMessage('');
-
-    try {
-      const response = await axios.post(buildApiUrl('/auth/verify'), { email: pendingEmail, otp: otpCode });
-      persistSession(response.data.token, response.data.user);
-      setMessage(response.data.message);
-      setTransitioning(true);
-      window.setTimeout(() => {
-        navigate('/home');
-      }, 1800);
-    } catch (error) {
-      setMessage(getErrorMessage(error));
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[var(--ochi-bg)] text-[var(--ochi-text)]">
 
@@ -198,18 +140,10 @@ function SignUpPage() {
       <main className="relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
         <section className="w-full max-w-[440px] rounded-2xl border border-white/[0.08] bg-[var(--ochi-surface)]/90 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.3)] sm:rounded-3xl sm:p-8">
             <div className="mb-7">
-              {pendingEmail ? <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--ochi-accent)]">Email verification</p> : null}
-              <h1 className={`${pendingEmail ? 'mt-2' : ''} text-2xl font-semibold tracking-tight text-white sm:text-[28px]`}>{pendingEmail ? 'Check your email' : 'Create account'}</h1>
-              {pendingEmail ? <p className="mt-1.5 text-sm text-slate-400">Code sent to {pendingEmail}.</p> : null}
+              <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-[28px]">Create account</h1>
             </div>
 
-            <form onSubmit={pendingEmail ? handleOtpSubmit : handleSubmit} className="space-y-4">
-              {pendingEmail ? (
-                <p className="text-sm text-slate-400">Enter the 6-digit verification code.</p>
-              ) : null}
-
-              {!pendingEmail ? (
-                <>
+            <form onSubmit={handleSubmit} className="space-y-4">
                   <label className="block text-sm font-medium text-slate-300">
                     Username
                     <input
@@ -281,23 +215,6 @@ function SignUpPage() {
                       <p className={`text-[11px] sm:text-xs ${passwordStrength.textClass}`}>{passwordStrength.label}</p>
                     </div>
                   </label>
-                </>
-              ) : (
-                <label className="block text-sm font-medium text-slate-300">
-                  Verification code
-                  <input
-                    name="otp"
-                    type="text"
-                    value={otpCode}
-                    onChange={(event) => setOtpCode(event.target.value)}
-                    placeholder="6-digit code"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    className="mt-2.5 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-[var(--ochi-accent)]/70 focus:bg-black/30 focus:ring-2 focus:ring-[var(--ochi-accent)]/15"
-                    required
-                  />
-                </label>
-              )}
 
               {message ? (
                 <div className={`rounded-lg border px-4 py-3 text-sm ${message.toLowerCase().includes('success') || message.toLowerCase().includes('successful') ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-rose-500/30 bg-rose-500/10 text-rose-300'}`}>
@@ -305,42 +222,24 @@ function SignUpPage() {
                 </div>
               ) : null}
 
-              {pendingEmail ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPendingEmail('');
-                    setOtpCode('');
-                    setMessage('');
-                  }}
-                  className="text-sm font-medium text-slate-400 transition hover:text-white"
-                >
-                  Use a different email
-                </button>
-              ) : null}
-
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full rounded-xl bg-[var(--ochi-accent-strong)] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--ochi-accent-strong)]/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? (pendingEmail ? 'Verifying code...' : 'Creating account...') : pendingEmail ? 'Verify & continue' : 'Create account'}
+                {loading ? 'Creating account...' : 'Create account'}
               </button>
             </form>
 
-            {!pendingEmail ? (
-              <>
-                <div className="my-5 flex items-center gap-3 text-xs text-slate-500">
-                  <div className="h-px flex-1 bg-white/[0.08]" />
-                  or
-                  <div className="h-px flex-1 bg-white/[0.08]" />
-                </div>
-                <button type="button" onClick={handleGoogleSignup} className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white">
-                  <span aria-hidden="true" className="font-semibold">G</span>
-                  Continue with Google
-                </button>
-              </>
-            ) : null}
+            <div className="my-5 flex items-center gap-3 text-xs text-slate-500">
+              <div className="h-px flex-1 bg-white/[0.08]" />
+              or
+              <div className="h-px flex-1 bg-white/[0.08]" />
+            </div>
+            <button type="button" onClick={handleGoogleSignup} className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white">
+              <span aria-hidden="true" className="font-semibold">G</span>
+              Continue with Google
+            </button>
         </section>
       </main>
     </div>
