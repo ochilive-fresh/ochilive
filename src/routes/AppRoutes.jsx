@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from '../pages/LandingPage';
 import SignUpPage from '../pages/SignUpPage';
 import LoginPage from '../pages/LoginPage';
@@ -11,7 +11,6 @@ import MoreUpcomingShowsPage from '../pages/MoreUpcomingShowsPage';
 import MorePopularClipsPage from '../pages/MorePopularClipsPage';
 import ActivityPage from '../pages/ActivityPage';
 import WalletShell from '../pages/wallet/WalletShell';
-import WalletLanding from '../pages/wallet/WalletLanding';
 import WalletOverview from '../pages/wallet/WalletOverview';
 import WalletRevenue from '../pages/wallet/WalletRevenue';
 import WalletTransactions from '../pages/wallet/WalletTransactions';
@@ -50,6 +49,7 @@ function AppRoutes() {
       <Route path="/live/:roomId" element={<ProtectedRoute><LiveViewerPage /></ProtectedRoute>} />
       <Route path="/notifications" element={<NotificationsPage />} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

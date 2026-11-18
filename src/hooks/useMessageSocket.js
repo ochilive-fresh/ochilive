@@ -13,7 +13,7 @@ export const useMessageSocket = (conversationId, callbacks = {}) => {
 
     // Connect if not already connected
     if (!socketRef.current) {
-      socketRef.current = io({
+      socketRef.current = io(import.meta.env.VITE_SOCKET_URL || undefined, {
         auth: { token },
         reconnection: true,
         reconnectionDelay: 1000,
