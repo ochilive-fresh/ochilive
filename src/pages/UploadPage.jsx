@@ -904,7 +904,7 @@ function UploadPage() {
                   >
                     <span
                       className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${
-                        active ? 'bg-[var(--ochi-accent)] text-[#190d0a]' : done ? 'bg-white/15 text-white' : 'bg-white/10 text-slate-400'
+                        active ? 'bg-[var(--ochi-accent)] text-white' : done ? 'bg-white/15 text-white' : 'bg-white/10 text-slate-400'
                       }`}
                     >
                       {done ? <CheckIcon className="h-2.5 w-2.5" /> : n}
@@ -927,7 +927,7 @@ function UploadPage() {
               type="button"
               onClick={handlePublish}
               disabled={!canPost}
-              className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-[var(--ochi-accent)] px-4 py-2 text-[13px] font-semibold text-[#190d0a] transition hover:bg-[var(--ochi-accent-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-slate-500"
+              className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-[var(--ochi-accent)] px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-[var(--ochi-accent-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-slate-500"
             >
               {uploading ? (
                 <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />

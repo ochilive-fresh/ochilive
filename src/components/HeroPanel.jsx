@@ -107,7 +107,7 @@ export default function HeroPanel() {
 
               {/* Category Badge */}
               <div className="inline-block">
-                <span className="text-[11px] font-bold tracking-widest uppercase text-[var(--ochi-accent)] bg-[var(--ochi-accent)]/20 px-3.5 py-1.5 rounded-full border border-[var(--ochi-accent)]/40 backdrop-blur-sm">
+                <span className="text-[11px] font-bold tracking-widest uppercase text-[var(--ochi-accent-light)] bg-[var(--ochi-accent)]/20 px-3.5 py-1.5 rounded-full border border-[var(--ochi-accent)]/40 backdrop-blur-sm">
                   ROGUE & RAW
                 </span>
               </div>
@@ -124,7 +124,7 @@ export default function HeroPanel() {
 
               {/* Host Info */}
               <p className="text-sm sm:text-base text-slate-100 font-semibold drop-shadow-md flex items-center gap-2">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-5 w-5 text-[var(--ochi-accent)]">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-5 w-5 text-[var(--ochi-accent-light)]">
                   <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" stroke="currentColor" strokeWidth="1.8" />
                   <path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
@@ -212,4 +212,3 @@ export default function HeroPanel() {
     </div>
   );
 }
-

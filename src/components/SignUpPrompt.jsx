@@ -30,7 +30,7 @@ function SignUpPrompt({ action, onClose, onSignUp, onSignIn }) {
         <p className="mt-3 text-sm leading-6 text-slate-300">
           Create an account to {action || 'interact with creators'}.
         </p>
-        <button type="button" onClick={onSignUp} className="mt-5 w-full rounded-full bg-[var(--ochi-accent)] px-4 py-3 text-sm font-semibold text-[#1a100e] transition hover:brightness-110">
+        <button type="button" onClick={onSignUp} className="mt-5 w-full rounded-full bg-[var(--ochi-accent)] px-4 py-3 text-sm font-semibold text-white transition hover:brightness-110">
           Create an account
         </button>
         <button type="button" onClick={onSignIn} className="mt-2 w-full rounded-full border border-white/10 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/[0.05]">

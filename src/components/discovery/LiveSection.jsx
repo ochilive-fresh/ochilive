@@ -5,7 +5,7 @@ import { getVideoFeed } from '../../api/dashboardApi';
 function Thumb({ src, title }) {
   return (
     <div className="relative aspect-[1.35] w-full overflow-hidden bg-[var(--ochi-surface-raised)]">
-      {src ? <img src={src} alt={title} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center bg-[radial-gradient(ellipse_at_50%_100%,rgba(255,118,94,0.2),transparent_60%)] text-3xl text-[var(--ochi-accent-light)]">◉</div>}
+      {src ? <img src={src} alt={title} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center bg-[radial-gradient(ellipse_at_50%_100%,rgba(77,35,36,0.2),transparent_60%)] text-3xl text-[var(--ochi-accent-light)]">◉</div>}
       <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/10" />
     </div>
   );

@@ -92,6 +92,8 @@ export default function DashboardShell({
   title,
   subtitle,
   children,
+  homeHeaderCenter,
+  homeHeaderAction,
   searchValue = '',
   onSearchChange,
   onSearchSubmit,
@@ -155,10 +157,20 @@ export default function DashboardShell({
     <div className="min-h-screen bg-[var(--ochi-bg)] text-[var(--ochi-text)]">
       <div className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.07] bg-[var(--ochi-bg)]/90 backdrop-blur-2xl lg:left-64">
         {isHome ? (
-          <div className="mx-auto flex h-12 max-w-[1360px] items-center justify-between gap-3 px-4 sm:h-[68px] sm:px-8 lg:px-10">
-            <div className="flex min-w-0 items-center gap-4">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--ochi-accent)] text-sm font-black tracking-tighter text-[#17100e] sm:h-9 sm:w-9">O.</span>
-              <span className="text-sm font-bold tracking-tight text-white">ochi<span className="text-[var(--ochi-accent)]">.</span>live</span>
+          <div className="mx-auto grid h-12 max-w-[1360px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:h-16 sm:gap-4 sm:px-8 lg:px-10">
+            <Link to="/home" aria-label="Ochi Live home" className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--ochi-accent)] text-sm font-black tracking-tighter text-white sm:h-10 sm:w-10">O.</Link>
+            <div className="flex min-w-0 justify-center">{homeHeaderCenter}</div>
+            <div className="flex justify-end">
+              {homeHeaderAction || (
+                <Link
+                  to="/upload"
+                  aria-label="Create a post"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--ochi-accent-strong)] text-white transition hover:bg-[var(--ochi-accent)] sm:h-10 sm:w-auto sm:gap-2 sm:px-4"
+                >
+                  <Icon name="plus" className="h-5 w-5" />
+                  <span className="hidden text-sm font-semibold sm:inline">Upload</span>
+                </Link>
+              )}
             </div>
           </div>
         ) : (
@@ -213,20 +225,16 @@ export default function DashboardShell({
         )}
       </div>
 
-      <main className={`mx-auto max-w-6xl px-3 pb-[calc(5rem+env(safe-area-inset-bottom))] ${isHome ? 'pt-14 sm:pt-20' : 'pt-[5.5rem] sm:pt-24'} sm:px-6 sm:pb-28 lg:mx-0 lg:ml-64 lg:max-w-none lg:px-0 lg:pt-24`}>
+      <main className={`mx-auto max-w-6xl px-3 pb-[calc(5rem+env(safe-area-inset-bottom))] ${isHome ? 'pt-14 sm:pt-16' : 'pt-[5.5rem] sm:pt-24'} sm:px-6 sm:pb-28 lg:mx-0 lg:ml-64 lg:max-w-none lg:px-0 lg:pt-20`}>
         <div className="mx-auto w-full max-w-[1360px] space-y-5 px-1 sm:space-y-7 sm:px-2 lg:px-10">{children}</div>
       </main>
 
       <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/[0.08] bg-[#0b0c0f]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl lg:bottom-0 lg:left-0 lg:right-auto lg:top-0 lg:w-64 lg:border-r lg:border-t-0 lg:bg-[#0b0c0f]/90 lg:pb-0">
         <div className="mx-auto grid max-w-6xl grid-cols-5 items-stretch px-1 py-1.5 sm:flex sm:items-center sm:justify-center sm:gap-6 sm:px-6 sm:py-1.5 lg:flex lg:h-full lg:flex-col lg:items-stretch lg:justify-start lg:gap-1 lg:px-5 lg:py-7">
           <Link to="/home" className="mb-7 hidden items-center gap-3 rounded-2xl px-3 py-2 lg:flex" aria-label="Ochi Live home">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--ochi-accent)] text-lg font-black tracking-tighter text-[#17100e] shadow-[0_8px_25px_rgba(255,118,94,0.22)]">O.</span>
-            <span>
-              <span className="block text-base font-bold tracking-tight text-white">ochi<span className="text-[var(--ochi-accent)]">.</span>live</span>
-              <span className="mt-0.5 block text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-500">The creator stage</span>
-            </span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--ochi-accent)] text-lg font-black tracking-tighter text-white shadow-[0_8px_25px_rgba(77,35,36,0.22)]">O.</span>
           </Link>
-          <Link to="/upload" className="mb-7 hidden h-12 items-center justify-center gap-2 rounded-xl bg-[var(--ochi-accent-strong)] px-4 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(236,95,69,0.18)] transition hover:bg-[var(--ochi-accent)] lg:flex">
+          <Link to="/upload" className="mb-7 hidden h-12 items-center justify-center gap-2 rounded-xl bg-[var(--ochi-accent-strong)] px-4 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(77,35,36,0.18)] transition hover:bg-[var(--ochi-accent)] lg:flex">
             <Icon name="plus" className="h-5 w-5" />
             Create something
           </Link>
@@ -255,7 +263,7 @@ export default function DashboardShell({
               >
                 {({ isActive }) => (
                   <>
-                    <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center ${item.path === '/upload' ? 'rounded-xl bg-[var(--ochi-accent)] text-[#190d0a]' : isActive ? 'text-[var(--ochi-accent)]' : colorMap[item.icon]}`}>
+                    <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center ${item.path === '/upload' ? 'rounded-xl bg-[var(--ochi-accent)] text-white' : isActive ? 'text-[var(--ochi-accent-light)]' : colorMap[item.icon]}`}>
                       <Icon name={item.icon} className="h-5 w-5 transition-transform group-active:scale-90" />
                     </span>
                     <span className="truncate leading-4 lg:text-sm">{item.label}</span>

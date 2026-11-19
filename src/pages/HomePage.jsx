@@ -5,6 +5,7 @@ import {
   getVideoById,
   getVideoFeed,
   incrementView,
+  markVideoWatched,
   likeVideo,
   commentOnVideo,
   toggleSaveVideo,
@@ -18,16 +19,21 @@ import SignUpPrompt from '../components/SignUpPrompt';
 const placeholderImage =
   'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&h=800&fit=crop&q=80';
 
-const tabs = [
-  { key: 'following', label: 'Following' },
-  { key: 'for_you', label: 'For You' },
-  { key: 'trending', label: 'Trending' },
+const homeTabs = [
   { key: 'recent_live', label: 'Recent Live' },
+  { key: 'for_you', label: 'For You' },
 ];
 
 const formatActionCount = (value) => {
   const count = Number(value);
   return new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(Number.isFinite(count) ? count : 0);
+};
+
+const formatPostDate = (value) => {
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp)
+    ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(timestamp)
+    : '';
 };
 
 const getCommentId = (comment, index) => comment.commentId || comment._id?.toString?.() || `${comment.userId || comment.userName || 'comment'}-${comment.createdAt || index}`;
@@ -112,7 +118,6 @@ function HomePage() {
   const [heartBurstVideoId, setHeartBurstVideoId] = useState(null);
   const [videoProgress, setVideoProgress] = useState({});
   const [videoLoadState, setVideoLoadState] = useState({});
-  const [mediaAspectRatios, setMediaAspectRatios] = useState({});
 
   const getLikedStorageKey = () => {
     const userId = getStoredSession().user?.id || getStoredSession().user?.username || 'guest';
@@ -540,9 +545,83 @@ function HomePage() {
       const updated = await incrementView(id);
       setVideoState(id, (video) => ({ ...video, ...updated }));
     } catch {
-      showMessage('Unable to update view count.');
+      showMessage('Unable to update view count. Please try again.');
+      return;
+    }
+
+    if (getStoredSession().token) {
+      try {
+        await markVideoWatched(id);
+      } catch {
+        showMessage('Unable to save this view to your watch history.');
+      }
     }
   };
+
+  const handleVideoEnded = async (id) => {
+    if (getStoredSession().token) {
+      try {
+        await markVideoWatched(id, true);
+      } catch {
+        showMessage('Unable to save completion to your watch history.');
+      }
+    }
+
+    if (videoId) return;
+    const currentIndex = videos.findIndex((video) => String(video.id) === String(id));
+    const nextVideo = videos.slice(currentIndex + 1).find((video) => isVideoType(video));
+    if (nextVideo) {
+      document.getElementById(`feed-post-${nextVideo.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    if (activeTab === 'for_you' && videos.length) {
+      try {
+        const cursor = videos[videos.length - 1].createdAt;
+        const page = await getVideoFeed(activeTab, cursor);
+        const loadedIds = new Set(videos.map((video) => String(video.id)));
+        const additions = Array.isArray(page) ? page.filter((video) => !loadedIds.has(String(video.id))) : [];
+        if (additions.length) {
+          setVideos((current) => [...current, ...additions]);
+          const nextPlayable = additions.find((video) => isVideoType(video));
+          if (nextPlayable) {
+            window.setTimeout(() => {
+              document.getElementById(`feed-post-${nextPlayable.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
+          }
+        }
+      } catch {
+        showMessage('Unable to load more unseen videos. Please try again.');
+      }
+    }
+  };
+
+  const homeHeaderCenter = !videoId ? (
+    <nav aria-label="Dashboard navigation" className="flex items-center justify-center gap-1 sm:gap-3">
+      {homeTabs.map((tab) => (
+        <button
+          key={tab.key}
+          type="button"
+          onClick={() => handleSelectTab(tab.key)}
+          aria-current={activeTab === tab.key ? 'page' : undefined}
+          className={`whitespace-nowrap rounded-lg px-1.5 py-2 text-[12pt] font-bold leading-[1.5] transition sm:px-3 sm:text-[14pt] ${
+            activeTab === tab.key
+              ? 'bg-[var(--ochi-accent-15)] text-white'
+              : 'text-slate-400 hover:bg-white/[0.05] hover:text-white'
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={() => navigate('/discover')}
+        className="whitespace-nowrap rounded-lg px-1.5 py-2 text-[12pt] font-bold leading-[1.5] text-slate-400 transition hover:bg-white/[0.05] hover:text-white sm:px-3 sm:text-[14pt]"
+      >
+        Rooms
+      </button>
+    </nav>
+  ) : null;
 
   return (
     <>
@@ -551,6 +630,7 @@ function HomePage() {
         subtitle={videoId ? 'Watching a creator post.' : 'The latest from creators and live comedy.'}
         showBack={Boolean(videoId)}
         backFallback="/home"
+        homeHeaderCenter={homeHeaderCenter}
       >
       <style>{`
         @keyframes feed-heart-burst {
@@ -572,28 +652,6 @@ function HomePage() {
         </div>
       ) : null}
 
-      {!videoId ? <div className="bg-transparent p-0">
-        <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/[0.07] bg-white/[0.025] p-1 no-scrollbar sm:rounded-2xl">
-          {tabs.map((tab) => {
-            const active = tab.key === activeTab;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => handleSelectTab(tab.key)}
-                className={`relative shrink-0 rounded-lg px-3 py-2 text-xs font-semibold tracking-normal transition-all duration-200 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm ${
-                  active
-                    ? 'bg-[var(--ochi-surface-raised)] text-white shadow-sm ring-1 ring-white/[0.06]'
-                    : 'text-slate-500 hover:bg-white/[0.04] hover:text-slate-200'
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-      </div>
-      </div> : null}
-
       {loading ? (
         <div className="mt-4 flex min-h-72 items-center justify-center rounded-[28px] border border-white/[0.07] bg-[var(--ochi-surface)]/70">
           <div className="flex items-center gap-3 text-sm text-slate-400">
@@ -612,12 +670,13 @@ function HomePage() {
           </div>
         </div>
       ) : (
-        <div className="-mx-4 mt-2 max-h-[calc(100dvh-10rem)] overflow-y-auto overscroll-contain snap-y snap-mandatory sm:mx-0 sm:mt-4 sm:max-h-[calc(100dvh-14rem)] sm:space-y-4 sm:pr-1">
+        <div className="-mx-4 mt-2 space-y-3 sm:mx-0 sm:mt-3 sm:space-y-4 sm:pr-1">
           {videos.length ? (
             videos.map((video) => (
               <article
                 key={video.id}
-                className="w-full snap-start overflow-hidden sm:rounded-[30px] sm:border sm:border-white/[0.09] sm:bg-[#101114] sm:shadow-[0_30px_90px_rgba(0,0,0,0.45)]"
+                id={`feed-post-${video.id}`}
+                className="w-full overflow-hidden sm:rounded-[30px] sm:border sm:border-white/[0.09] sm:bg-[#101114] sm:shadow-[0_30px_90px_rgba(0,0,0,0.45)]"
                 onClick={() => {
                   if (video.type === 'live') {
                     navigate(`/live/${video.id}`);
@@ -626,8 +685,8 @@ function HomePage() {
                 }}
               >
                 <div
-                  className="relative w-full overflow-hidden bg-black sm:rounded-t-[29px]"
-                  style={{ aspectRatio: mediaAspectRatios[video.id] || (isVideoType(video) ? '9 / 16' : '4 / 5') }}
+                  className="relative w-full max-h-[700px] overflow-hidden bg-black sm:rounded-t-[29px]"
+                  style={{ height: 'min(70vh, 700px)', minHeight: 'min(280px, 40vh)' }}
                 >
                 {isVideoType(video) ? (
                   <video
@@ -638,7 +697,6 @@ function HomePage() {
                     poster={video.thumbnailUrl || video.mediaUrl}
                     muted={mutedVideos[video.id] ?? false}
                     autoPlay
-                    loop
                     playsInline
                     preload="none"
                     className="h-full w-full object-contain"
@@ -646,10 +704,6 @@ function HomePage() {
                     onCanPlay={() => setVideoLoadState((current) => ({ ...current, [video.id]: 'ready' }))}
                     onError={() => setVideoLoadState((current) => ({ ...current, [video.id]: 'error' }))}
                     onLoadedMetadata={(event) => {
-                      const { videoWidth, videoHeight } = event.currentTarget;
-                      if (videoWidth && videoHeight) {
-                        setMediaAspectRatios((current) => ({ ...current, [video.id]: videoWidth / videoHeight }));
-                      }
                       const savedPosition = playbackPositions.current.get(video.id);
                       if (savedPosition && savedPosition < event.currentTarget.duration - 0.5) {
                         event.currentTarget.currentTime = savedPosition;
@@ -660,6 +714,7 @@ function HomePage() {
                       playbackPositions.current.set(video.id, currentTime);
                       if (duration) setVideoProgress((current) => ({ ...current, [video.id]: currentTime / duration }));
                     }}
+                    onEnded={() => handleVideoEnded(video.id)}
                     onPointerUp={(event) => handleVideoTap(event, video)}
                   />
                 ) : (
@@ -667,12 +722,6 @@ function HomePage() {
                     src={getPreviewImage(video)}
                     alt={video.title}
                     className="h-full w-full object-contain"
-                    onLoad={(event) => {
-                      const { naturalWidth, naturalHeight } = event.currentTarget;
-                      if (naturalWidth && naturalHeight) {
-                        setMediaAspectRatios((current) => ({ ...current, [video.id]: naturalWidth / naturalHeight }));
-                      }
-                    }}
                     onClick={(event) => {
                       if (video.type === 'live') navigate(`/live/${video.id}`);
                       else handlePhotoTap(event, video);
@@ -789,19 +838,20 @@ function HomePage() {
                 </div>
                 </div>
 
-                <div className="flex min-w-0 items-start justify-between gap-4 px-3 py-3 sm:px-5">
-                  <div className="min-w-0 flex-1 text-left">
-                    <h2 className="line-clamp-1 text-sm font-semibold text-white sm:text-base">{video.title}</h2>
-                    <p className="mt-1 line-clamp-2 text-xs text-slate-400 sm:text-sm">
-                      {video.description || 'Fresh creator content for your feed.'}
+                <div className="min-w-0 space-y-1 px-3 py-3 text-left sm:px-5">
+                  <p className="truncate text-[15pt] font-bold leading-[1.5] text-white">
+                    {video.creatorUsername ? `@${video.creatorUsername}` : video.creatorName || 'Ochi creator'}
+                  </p>
+                  {formatPostDate(video.createdAt) ? (
+                    <time dateTime={video.createdAt} className="block text-[14pt] font-bold leading-[1.5] text-slate-500">
+                      {formatPostDate(video.createdAt)}
+                    </time>
+                  ) : null}
+                  {(video.description || video.title) ? (
+                    <p className="line-clamp-3 break-words text-[15pt] font-bold leading-[1.5] text-slate-100">
+                      {video.description || video.title}
                     </p>
-                  </div>
-                  <div className="max-w-[38%] shrink-0 pt-0.5 text-right">
-                    <p className="truncate text-xs font-semibold text-slate-200 sm:text-sm">
-                      {video.creatorUsername ? `@${video.creatorUsername}` : video.creatorName}
-                    </p>
-                    <p className="mt-1 text-[10px] text-slate-500">{video.creatorName}</p>
-                  </div>
+                  ) : null}
                 </div>
               </article>
             ))
@@ -822,11 +872,11 @@ function HomePage() {
 
       {!videoId ? <aside className="hidden min-w-0 min-[1440px]:block">
         <LiveSection compact />
-        <div className="mt-6 overflow-hidden rounded-[28px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(255,118,94,0.18),transparent_52%),linear-gradient(145deg,#17191f,#101115)] p-5">
+        <div className="mt-6 overflow-hidden rounded-[28px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(77,35,36,0.18),transparent_52%),linear-gradient(145deg,#17191f,#101115)] p-5">
           <p className="ochi-kicker">Your next move</p>
           <h3 className="mt-3 text-xl font-semibold tracking-tight text-white">Make a moment of your own.</h3>
           <p className="mt-2 text-sm leading-6 text-slate-400">Drop a clip for the community or start a live set when you’re ready.</p>
-          <button type="button" onClick={() => navigate('/upload')} className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[var(--ochi-accent)] px-4 text-sm font-semibold text-[#1a100e] transition hover:brightness-110">
+          <button type="button" onClick={() => navigate('/upload')} className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[var(--ochi-accent)] px-4 text-sm font-semibold text-white transition hover:brightness-110">
             <span className="text-lg leading-none">+</span> Create something
           </button>
         </div>
@@ -873,9 +923,19 @@ function HomePage() {
                 />
               )}
               <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-6 pb-6 pt-16">
-                <p className="text-sm font-semibold text-white">{activeCommentVideo.creatorName || 'Ochi creator'}</p>
-                {activeCommentVideo.title ? <p className="mt-1 line-clamp-2 text-sm leading-5 text-white/75">{activeCommentVideo.title}</p> : null}
-                {activeCommentVideo.description ? <p className="mt-2 line-clamp-3 text-xs leading-5 text-white/55">{activeCommentVideo.description}</p> : null}
+                <p className="text-[14pt] font-bold leading-[1.5] text-white">
+                  {activeCommentVideo.creatorUsername ? `@${activeCommentVideo.creatorUsername}` : activeCommentVideo.creatorName || 'Ochi creator'}
+                </p>
+                {formatPostDate(activeCommentVideo.createdAt) ? (
+                  <time dateTime={activeCommentVideo.createdAt} className="mt-1 block text-[14pt] font-bold leading-[1.5] text-white/60">
+                    {formatPostDate(activeCommentVideo.createdAt)}
+                  </time>
+                ) : null}
+                {(activeCommentVideo.description || activeCommentVideo.title) ? (
+                  <p className="mt-1 line-clamp-3 text-[14pt] font-bold leading-[1.5] text-white/85">
+                    {activeCommentVideo.description || activeCommentVideo.title}
+                  </p>
+                ) : null}
               </div>
             </aside>
 
@@ -890,10 +950,10 @@ function HomePage() {
                       {Number(activeCommentVideo.comments || activeCommentThread.length || 0).toLocaleString()}
                     </span>
                   </div>
-                  <p className="mt-1 truncate text-xs text-slate-500">
-                    Conversation on <span className="font-medium text-slate-300">{activeCommentVideo.creatorName || 'this post'}’s post</span>
+                  <p className="mt-1 truncate text-xs font-semibold text-slate-500">
+                    Conversation on <span className="font-bold text-slate-300">{activeCommentVideo.creatorUsername ? `@${activeCommentVideo.creatorUsername}` : activeCommentVideo.creatorName || 'this post'}’s post</span>
                   </p>
-                  {activeCommentVideo.title ? <p className="mt-1 truncate text-xs text-slate-400 lg:hidden">{activeCommentVideo.title}</p> : null}
+                  {(activeCommentVideo.description || activeCommentVideo.title) ? <p className="mt-1 truncate text-xs text-slate-400 lg:hidden">{activeCommentVideo.description || activeCommentVideo.title}</p> : null}
                 </div>
                 <button
                   ref={commentCloseButtonRef}
@@ -924,10 +984,10 @@ function HomePage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <p className="truncate text-sm font-semibold text-white">{author}</p>
+                            <p className="truncate text-[14pt] font-bold leading-[1.5] text-white">{author}</p>
                             <span className="text-xs text-slate-500">· {formatCommentTime(comment.createdAt)}</span>
                           </div>
-                          <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-5 text-slate-300">{commentText}</p>
+                          <p className="mt-1 whitespace-pre-wrap break-words text-[14pt] font-bold leading-[1.5] text-slate-300">{commentText}</p>
                           <button
                             type="button"
                             onClick={() => {
@@ -954,10 +1014,10 @@ function HomePage() {
                                     </div>
                                     <div className="min-w-0 flex-1">
                                       <div className="flex items-center gap-2">
-                                        <p className="truncate text-xs font-semibold text-slate-200">{replyAuthor}</p>
+                                        <p className="truncate text-[14pt] font-bold leading-[1.5] text-slate-200">{replyAuthor}</p>
                                         <span className="text-[10px] text-slate-500">· {formatCommentTime(reply.createdAt)}</span>
                                       </div>
-                                      <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-5 text-slate-400">{reply.text}</p>
+                                      <p className="mt-1 whitespace-pre-wrap break-words text-[14pt] font-bold leading-[1.5] text-slate-400">{reply.text}</p>
                                     </div>
                                   </div>
                                 );
@@ -1006,15 +1066,15 @@ function HomePage() {
                   placeholder={replyTarget ? `Reply to ${replyTarget.userName}...` : 'Add to the conversation...'}
                   disabled={activeCommentVideo.allowComments === false || commentSubmitting}
                   aria-label={replyTarget ? `Reply to ${replyTarget.userName}` : 'Add a comment'}
-                  className="max-h-24 min-h-10 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none disabled:cursor-not-allowed"
+                  className="max-h-24 min-h-10 flex-1 resize-none bg-transparent px-3 py-2.5 text-[14pt] font-bold leading-[1.5] text-white placeholder:text-slate-500 focus:outline-none disabled:cursor-not-allowed"
                 />
                 <button
                   type="submit"
                   disabled={!String(commentDraft || '').trim() || commentSubmitting || activeCommentVideo.allowComments === false}
-                  className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-[var(--ochi-accent)] px-3.5 text-sm font-semibold text-[#190d0a] transition hover:bg-[var(--ochi-accent-light)] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-[var(--ochi-accent)] px-3.5 text-sm font-semibold text-white transition hover:bg-[var(--ochi-accent-light)] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {commentSubmitting ? (
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#190d0a]/30 border-t-[#190d0a]" />
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   ) : (
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
                       <path d="M22 2 15 22l-4-9-9-4 20-7Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

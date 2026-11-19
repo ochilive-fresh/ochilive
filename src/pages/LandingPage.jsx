@@ -183,7 +183,7 @@ const Reveal = ({ children, delay = 0, as: Tag = 'div', className = '' }) => {
 /* --------------------------- Primitives --------------------------- */
 
 const Eyebrow = ({ children }) => (
-  <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--ochi-accent)]">
+  <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--ochi-accent-light)]">
     <span className="h-px w-6 bg-[var(--ochi-accent)]/60" />
     {children}
   </span>
@@ -358,7 +358,7 @@ export default function LandingPage() {
               />
             </div>
             <a href="/" aria-label="Ochi Live home" className="text-lg font-semibold tracking-tight">
-              ochi<span className="text-[var(--ochi-accent)]">.</span>live
+              ochi<span className="text-[var(--ochi-accent-light)]">.</span>live
             </a>
           </div>
           <nav aria-label="Primary" className="hidden gap-8 text-sm text-slate-400 md:flex">
@@ -597,7 +597,7 @@ export default function LandingPage() {
               <Eyebrow>For Creators</Eyebrow>
               <h2 id="creators-title" className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
                 Built for comedians. <br />
-                <span className="italic text-[var(--ochi-accent)]">Designed for growth.</span>
+                <span className="italic text-[var(--ochi-accent-light)]">Designed for growth.</span>
               </h2>
               <p className="mt-6 max-w-lg text-base leading-relaxed text-slate-400">
                 Ochi Live gives you the tools to build a sustainable comedy career - without middlemen.
@@ -795,7 +795,7 @@ export default function LandingPage() {
               <Eyebrow>Security & quality</Eyebrow>
               <h2 id="security-title" className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
                 Premium experience. <br />
-                <span className="italic text-[var(--ochi-accent)]">Secure platform.</span>
+                <span className="italic text-[var(--ochi-accent-light)]">Secure platform.</span>
               </h2>
               <p className="mt-6 max-w-md text-base leading-relaxed text-slate-400">
                 We take your experience and data seriously - from the first tap to the final bow.
@@ -856,7 +856,7 @@ export default function LandingPage() {
           <div className="grid gap-12 md:grid-cols-[1.4fr_repeat(4,1fr)]">
             <div>
               <a href="/" className="text-lg font-semibold tracking-tight">
-                ochi<span className="text-[var(--ochi-accent)]">.</span>live
+                ochi<span className="text-[var(--ochi-accent-light)]">.</span>live
               </a>
               <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-500">
                 The global stage for live comedy. Watch, perform, and connect - anywhere in the world.

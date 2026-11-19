@@ -35,7 +35,7 @@
         {/* Content Bottom */}
         <div className="absolute bottom-0 inset-x-0 p-4 space-y-1">
           {/* Event Category */}
-          <span className="inline-block text-[10px] font-bold tracking-wider uppercase text-[var(--ochi-accent)]">
+          <span className="inline-block text-[10px] font-bold tracking-wider uppercase text-[var(--ochi-accent-light)]">
             ROGUE & RAW
           </span>
           
@@ -56,4 +56,3 @@
     </div>
   );
 }
-

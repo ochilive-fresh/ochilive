@@ -44,7 +44,7 @@ export default function ComedyOnboarding({ onComplete, onClose }) {
       <form onSubmit={next} className="w-full max-w-xl border border-slate-700 bg-slate-950 p-5 shadow-2xl sm:p-7">
         <div className="flex items-start justify-between gap-5">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.28em] text-ochi-accent">Try Comedy</p>
+            <p className="text-[10px] uppercase tracking-[0.28em] text-[var(--ochi-accent-light)]">Try Comedy</p>
             <h2 id="comedy-onboarding-title" className="mt-2 text-2xl font-semibold text-white">Find your funny voice.</h2>
             <p className="mt-2 max-w-md text-sm leading-6 text-slate-400">Answer five quick questions. When you finish, your creator profile becomes a comedian profile and live access unlocks.</p>
           </div>

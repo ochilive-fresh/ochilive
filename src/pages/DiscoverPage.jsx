@@ -197,13 +197,13 @@ function DiscoverPage() {
           ) : null}
 
           {!searchTerm.trim() ? (
-            <section className="relative mb-8 overflow-hidden rounded-[32px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_92%_6%,rgba(255,118,94,0.22),transparent_35%),radial-gradient(ellipse_at_10%_100%,rgba(215,245,106,0.07),transparent_38%),linear-gradient(130deg,#17191f,#101115_70%)] px-5 py-7 sm:px-8 sm:py-9 lg:px-10 lg:py-11">
+            <section className="relative mb-8 overflow-hidden rounded-[32px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_92%_6%,rgba(77,35,36,0.22),transparent_35%),radial-gradient(ellipse_at_10%_100%,rgba(215,245,106,0.07),transparent_38%),linear-gradient(130deg,#17191f,#101115_70%)] px-5 py-7 sm:px-8 sm:py-9 lg:px-10 lg:py-11">
               <div className="absolute -right-10 -top-20 h-64 w-64 rounded-full border border-white/[0.05]" />
               <div className="absolute -right-2 -top-12 h-48 w-48 rounded-full border border-white/[0.05]" />
               <div className="relative max-w-2xl">
                 <p className="ochi-kicker">Explore the Ochi universe</p>
                 <h2 className="mt-4 max-w-xl text-3xl font-semibold leading-[1.08] tracking-[-0.05em] text-white sm:text-5xl">
-                  Find your people.<br /><span className="text-[var(--ochi-accent)]">Catch the moment.</span>
+                  Find your people.<br /><span className="text-[var(--ochi-accent-light)]">Catch the moment.</span>
                 </h2>
                 <p className="mt-4 max-w-lg text-sm leading-6 text-slate-400 sm:text-base sm:leading-7">
                   Drop into a live set, discover a fresh voice, or save a clip worth passing around.
@@ -220,7 +220,7 @@ function DiscoverPage() {
                       href={`#${item.target}`}
                       className="rounded-full border border-white/[0.12] bg-black/20 px-3.5 py-2 text-xs font-medium text-slate-200 transition hover:border-[var(--ochi-accent-40)] hover:bg-[var(--ochi-accent-10)] hover:text-white"
                     >
-                      {item.label}<span className="ml-2 text-[var(--ochi-accent)]">↘</span>
+                      {item.label}<span className="ml-2 text-[var(--ochi-accent-light)]">↘</span>
                     </a>
                   ))}
                 </div>
@@ -230,7 +230,7 @@ function DiscoverPage() {
                   <p className="text-sm font-semibold text-white">Your next favorite is out there.</p>
                   <p className="mt-1 text-xs text-slate-500">Start with what’s happening right now.</p>
                 </div>
-                <button type="button" onClick={() => navigate(isSignedIn ? '/upload' : '/signup')} className="shrink-0 rounded-full bg-[var(--ochi-accent)] px-4 py-2.5 text-xs font-bold text-[#1a100e] transition hover:brightness-110 sm:text-sm">{isSignedIn ? 'Create a moment' : 'Join the stage'}</button>
+                <button type="button" onClick={() => navigate(isSignedIn ? '/upload' : '/signup')} className="shrink-0 rounded-full bg-[var(--ochi-accent)] px-4 py-2.5 text-xs font-bold text-white transition hover:brightness-110 sm:text-sm">{isSignedIn ? 'Create a moment' : 'Join the stage'}</button>
               </div>
             </section>
           ) : null}
@@ -321,12 +321,12 @@ function DiscoverPage() {
         ) : null}
 
           {!isSignedIn ? (
-            <section className="rounded-[28px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(255,118,94,0.12),transparent_52%),linear-gradient(145deg,#17191f,#111318)] p-5 sm:p-7">
+            <section className="rounded-[28px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(77,35,36,0.12),transparent_52%),linear-gradient(145deg,#17191f,#111318)] p-5 sm:p-7">
               <p className="ochi-kicker">A seat is waiting</p>
               <h2 className="mt-3 text-xl font-semibold tracking-tight text-white sm:text-2xl">Come in and find your people.</h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">Sign in to browse live rooms, follow creators, and get recommendations shaped around what you love.</p>
               <div className="mt-5 flex flex-wrap gap-2">
-                <button type="button" onClick={() => navigate('/login')} className="rounded-full bg-[var(--ochi-accent)] px-5 py-2.5 text-sm font-semibold text-[#190d0a] transition hover:brightness-110">Sign in</button>
+                <button type="button" onClick={() => navigate('/login')} className="rounded-full bg-[var(--ochi-accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110">Sign in</button>
                 <button type="button" onClick={() => navigate('/signup')} className="rounded-full border border-white/10 px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06]">Create an account</button>
               </div>
             </section>

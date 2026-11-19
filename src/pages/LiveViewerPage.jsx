@@ -167,7 +167,7 @@ export default function LiveViewerPage() {
         <div className="min-w-0 overflow-hidden rounded-[30px] border border-white/[0.08] bg-[var(--ochi-surface)] p-3 shadow-[0_25px_80px_rgba(0,0,0,0.32)] sm:p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--ochi-accent)] text-sm font-bold text-[#190d0a]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--ochi-accent)] text-sm font-bold text-white">
                 {hostLabel.slice(0, 1).toUpperCase()}
               </div>
               <div>
@@ -190,7 +190,7 @@ export default function LiveViewerPage() {
                   {canRetry ? '!' : <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-[var(--ochi-accent)]" />}
                 </span>
                 <p className="max-w-md text-sm leading-6 text-slate-300">{status}</p>
-                {canRetry ? <button type="button" onClick={() => { setParticipants([]); setStatus('Reconnecting to stream…'); setConnectionAttempt((attempt) => attempt + 1); }} className="mt-4 rounded-full bg-[var(--ochi-accent)] px-4 py-2 text-sm font-semibold text-[#190d0a] transition hover:brightness-110">Reconnect</button> : null}
+                {canRetry ? <button type="button" onClick={() => { setParticipants([]); setStatus('Reconnecting to stream…'); setConnectionAttempt((attempt) => attempt + 1); }} className="mt-4 rounded-full bg-[var(--ochi-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110">Reconnect</button> : null}
               </div>
             )}
 
@@ -238,11 +238,11 @@ export default function LiveViewerPage() {
             <p className="ochi-kicker">Inside the room</p>
             <h3 className="mt-2 text-lg font-semibold text-white">Watch together.</h3>
             <p className="mt-2 text-sm leading-6 text-slate-400">Live sessions are best shared. Invite someone in and make this a moment.</p>
-            <button type="button" onClick={handleShare} className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[var(--ochi-accent)] px-4 text-sm font-semibold text-[#190d0a] transition hover:brightness-110">
+            <button type="button" onClick={handleShare} className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[var(--ochi-accent)] px-4 text-sm font-semibold text-white transition hover:brightness-110">
               <span aria-hidden="true">↗</span> Share this room
             </button>
           </div>
-          <div className="rounded-[26px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(255,118,94,0.12),transparent_52%),linear-gradient(145deg,#17191f,#111318)] p-5">
+          <div className="rounded-[26px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(77,35,36,0.12),transparent_52%),linear-gradient(145deg,#17191f,#111318)] p-5">
             <p className="ochi-kicker">Keep exploring</p>
             <p className="mt-2 text-sm leading-6 text-slate-300">Find another live set, discover a fresh voice, or join the feed.</p>
             <button type="button" onClick={() => navigate('/home')} className="mt-4 text-sm font-semibold text-[var(--ochi-accent-light)] transition hover:text-white">Back to your stage →</button>

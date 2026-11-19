@@ -118,7 +118,7 @@ export default function LiveActivityFeed() {
                   )}
                   {activity.type === 'watch' && (
                     <p className="text-sm text-slate-300">
-                      <span className="font-bold text-[var(--ochi-accent)]">{activity.count}</span>
+                      <span className="font-bold text-[var(--ochi-accent-light)]">{activity.count}</span>
                       {' '}
                       <span className="text-slate-400">{activity.action}</span>
                     </p>
@@ -143,12 +143,12 @@ export default function LiveActivityFeed() {
                     <p className="text-sm text-slate-300">
                       <span className="text-slate-400">{activity.action}</span>
                       {' '}
-                      <span className="font-bold text-[var(--ochi-accent)]">{activity.time}</span>
+                      <span className="font-bold text-[var(--ochi-accent-light)]">{activity.time}</span>
                     </p>
                   )}
                   {activity.type === 'milestone' && (
                     <p className="text-sm text-slate-300">
-                      <span className="font-bold text-[var(--ochi-accent)]">{activity.count}</span>
+                      <span className="font-bold text-[var(--ochi-accent-light)]">{activity.count}</span>
                       {' '}
                       <span className="text-slate-400">{activity.action}</span>
                     </p>
@@ -161,7 +161,7 @@ export default function LiveActivityFeed() {
 
         {/* Footer */}
         <div className="mt-4 pt-4 border-t border-slate-700/30">
-          <Link to="/signup" className="block w-full rounded-lg border border-[var(--ochi-accent)]/30 bg-[var(--ochi-accent)]/10 px-3 py-2 text-center text-xs font-semibold text-[var(--ochi-accent)] transition-all duration-300 hover:border-[var(--ochi-accent)]/60 hover:bg-[var(--ochi-accent)]/20">
+          <Link to="/signup" className="block w-full rounded-lg border border-[var(--ochi-accent)]/30 bg-[var(--ochi-accent)]/10 px-3 py-2 text-center text-xs font-semibold text-[var(--ochi-accent-light)] transition-all duration-300 hover:border-[var(--ochi-accent)]/60 hover:bg-[var(--ochi-accent)]/20">
             Join the Action
           </Link>
         </div>

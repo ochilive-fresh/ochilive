@@ -45,8 +45,8 @@ export const getDashboardSummary = async () => {
   return data;
 };
 
-export const getVideoFeed = async (mode = 'for_you') => {
-  const { data } = await videoApi.get('/videos/', { params: { mode } });
+export const getVideoFeed = async (mode = 'for_you', before) => {
+  const { data } = await videoApi.get('/videos/', { params: { mode, ...(before ? { before } : {}) } });
   return data;
 };
 
@@ -57,6 +57,11 @@ export const getVideoById = async (id) => {
 
 export const incrementView = async (id) => {
   const { data } = await videoApi.post(`/videos/${id}/view`);
+  return data;
+};
+
+export const markVideoWatched = async (id, completed = false) => {
+  const { data } = await videoApi.post(`/videos/${encodeURIComponent(id)}/watch`, { completed });
   return data;
 };
 

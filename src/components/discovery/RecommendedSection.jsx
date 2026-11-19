@@ -37,7 +37,7 @@ export default function RecommendedSection() {
       ) : items.length ? (
         <div className="grid gap-3 md:grid-cols-3">
           {items.map((item) => (
-            <article key={item.id || item.title} className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(255,118,94,0.12),transparent_52%),linear-gradient(145deg,#17191f,#111318)] p-4 transition hover:-translate-y-0.5 hover:border-white/[0.15]">
+            <article key={item.id || item.title} className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(77,35,36,0.12),transparent_52%),linear-gradient(145deg,#17191f,#111318)] p-4 transition hover:-translate-y-0.5 hover:border-white/[0.15]">
               <div className="flex items-start justify-between gap-3">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--ochi-accent-10)] text-sm text-[var(--ochi-accent-light)]">✦</span>
                 <span className="rounded-full border border-white/[0.08] bg-black/20 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.15em] text-slate-400">{item.tag || item.category || 'Ochi pick'}</span>

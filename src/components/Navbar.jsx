@@ -8,7 +8,7 @@ function Navbar() {
     <nav className="sticky top-0 z-30 border-b border-white/[0.06] bg-[var(--ochi-bg)]/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2.5 text-sm font-semibold text-white">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-[10px] font-bold tracking-tight text-[var(--ochi-accent)]">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-[10px] font-bold tracking-tight text-[var(--ochi-accent-light)]">
             O.
           </span>
           <span>ochi.live</span>

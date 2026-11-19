@@ -31,7 +31,7 @@ export default function PopularClipsSection() {
     <section className="mb-6">
       <div className="mb-4 flex items-end justify-between gap-4 px-1">
         <div>
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--ochi-accent)]">Made for you</p>
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--ochi-accent-light)]">Made for you</p>
           <h3 className="text-xl font-semibold tracking-tight text-white">Popular clips</h3>
         </div>
         {items.length > 0 && !error ? (
@@ -50,7 +50,7 @@ export default function PopularClipsSection() {
       ) : error ? (
         <div className="rounded-2xl border border-white/[0.08] bg-[var(--ochi-surface)] px-4 py-5">
           <p className="text-sm font-medium text-slate-200">Clips couldn’t load.</p>
-          <button type="button" onClick={() => setRefreshKey((key) => key + 1)} className="mt-2 text-sm font-medium text-[var(--ochi-accent)] transition hover:text-white">
+          <button type="button" onClick={() => setRefreshKey((key) => key + 1)} className="mt-2 text-sm font-medium text-[var(--ochi-accent-light)] transition hover:text-white">
             Try again
           </button>
         </div>
