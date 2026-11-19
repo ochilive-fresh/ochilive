@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useNavigate, useState } from 'react';
 import { likeVideo, commentOnVideo, toggleSaveVideo, reshareVideo, followProfile, unfollowProfile } from '../../api/dashboardApi';
 
 const toneStyles = {
@@ -21,7 +21,27 @@ const getInitials = (name = '') => {
   return parts.map((part) => part[0]?.toUpperCase() || '').join('') || 'U';
 };
 
-function ContentCard({ item, tab }) {
+const commentId = (comment, index) => comment.commentId || comment._id?.toString?.() || `${comment.userId || comment.userName || 'comment'}-${comment.createdAt || index}`;
+
+const normalizeCommentThread = (comments) => {
+  const entries = Array.isArray(comments) ? comments : [];
+  const byId = new Map();
+  const roots = [];
+  entries.forEach((comment, index) => {
+    const id = commentId(comment, index);
+    byId.set(id, { ...comment, commentKey: id, commentId: id, replies: [] });
+  });
+  entries.forEach((comment, index) => {
+    const item = byId.get(commentId(comment, index));
+    const parent = comment.parentCommentId ? byId.get(String(comment.parentCommentId)) : null;
+    if (parent) parent.replies.push(item);
+    else roots.push(item);
+  });
+  return roots;
+};
+
+function ContentCard({ item, tab, isAuthenticated, onRequireAuth }) {
+  const navigate = useNavigate();
   const currentUserId = (() => {
     try {
       return JSON.parse(sessionStorage.getItem('ochi_user') || 'null')?.id || null;
@@ -35,14 +55,7 @@ function ContentCard({ item, tab }) {
   const [reshared, setReshared] = useState(Boolean(item.reshared));
   const [likes, setLikes] = useState(Number(item.likes || 0));
   const [comments, setComments] = useState(Number(item.comments || 0));
-  const [commentThread, setCommentThread] = useState(() => {
-    const base = Array.isArray(item.commentThread) ? item.commentThread : [];
-    return base.map((comment, index) => ({
-      ...comment,
-      commentKey: comment.commentKey || `${comment.userName || 'creator'}-${comment.createdAt || index}`,
-      replies: Array.isArray(comment.replies) ? comment.replies : [],
-    }));
-  });
+  const [commentThread, setCommentThread] = useState(() => normalizeCommentThread(item.commentThread));
   const [commentDraft, setCommentDraft] = useState('');
   const [commentOpen, setCommentOpen] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
@@ -52,49 +65,49 @@ function ContentCard({ item, tab }) {
   const [expanded, setExpanded] = useState(false);
 
   const recentComments = useMemo(() => {
-    return commentThread
-      .map((comment, index) => ({
-        ...comment,
-        commentKey: comment.commentKey || `${comment.userName || 'creator'}-${comment.createdAt || index}`,
-        replies: Array.isArray(comment.replies) ? comment.replies : [],
-      }))
-      .slice(-3)
-      .reverse();
+    return commentThread.slice(-3).reverse();
   }, [commentThread]);
 
   const handleLike = async () => {
-    if (liked) {
-      setMessage('You already liked this video.');
+    if (!isAuthenticated) {
+      onRequireAuth?.('like posts');
       return;
     }
-
     try {
       const updated = await likeVideo(item.id);
-      setLiked(Boolean(updated.liked || true));
-      setLikes(Number(updated.likes || likes + 1));
-      setMessage(updated.message || 'You liked this post.');
+      setLiked(Boolean(updated.liked));
+      setLikes(Number(updated.likes ?? likes));
+      setMessage(updated.message || (updated.liked ? 'You liked this post.' : 'Like removed.'));
     } catch (error) {
-      setMessage('Unable to like this post right now.');
+      setMessage(error?.response?.data?.message || 'Unable to update this like right now.');
     }
   };
 
   const handleSave = async () => {
+    if (!isAuthenticated) {
+      onRequireAuth?.('save posts');
+      return;
+    }
     try {
       const response = await toggleSaveVideo(item.id);
       setSaved(Boolean(response.saved));
       setMessage(response.saved ? 'Saved to your library.' : 'Removed from saved posts.');
     } catch (error) {
-      setMessage('Unable to save this post right now.');
+      setMessage(error?.response?.data?.message || 'Unable to save this post right now.');
     }
   };
 
   const handleCommentSubmit = async (event) => {
     event.preventDefault();
+    if (!isAuthenticated) {
+      onRequireAuth?.('comment on posts');
+      return;
+    }
     const comment = commentDraft.trim();
     if (!comment) return;
 
     try {
-      const response = await commentOnVideo(item.id, comment);
+      const response = await commentOnVideo(item.id, comment, replyingTo?.commentId);
       const nextComment = response.comment || {
         userName: 'You',
         text: comment,
@@ -102,69 +115,58 @@ function ContentCard({ item, tab }) {
         replyTo: replyingTo?.userName || null,
       };
 
-      setCommentThread((current) => {
-        if (replyingTo?.commentKey) {
-          return current.map((entry, index) => {
-            const key = entry.commentKey || `${entry.userName || 'creator'}-${entry.createdAt || index}`;
-            if (key !== replyingTo.commentKey) return entry;
-            return {
-              ...entry,
-              replies: [
-                ...(Array.isArray(entry.replies) ? entry.replies : []),
-                {
-                  ...nextComment,
-                  commentKey: `${key}-reply-${Date.now()}`,
-                  replies: [],
-                },
-              ],
-            };
-          });
-        }
-
-        return [
-          ...current,
-          {
-            ...nextComment,
-            commentKey: `${nextComment.userName || 'you'}-${Date.now()}`,
-            replies: [],
-          },
-        ];
-      });
+      setCommentThread(normalizeCommentThread(response.video?.commentThread || [...commentThread, {
+        ...nextComment,
+        commentId: nextComment.commentId || `${nextComment.userName || 'you'}-${Date.now()}`,
+        parentCommentId: replyingTo?.commentId || null,
+      }]));
 
       setComments(Number(response.video?.comments || comments + 1));
       setCommentDraft('');
       setReplyingTo(null);
       setMessage(replyingTo ? `Reply to @${replyingTo.userName} posted.` : 'Comment posted and visible to others.');
     } catch (error) {
-      setMessage('Unable to add the comment.');
+      setMessage(error?.response?.data?.message || 'Unable to add the comment.');
     }
   };
 
   const handleShare = async () => {
     const shareText = `${item.title || 'Creator post'} by ${item.creatorName || 'Ochi creator'}`;
+    const shareUrl = `${window.location.origin}/video/${encodeURIComponent(item.id)}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: item.title || 'Ochi post', text: shareText, url: window.location.href });
+        await navigator.share({ title: item.title || 'Ochi post', text: shareText, url: shareUrl });
+        setMessage('Post shared.');
       } else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(`${shareText} ${window.location.href}`);
+        await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+        setMessage('Post link copied.');
+      } else {
+        setMessage('Sharing is not available in this browser.');
       }
-      setMessage('Share link copied.');
     } catch (error) {
-      setMessage('Unable to complete the share right now.');
+      if (error?.name !== 'AbortError') setMessage(error?.response?.data?.message || 'Unable to complete the share right now.');
     }
   };
 
   const handleReshare = async () => {
+    if (!isAuthenticated) {
+      onRequireAuth?.('reshare posts');
+      return;
+    }
     try {
       await reshareVideo(item.id);
       setReshared(true);
       setMessage('Post reshared to your profile.');
     } catch (error) {
-      setMessage('Unable to reshare right now.');
+      setMessage(error?.response?.data?.message || 'Unable to reshare right now.');
     }
   };
 
   const handleFollowCreator = async () => {
+    if (!isAuthenticated) {
+      onRequireAuth?.('follow creators');
+      return;
+    }
     const creatorUsername = item.creatorUsername || item.creator?.username;
     if (!creatorUsername || currentUserId === item.creatorId) return;
 
@@ -175,7 +177,7 @@ function ContentCard({ item, tab }) {
       setFollowingCreator(Boolean(relationship.isFollowing || relationship.isMutual || !followingCreator));
       setMessage(followingCreator ? 'Unfollowed creator.' : 'Now following creator.');
     } catch (error) {
-      setMessage('Unable to update follow state right now.');
+      setMessage(error?.response?.data?.message || 'Unable to update follow state right now.');
     } finally {
       setFollowLoading(false);
     }
@@ -186,7 +188,10 @@ function ContentCard({ item, tab }) {
 
   return (
     <article className="group overflow-hidden bg-slate-950 shadow-[0_12px_26px_rgba(2,6,23,0.2)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(2,6,23,0.3)]">
-      <div className="relative aspect-[3/4] cursor-zoom-in overflow-hidden bg-slate-900" onClick={() => setExpanded(true)}>
+      <div className="relative aspect-[3/4] cursor-zoom-in overflow-hidden bg-slate-900" onClick={(event) => {
+        if (commentOpen || event.target.closest('button,input,textarea,form,video')) return;
+        setExpanded(true);
+      }}>
         <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-2 p-3 text-white">
           <div className="flex items-center gap-2 min-w-0">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-950/70 text-[10px] font-bold text-white ring-1 ring-white/10">
@@ -280,7 +285,6 @@ function ContentCard({ item, tab }) {
                 <p className="mt-1 text-sm font-medium text-white">{comments} total</p>
               </div>
               <div className="flex items-center gap-2">
-                <button type="button" className="rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-[9px] uppercase tracking-[0.14em] text-slate-200 transition hover:border-slate-500 hover:text-white">View all</button>
                 <button type="button" onClick={() => setCommentOpen(false)} className="rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-slate-200 transition hover:border-slate-500 hover:text-white">Close</button>
               </div>
             </div>
@@ -315,14 +319,18 @@ function ContentCard({ item, tab }) {
                             <button
                               type="button"
                               onClick={() => {
-                                setReplyingTo({ userName: comment.userName || 'Creator', commentKey });
+                                if (!isAuthenticated) {
+                                  onRequireAuth?.('reply to comments');
+                                  return;
+                                }
+                                setReplyingTo({ userName: comment.userName || 'Creator', commentKey, commentId: comment.commentId });
                                 setCommentDraft('');
                               }}
                               className="transition hover:text-slate-300"
+                              disabled={!comment.commentId}
                             >
                               Reply
                             </button>
-                            <button type="button" className="transition hover:text-slate-300">Like</button>
                             {replyCount > 0 ? <span className="rounded-full border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[8px] text-slate-300">{replyCount}</span> : null}
                           </div>
 
@@ -371,10 +379,13 @@ function ContentCard({ item, tab }) {
                 onChange={(event) => setCommentDraft(event.target.value)}
                 maxLength={180}
                 placeholder={replyingTo ? `Reply to @${replyingTo.userName}...` : 'Add a comment...'}
+                disabled={item.allowComments === false}
+                aria-label={replyingTo ? `Reply to ${replyingTo.userName}` : 'Add a comment'}
                 className="w-full bg-transparent px-2 py-1.5 text-sm text-white placeholder:text-slate-500 focus:outline-none"
               />
-              <button type="submit" className="rounded-full border border-rose-400/50 bg-rose-500/15 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-rose-200 transition hover:bg-rose-500/20">{replyingTo ? 'Reply' : 'Post'}</button>
+              <button type="submit" disabled={item.allowComments === false} className="rounded-full border border-rose-400/50 bg-rose-500/15 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-rose-200 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40">{replyingTo ? 'Reply' : 'Post'}</button>
             </form>
+            {item.allowComments === false ? <p className="mt-2 text-xs text-slate-500">Comments are disabled for this post.</p> : null}
           </div>
         </div>
       </div>
@@ -382,7 +393,7 @@ function ContentCard({ item, tab }) {
       <div className="space-y-2 p-2 sm:p-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold leading-tight text-white sm:text-base">{item.title || 'Untitled post'}</p>
+            <button type="button" onClick={() => item.id && navigate(`/video/${encodeURIComponent(item.id)}`)} className="block max-w-full truncate text-left text-sm font-semibold leading-tight text-white hover:text-[var(--ochi-accent-light)] sm:text-base" disabled={!item.id}>{item.title || 'Untitled post'}</button>
             <p className="mt-1 line-clamp-1 text-xs leading-5 text-slate-400">{item.description || 'Creator post from Ochi Live.'}</p>
           </div>
           <span className="shrink-0 text-[9px] text-slate-500">{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Today'}</span>
@@ -401,7 +412,8 @@ function ContentCard({ item, tab }) {
         <div className="flex items-center justify-between gap-3 pt-1 text-[11px] uppercase tracking-[0.14em] text-slate-500">
           <span>{item.creatorName || 'Ochi creator'}</span>
           <div className="flex items-center gap-3 normal-case tracking-normal">
-            <button type="button" onClick={handleLike} className={liked ? 'text-rose-300' : 'text-slate-400'} aria-label={liked ? 'Liked' : 'Like'}>{liked ? '♥' : '♡'} {likes}</button>
+            <button type="button" onClick={handleLike} className={liked ? 'text-rose-300' : 'text-slate-400'} aria-label={liked ? 'Unlike' : 'Like'} aria-pressed={liked}>{liked ? '♥' : '♡'} {likes}</button>
+            <button type="button" onClick={() => setCommentOpen((open) => !open)} className="text-slate-400" aria-label={`${commentOpen ? 'Hide' : 'Open'} comments, ${comments} total`} aria-expanded={commentOpen}>Comment {comments}</button>
             <button type="button" onClick={handleSave} className={saved ? 'text-amber-300' : 'text-slate-400'} aria-label={saved ? 'Saved' : 'Save'}>{saved ? 'Saved' : 'Save'}</button>
             <button type="button" onClick={handleShare} className="text-slate-400" aria-label="Share">Share</button>
           </div>
@@ -421,7 +433,7 @@ function ContentCard({ item, tab }) {
   );
 }
 
-function ContentGrid({ items, tab, isOwnProfile }) {
+function ContentGrid({ items, tab, isOwnProfile, isAuthenticated = true, onRequireAuth }) {
   if (!items.length) {
     return (
       <div className="border-t border-slate-800 py-14 text-center">
@@ -435,7 +447,7 @@ function ContentGrid({ items, tab, isOwnProfile }) {
   return (
     <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:gap-4" role="tabpanel">
       {items.map((item) => (
-        <ContentCard key={item.id} item={item} tab={tab} />
+        <ContentCard key={item.id} item={item} tab={tab} isAuthenticated={isAuthenticated} onRequireAuth={onRequireAuth} />
       ))}
     </div>
   );

@@ -1,6 +1,6 @@
 import FollowButton from './FollowButton';
 
-function ProfileHeader({ user, relationship, onFollowChange, onShare, onTryComedy, onMessage, onGoLive, canMessage, messageLabel }) {
+function ProfileHeader({ user, relationship, onFollowChange, onShare, onTryComedy, onMessage, onGoLive, canMessage, messageLabel, isAuthenticated, onRequireAuth }) {
   const name = user?.name || 'Ochi Creator';
   const username = user?.username || 'creator';
   const initials = name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
@@ -60,7 +60,7 @@ function ProfileHeader({ user, relationship, onFollowChange, onShare, onTryComed
                 {messageLabel || 'Message'}
               </button>
             )}
-            <FollowButton username={username} relationship={{ ...relationship, accountType: user?.accountType }} onChange={onFollowChange} onTryComedy={onTryComedy} />
+            <FollowButton username={username} relationship={{ ...relationship, accountType: user?.accountType }} onChange={onFollowChange} onTryComedy={onTryComedy} isAuthenticated={isAuthenticated} onRequireAuth={onRequireAuth} />
             <button type="button" onClick={onShare} className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.08]">Share</button>
           </div>
         </div>

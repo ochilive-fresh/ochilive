@@ -50,6 +50,11 @@ export const getVideoFeed = async (mode = 'for_you') => {
   return data;
 };
 
+export const getVideoById = async (id) => {
+  const { data } = await videoApi.get(`/videos/${encodeURIComponent(id)}`);
+  return data;
+};
+
 export const incrementView = async (id) => {
   const { data } = await videoApi.post(`/videos/${id}/view`);
   return data;
@@ -65,8 +70,8 @@ export const reshareVideo = async (id) => {
   return data;
 };
 
-export const commentOnVideo = async (id, comment) => {
-  const { data } = await videoApi.post(`/videos/${id}/comments`, { comment });
+export const commentOnVideo = async (id, comment, parentCommentId = null) => {
+  const { data } = await videoApi.post(`/videos/${id}/comments`, { comment, parentCommentId });
   return data;
 };
 
@@ -85,8 +90,11 @@ export const uploadVideoPost = async (payload) => {
   return data;
 };
 
-export const uploadVideoFile = async (form) => {
-  const { data } = await videoApi.post('/videos/upload-file', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const uploadVideoFile = async (form, onUploadProgress) => {
+  const { data } = await videoApi.post('/videos/upload-file', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress,
+  });
   return data;
 };
 

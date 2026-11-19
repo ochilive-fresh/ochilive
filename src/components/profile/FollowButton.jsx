@@ -1,13 +1,14 @@
 import { followProfile, unfollowProfile } from '../../api/dashboardApi';
 import { useState, useEffect } from 'react';
 
-function FollowButton({ username, relationship, onChange, onTryComedy }) {
+function FollowButton({ username, relationship, onChange, onTryComedy, isAuthenticated = true, onRequireAuth }) {
   const [state, setState] = useState({
     isFollowing: Boolean(relationship?.isFollowing),
     isFollowedBy: Boolean(relationship?.isFollowedBy),
     isMutual: Boolean(relationship?.isMutual),
   });
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     setState({
@@ -30,6 +31,11 @@ function FollowButton({ username, relationship, onChange, onTryComedy }) {
       : 'border-ochi-accent bg-ochi-accent text-white hover:bg-ochi-accent/80';
 
   const toggle = async () => {
+    if (!isAuthenticated) {
+      onRequireAuth?.('follow creators');
+      return;
+    }
+    setErrorMessage('');
     setLoading(true);
     try {
       const result = state.isFollowing ? await unfollowProfile(username) : await followProfile(username);
@@ -41,21 +47,26 @@ function FollowButton({ username, relationship, onChange, onTryComedy }) {
       };
       setState(nextState);
       onChange?.(result);
+    } catch (error) {
+      setErrorMessage(error?.response?.data?.message || 'Unable to update follow state.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      disabled={loading}
-      className={`border px-7 py-2.5 text-sm font-semibold transition-colors ${buttonClasses}`}
-      aria-pressed={state.isFollowing || state.isMutual}
-    >
-      {loading ? 'Updating...' : label}
-    </button>
+    <div>
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={loading}
+        className={`border px-7 py-2.5 text-sm font-semibold transition-colors ${buttonClasses}`}
+        aria-pressed={state.isFollowing || state.isMutual}
+      >
+        {loading ? 'Updating...' : label}
+      </button>
+      {errorMessage ? <p role="alert" className="mt-1 text-xs text-rose-300">{errorMessage}</p> : null}
+    </div>
   );
 }
 

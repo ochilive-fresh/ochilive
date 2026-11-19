@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import BrandedLoader from '../components/BrandedLoader';
@@ -60,6 +60,7 @@ const getPasswordStrength = (password) => {
 
 function SignUpPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState({ email: '', username: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -116,7 +117,11 @@ function SignUpPage() {
       persistSession(response.data.token, response.data.user);
       setTransitioning(true);
       window.setTimeout(() => {
-        navigate('/home');
+        const from = location.state?.from;
+        const destination = typeof from?.pathname === 'string' && from.pathname.startsWith('/') && !from.pathname.startsWith('//')
+          ? `${from.pathname}${from.search || ''}${from.hash || ''}`
+          : '/home';
+        navigate(destination, { replace: true });
       }, 1800);
     } catch (error) {
       setMessage(getErrorMessage(error));

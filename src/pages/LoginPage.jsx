@@ -1,5 +1,5 @@
 ﻿import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import BrandedLoader from '../components/BrandedLoader';
@@ -30,6 +30,7 @@ import { persistSession } from '../utils/session';
 
 function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState({ identity: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -56,7 +57,11 @@ function LoginPage() {
       setMessage(response.data.message);
       setTransitioning(true);
       window.setTimeout(() => {
-        navigate('/home');
+        const from = location.state?.from;
+        const destination = typeof from?.pathname === 'string' && from.pathname.startsWith('/') && !from.pathname.startsWith('//')
+          ? `${from.pathname}${from.search || ''}${from.hash || ''}`
+          : '/home';
+        navigate(destination, { replace: true });
       }, 1800);
     } catch (error) {
       setMessage(getErrorMessage(error));

@@ -224,7 +224,19 @@ function UploadPage() {
   const [liveDetailsOpen, setLiveDetailsOpen] = useState(false);
   const [livekitRoom, setLivekitRoom] = useState(null);
   const [liveViewerCount, setLiveViewerCount] = useState(0);
+  const [networkOnline, setNetworkOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine);
   const livekitUrl = import.meta.env.VITE_LIVEKIT_URL || 'ws://localhost:7880';
+
+  useEffect(() => {
+    const handleOnline = () => setNetworkOnline(true);
+    const handleOffline = () => setNetworkOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     let sessionUser = null;
@@ -291,17 +303,6 @@ function UploadPage() {
     const id = window.setInterval(() => setElapsed((v) => v + 1), 1000);
     return () => window.clearInterval(id);
   }, [recording]);
-
-  /* cosmetic progress bar while the real request is in flight */
-  useEffect(() => {
-    if (!uploading) {
-      setProgress(0);
-      return undefined;
-    }
-    setProgress(8);
-    const id = window.setInterval(() => setProgress((v) => (v < 92 ? v + Math.max(1, (92 - v) * 0.08) : v)), 220);
-    return () => window.clearInterval(id);
-  }, [uploading]);
 
   const stopCamera = () => {
     if (!stream) return;
@@ -605,7 +606,8 @@ function UploadPage() {
     }
 
     setUploading(true);
-    setStatus('Posting...');
+    setProgress(0);
+    setStatus('Preparing your post...');
 
     try {
         let mediaUrlToSend = previewUrl;
@@ -617,29 +619,38 @@ function UploadPage() {
           const file = new File([blob], `upload_${Date.now()}.${ext}`, { type: blob.type || 'video/webm' });
           const form = new FormData();
           form.append('file', file);
-          const uploadResp = await uploadVideoFile(form);
+          setStatus('Uploading media...');
+          const uploadResp = await uploadVideoFile(form, (event) => {
+            if (event.total) setProgress(Math.round((event.loaded / event.total) * 100));
+          });
           mediaUrlToSend = uploadResp.mediaUrl || uploadResp.url || mediaUrlToSend;
           thumbnailUrlToSend = uploadResp.thumbnailUrl || uploadResp.mediaUrl || uploadResp.url || mediaUrlToSend;
         }
 
-        await uploadVideoPost({
+        setProgress(100);
+        setStatus('Publishing your post...');
+        const publishResponse = await uploadVideoPost({
           title: caption || 'New clip',
           category: previewType === 'video' ? 'Video' : 'Photo',
           description: caption,
           mediaUrl: mediaUrlToSend,
           thumbnailUrl: thumbnailUrlToSend,
           visibility: privacy,
+          allowComments,
           type: previewType,
         });
-      setStatus('Uploaded.');
+      setStatus('Posted successfully. Your post is on your stage.');
       setPreviewUrl('');
       setCaption('');
       setScreen('camera');
       setActiveTab('video');
+      const publishedPostId = publishResponse.upload?.id || publishResponse.upload?._id;
+      navigate(publishedPostId ? `/video/${encodeURIComponent(publishedPostId)}` : '/home');
     } catch (error) {
       setStatus(error?.response?.data?.message || 'Upload failed.');
     } finally {
       setUploading(false);
+      setProgress(0);
     }
   };
 
@@ -1100,7 +1111,7 @@ function UploadPage() {
                         {uploading ? (
                           <>
                             <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                            Posting… {Math.round(progress)}%
+                            {progress >= 100 ? 'Publishing…' : `Uploading… ${Math.round(progress)}%`}
                           </>
                         ) : (
                           <>
@@ -1172,7 +1183,7 @@ function UploadPage() {
                     {[
                       { label: 'Camera', ready: Boolean(stream), pending: cameraLoading },
                       { label: 'Microphone', ready: Boolean(stream?.getAudioTracks?.().length), pending: cameraLoading },
-                      { label: 'Network', ready: true, pending: false },
+                      { label: 'Internet connection', ready: networkOnline, pending: false },
                     ].map((item, i) => (
                       <li
                         key={item.label}
@@ -1181,7 +1192,7 @@ function UploadPage() {
                         {item.label}
                         <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${item.pending ? 'text-amber-300' : item.ready ? 'text-emerald-300' : 'text-rose-300'}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${item.pending ? 'animate-pulse bg-amber-400' : item.ready ? 'bg-emerald-400' : 'bg-rose-400'}`} />
-                          {item.pending ? 'Checking' : item.ready ? 'Ready' : 'Required'}
+                          {item.pending ? 'Checking' : item.label === 'Internet connection' ? (item.ready ? 'Online' : 'Offline') : item.ready ? 'Ready' : 'Required'}
                         </span>
                       </li>
                     ))}
@@ -1192,7 +1203,7 @@ function UploadPage() {
                       {liveStarting ? 'Ending live room...' : 'End live room'}
                     </button>
                   ) : (
-                    <button type="button" disabled={liveStarting || !stream || !liveTitle.trim()} onClick={startPreparedLive} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 disabled:cursor-not-allowed disabled:opacity-50">
+                    <button type="button" disabled={liveStarting || !stream || !networkOnline || !liveTitle.trim()} onClick={startPreparedLive} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 disabled:cursor-not-allowed disabled:opacity-50">
                       <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
                       {liveStarting ? (liveRoomId ? 'Starting room...' : 'Preparing room...') : liveRoomId ? 'Start live room' : 'Prepare live room'}
                     </button>

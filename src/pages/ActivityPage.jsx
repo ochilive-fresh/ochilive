@@ -6,6 +6,8 @@ function ActivityPage() {
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [loadError, setLoadError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const filters = [
     { id: 'all', label: 'All activity' },
@@ -20,11 +22,13 @@ function ActivityPage() {
   }, [activity, activeFilter]);
 
   useEffect(() => {
+    setLoading(true);
+    setLoadError('');
     getActivityFeed()
-      .then((data) => setActivity(data))
-      .catch(() => setActivity([]))
+      .then((data) => setActivity(Array.isArray(data) ? data : []))
+      .catch((error) => setLoadError(error?.response?.data?.message || 'We could not load activity. Please try again.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [refreshKey]);
 
   return (
     <DashboardShell
@@ -73,7 +77,14 @@ function ActivityPage() {
             </div>
 
             <div className="p-4 sm:p-6">
-              {filteredActivity.length === 0 ? (
+              {loadError ? (
+                <div role="alert" className="rounded-xl border border-rose-400/20 bg-rose-500/10 p-5 text-center">
+                  <p className="text-sm font-medium text-rose-100">{loadError}</p>
+                  <button type="button" onClick={() => setRefreshKey((key) => key + 1)} className="mt-3 rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10">
+                    Try again
+                  </button>
+                </div>
+              ) : filteredActivity.length === 0 ? (
                 <div className="flex min-h-56 items-center justify-center rounded-xl border border-dashed border-slate-800 px-5 text-center">
                   <div>
                     <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-slate-900 text-slate-300">—</div>
@@ -117,4 +128,3 @@ function ActivityPage() {
 }
 
 export default ActivityPage;
-

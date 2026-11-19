@@ -33,6 +33,7 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/home" element={<HomePage />} />
+      <Route path="/video/:videoId" element={<HomePage />} />
       <Route path="/discover" element={<DiscoverPage />} />
       <Route path="/discover/more-upcoming-shows" element={<MoreUpcomingShowsPage />} />
       <Route path="/discover/more-popular-clips" element={<MorePopularClipsPage />} />
@@ -44,7 +45,7 @@ function AppRoutes() {
       <Route path="/wallet/transactions" element={<ProtectedRoute><WalletTransactions /></ProtectedRoute>} />
       <Route path="/wallet/withdrawals" element={<ProtectedRoute><WalletWithdrawals /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-      <Route path="/profile/:username" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+      <Route path="/profile/:username" element={<ProfilePage />} />
       <Route path="/upload" element={<UploadPage />} />
       <Route path="/live/:roomId" element={<ProtectedRoute><LiveViewerPage /></ProtectedRoute>} />
       <Route path="/notifications" element={<NotificationsPage />} />

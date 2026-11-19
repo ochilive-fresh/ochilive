@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
 import { getProfileSummary, getProfilePosts, getProfileReshares, rateProfile } from '../api/dashboardApi';
 import ProfileHeader from '../components/profile/ProfileHeader';
@@ -8,6 +8,8 @@ import TabsSection from '../components/profile/TabsSection';
 import ContentGrid from '../components/profile/ContentGrid';
 import ComedyOnboarding from '../components/profile/ComedyOnboarding';
 import ComedianPerformanceCard from '../components/profile/ComedianPerformanceCard';
+import SignUpPrompt from '../components/SignUpPrompt';
+import { getStoredSession } from '../utils/session';
 
 const fallbackProfile = {
   user: {
@@ -45,7 +47,14 @@ const getSessionProfile = () => {
 function ProfilePage() {
   const { username: routeUsername } = useParams();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState(() => getSessionProfile());
+  const location = useLocation();
+  const isAuthenticated = Boolean(getStoredSession().token);
+  const [profile, setProfile] = useState(() => {
+    const currentProfile = getSessionProfile();
+    return routeUsername
+      ? { ...currentProfile, user: { ...currentProfile.user, username: routeUsername } }
+      : currentProfile;
+  });
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState({ posts: [], reshared: [] });
   const [contentLoading, setContentLoading] = useState(false);
@@ -56,9 +65,15 @@ function ProfilePage() {
   const [showComedyOnboarding, setShowComedyOnboarding] = useState(false);
   const [showPerformanceProfile, setShowPerformanceProfile] = useState(false);
   const [ratingMessage, setRatingMessage] = useState('');
+  const [signupPromptAction, setSignupPromptAction] = useState('');
 
   const canMessage = !profile.relationship?.isOwnProfile && Boolean(profile.user?.id);
-  const messageLabel = profile.relationship?.isFollowing || profile.relationship?.isFollowedBy ? 'Message' : 'Request to message';
+  const messageLabel = !isAuthenticated ? 'Sign up to message' : profile.relationship?.isFollowing || profile.relationship?.isFollowedBy ? 'Message' : 'Request to message';
+
+  const requireAccount = (action) => setSignupPromptAction(action);
+  const closeSignupPrompt = () => setSignupPromptAction('');
+  const openSignup = () => navigate('/signup', { state: { from: location } });
+  const openLogin = () => navigate('/login', { state: { from: location } });
 
   useEffect(() => {
     const sessionUser = (() => {
@@ -96,7 +111,7 @@ function ProfilePage() {
           },
         });
       })
-      .catch(() => {
+      .catch((error) => {
         const fallbackUser = getSessionProfile().user;
         const fallbackOwnerState = !normalizedRouteUsername || normalizedRouteUsername.toLowerCase() === String((sessionUser?.username || sessionUser?.email?.split('@')[0] || '')).toLowerCase();
         setProfile({
@@ -105,7 +120,9 @@ function ProfilePage() {
           stats: { ...fallbackProfile.stats, followers: 0, following: 0, posts: 0 },
           relationship: { isOwnProfile: fallbackOwnerState, isFollowing: false, accountType: fallbackUser.accountType || 'creator' },
         });
-        setProfileError(`@${targetUsername} has not published a profile yet. Their page will appear here once they add their first bio, clips, or live setup.`);
+        setProfileError(error?.response?.status === 404
+          ? `@${targetUsername} could not be found.`
+          : `We could not load @${targetUsername}'s profile. Please try again.`);
       })
       .finally(() => setLoading(false));
   }, [routeUsername]);
@@ -138,12 +155,20 @@ function ProfilePage() {
   };
 
   const handleMessage = () => {
+    if (!isAuthenticated) {
+      requireAccount('message creators');
+      return;
+    }
     if (!profile.user?.id && !profile.user?.username) return;
     const target = profile.user.id || profile.user.username;
     navigate(`/messages?user=${encodeURIComponent(target)}&username=${encodeURIComponent(profile.user.username || '')}`);
   };
 
   const handleRate = async (score) => {
+    if (!isAuthenticated) {
+      requireAccount('rate creators');
+      return;
+    }
     try {
       const result = await rateProfile(profile.user.username, score);
       setProfile((current) => ({ ...current, user: { ...current.user, comedyProfile: { ...current.user.comedyProfile, rating: result.rating, ratingCount: result.ratingCount } } }));
@@ -206,6 +231,8 @@ function ProfilePage() {
               onMessage={handleMessage}
               canMessage={canMessage}
               messageLabel={messageLabel}
+              isAuthenticated={isAuthenticated}
+              onRequireAuth={requireAccount}
             />
             {profile.user?.accountType === 'comedian' ? (
               <>
@@ -251,14 +278,14 @@ function ProfilePage() {
                   </div>
                 </div>
               </div>
-            ) : contentLoading ? <div className="rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] py-12 text-center text-sm text-slate-500">Loading {activeTab}...</div> : contentError ? <div className="rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] py-12 text-center"><p className="text-sm text-[var(--ochi-accent-light)]">{contentError}</p><button type="button" onClick={() => { setContentError(''); setContentRequestKey((key) => key + 1); }} className="mt-4 rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/[0.05] hover:text-white">Retry</button></div> : <ContentGrid items={content[activeTab]} tab={activeTab} isOwnProfile={profile.relationship?.isOwnProfile} />}
+            ) : contentLoading ? <div className="rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] py-12 text-center text-sm text-slate-500">Loading {activeTab}...</div> : contentError ? <div className="rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] py-12 text-center"><p className="text-sm text-[var(--ochi-accent-light)]">{contentError}</p><button type="button" onClick={() => { setContentError(''); setContentRequestKey((key) => key + 1); }} className="mt-4 rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/[0.05] hover:text-white">Retry</button></div> : <ContentGrid items={content[activeTab]} tab={activeTab} isOwnProfile={profile.relationship?.isOwnProfile} isAuthenticated={isAuthenticated} onRequireAuth={requireAccount} />}
           </div>
         </div>
       )}
       {showComedyOnboarding ? <ComedyOnboarding onComplete={handleComedyComplete} onClose={() => setShowComedyOnboarding(false)} /> : null}
+      {signupPromptAction ? <SignUpPrompt action={signupPromptAction} onClose={closeSignupPrompt} onSignUp={openSignup} onSignIn={openLogin} /> : null}
     </DashboardShell>
   );
 }
 
 export default ProfilePage;
-

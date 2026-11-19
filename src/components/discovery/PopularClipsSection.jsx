@@ -62,7 +62,7 @@ export default function PopularClipsSection() {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => navigate('/discover/more-popular-clips')}
+                onClick={() => navigate(item.id ? `/video/${encodeURIComponent(item.id)}` : '/discover/more-popular-clips')}
                 className="group relative aspect-[3/4] w-[62%] shrink-0 overflow-hidden rounded-2xl border border-white/[0.08] bg-[var(--ochi-surface)] text-left sm:w-[calc(33.333%-0.5rem)]"
               >
                 {thumbnail ? <img src={thumbnail} alt={item.title || 'Popular clip'} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : null}

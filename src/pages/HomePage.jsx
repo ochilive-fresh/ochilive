@@ -1,7 +1,8 @@
 ﻿import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
 import {
+  getVideoById,
   getVideoFeed,
   incrementView,
   likeVideo,
@@ -12,6 +13,7 @@ import {
 } from '../api/dashboardApi';
 import { getStoredSession } from '../utils/session';
 import LiveSection from '../components/discovery/LiveSection';
+import SignUpPrompt from '../components/SignUpPrompt';
 
 const placeholderImage =
   'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&h=800&fit=crop&q=80';
@@ -23,25 +25,51 @@ const tabs = [
   { key: 'recent_live', label: 'Recent Live' },
 ];
 
+const formatActionCount = (value) => {
+  const count = Number(value);
+  return new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(Number.isFinite(count) ? count : 0);
+};
+
+const getCommentId = (comment, index) => comment.commentId || comment._id?.toString?.() || `${comment.userId || comment.userName || 'comment'}-${comment.createdAt || index}`;
+
+const buildCommentTree = (comments) => {
+  const entries = Array.isArray(comments) ? comments : [];
+  const byId = new Map();
+  const roots = [];
+  entries.forEach((comment, index) => {
+    const id = getCommentId(comment, index);
+    byId.set(id, { ...comment, commentId: id, replies: [] });
+  });
+  entries.forEach((comment, index) => {
+    const entry = byId.get(getCommentId(comment, index));
+    const parent = comment.parentCommentId ? byId.get(String(comment.parentCommentId)) : null;
+    if (parent) parent.replies.push(entry);
+    else roots.push(entry);
+  });
+  return roots;
+};
+
 const FeedIcon = ({ type, active = false }) => {
-  const common = 'h-6 w-6';
+  const common = 'h-5 w-5';
   if (type === 'like') {
-    return <svg viewBox="0 0 24 24" className={common} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.8 8.8c0 5.2-8.8 10.2-8.8 10.2S3.2 14 3.2 8.8A4.6 4.6 0 0 1 12 6.4a4.6 4.6 0 0 1 8.8 2.4Z" /></svg>;
+    return <svg viewBox="0 0 24 24" className={common} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z" /></svg>;
   }
   if (type === 'comment') {
-    return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.5 11.5a8.3 8.3 0 0 1-8.5 8 8.7 8.7 0 0 1-3.8-.9L3 20l1.4-4.5a7.6 7.6 0 0 1-1.4-4c0-4.4 3.8-8 9-8s8.5 3.6 8.5 8Z" /></svg>;
+    return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.25 11.5a8.25 8.25 0 0 1-8.25 8.25 8.2 8.2 0 0 1-3.82-.94L3 20.25l1.44-4.32A8.2 8.2 0 0 1 3.75 12a8.25 8.25 0 1 1 16.5-.5Z" /><path d="M8 12h.01M12 12h.01M16 12h.01" /></svg>;
   }
   if (type === 'save') {
-    return <svg viewBox="0 0 24 24" className={common} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V21L12 17.4 6.5 21V4.5Z" /></svg>;
+    return <svg viewBox="0 0 24 24" className={common} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6.75 4.5A2.25 2.25 0 0 1 9 2.25h6a2.25 2.25 0 0 1 2.25 2.25v16.75L12 17.5l-5.25 3.75V4.5Z" /></svg>;
   }
   if (type === 'share') {
-    return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m21 3-7.2 18-3.9-7.9L2 9.2 21 3Z" /><path d="M21 3 9.9 13.1" /></svg>;
+    return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 2 15 22l-4-9-9-4 20-7Z" /><path d="M22 2 11 13" /></svg>;
   }
   return null;
 };
 
 function HomePage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { videoId } = useParams();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -51,6 +79,11 @@ function HomePage() {
   const [commentSheetVideoId, setCommentSheetVideoId] = useState(null);
   const [commentDraft, setCommentDraft] = useState('');
   const [replyTarget, setReplyTarget] = useState(null);
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [commentError, setCommentError] = useState('');
+  const [pendingLikes, setPendingLikes] = useState(() => new Set());
+  const [signupPromptAction, setSignupPromptAction] = useState('');
+  const commentComposerRef = useRef(null);
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
   const touchStartY = useRef(null);
@@ -81,10 +114,11 @@ function HomePage() {
     }
   };
 
-  const rememberLikedVideo = (id) => {
+  const rememberLikedVideo = (id, liked) => {
     try {
       const likedIds = readLikedVideoIds();
-      likedIds.add(String(id));
+      if (liked) likedIds.add(String(id));
+      else likedIds.delete(String(id));
       localStorage.setItem(getLikedStorageKey(), JSON.stringify([...likedIds]));
     } catch {
       // Persistent UI state is best-effort when storage is unavailable.
@@ -93,21 +127,22 @@ function HomePage() {
 
   useEffect(() => {
     setLoading(true);
-    getVideoFeed(activeTab)
+    const request = videoId ? getVideoById(videoId).then((video) => [video]) : getVideoFeed(activeTab);
+    request
       .then((data) => {
         const likedIds = readLikedVideoIds();
         setVideos(Array.isArray(data) ? data.map((video) => ({
           ...video,
-          liked: Boolean(video.liked || likedIds.has(String(video.id))),
+          liked: typeof video.liked === 'boolean' ? video.liked : likedIds.has(String(video.id)),
         })) : []);
         setError('');
       })
-      .catch(() => {
+      .catch((requestError) => {
         setVideos([]);
-        setError('Unable to load the feed. Please refresh.');
+        setError(requestError?.response?.data?.message || (videoId ? 'Unable to load this post. Please try again.' : 'Unable to load the feed. Please refresh.'));
       })
       .finally(() => setLoading(false));
-  }, [activeTab, refreshKey]);
+  }, [activeTab, refreshKey, videoId]);
 
   useEffect(() => {
     if (!videos.length || typeof IntersectionObserver === 'undefined') return undefined;
@@ -205,6 +240,11 @@ function HomePage() {
     window.setTimeout(() => setMessage(''), 2400);
   };
 
+  const requireAccount = (action) => setSignupPromptAction(action);
+  const closeSignupPrompt = () => setSignupPromptAction('');
+  const openSignup = () => navigate('/signup', { state: { from: location } });
+  const openLogin = () => navigate('/login', { state: { from: location } });
+
   const getPreviewImage = (video) => {
     return video?.thumbnailUrl || video?.mediaUrl || placeholderImage;
   };
@@ -239,23 +279,39 @@ function HomePage() {
   };
 
   const handleToggleLike = async (id) => {
+    if (!getStoredSession().token) {
+      requireAccount('like posts');
+      return;
+    }
+    if (pendingLikes.has(id)) return;
     const previousVideo = videos.find((video) => video.id === id);
-    setVideoState(id, (video) => ({ ...video, liked: true, likes: Number(video.likes || 0) + (video.liked ? 0 : 1) }));
+    if (!previousVideo) return;
+    const wasLiked = Boolean(previousVideo.liked);
+    setPendingLikes((current) => new Set(current).add(id));
+    setVideoState(id, (video) => ({
+      ...video,
+      liked: !wasLiked,
+      likes: Math.max(0, Number(video.likes || 0) + (wasLiked ? -1 : 1)),
+    }));
     try {
       const updated = await likeVideo(id);
-      rememberLikedVideo(id);
+      rememberLikedVideo(id, Boolean(updated.liked));
       setVideoState(id, (video) => ({
         ...video,
         ...updated,
-        liked: true,
-        likes: Number(updated?.likes ?? Number(video.likes || 0) + 1),
+        liked: Boolean(updated.liked),
+        likes: Number(updated.likes ?? video.likes),
       }));
-      showMessage(updated?.message || 'You liked this post.');
+      showMessage(updated?.message || (updated.liked ? 'You liked this post.' : 'Like removed.'));
     } catch {
-      if (!previousVideo?.liked) {
-        setVideoState(id, (video) => ({ ...video, liked: false, likes: Math.max(0, Number(video.likes || 0) - 1) }));
-      }
-      showMessage('Unable to like the post.');
+      setVideoState(id, (video) => ({ ...video, liked: wasLiked, likes: Number(previousVideo.likes || 0) }));
+      showMessage('Unable to update the like. Please try again.');
+    } finally {
+      setPendingLikes((current) => {
+        const next = new Set(current);
+        next.delete(id);
+        return next;
+      });
     }
   };
 
@@ -276,7 +332,11 @@ function HomePage() {
         window.clearTimeout(pendingTap);
         tapTimers.current.delete(video.id);
       }
-      handleToggleLike(video.id);
+      if (!getStoredSession().token) {
+        requireAccount('like posts');
+        return;
+      }
+      if (!video.liked) handleToggleLike(video.id);
       setHeartBurstVideoId(video.id);
       window.setTimeout(() => setHeartBurstVideoId((current) => (current === video.id ? null : current)), 850);
       return;
@@ -301,13 +361,21 @@ function HomePage() {
     const previousTap = lastVideoTap.current.get(video.id) || 0;
     lastVideoTap.current.set(video.id, now);
     if (now - previousTap < 320) {
-      handleToggleLike(video.id);
+      if (!getStoredSession().token) {
+        requireAccount('like posts');
+        return;
+      }
+      if (!video.liked) handleToggleLike(video.id);
       setHeartBurstVideoId(video.id);
       window.setTimeout(() => setHeartBurstVideoId((current) => (current === video.id ? null : current)), 850);
     }
   };
 
   const handleToggleSave = async (id) => {
+    if (!getStoredSession().token) {
+      requireAccount('save posts');
+      return;
+    }
     try {
       const response = await toggleSaveVideo(id);
       setVideoState(id, (video) => ({ ...video, saved: response.saved }));
@@ -318,6 +386,10 @@ function HomePage() {
   };
 
   const handleToggleFollow = async (video) => {
+    if (!getStoredSession().token) {
+      requireAccount('follow creators');
+      return;
+    }
     if (!video.creatorUsername) return;
     try {
       const result = video.isFollowing
@@ -338,18 +410,23 @@ function HomePage() {
     setCommentSheetVideoId(video.id);
     setCommentDraft('');
     setReplyTarget(null);
+    setCommentError('');
   };
 
   const handleSubmitComment = async () => {
     if (!commentSheetVideoId) return;
+    if (!getStoredSession().token) {
+      requireAccount('comment on posts');
+      return;
+    }
 
     const trimmed = String(commentDraft || '').trim();
     if (!trimmed) return;
 
-    const finalComment = replyTarget ? `@${replyTarget.userName} ${trimmed}` : trimmed;
-
+    setCommentSubmitting(true);
+    setCommentError('');
     try {
-      const response = await commentOnVideo(commentSheetVideoId, finalComment);
+      const response = await commentOnVideo(commentSheetVideoId, trimmed, replyTarget?.commentId);
       setVideoState(commentSheetVideoId, (video) => ({
         ...video,
         ...response.video,
@@ -358,27 +435,47 @@ function HomePage() {
       setCommentDraft('');
       setReplyTarget(null);
       showMessage(replyTarget ? 'Reply sent.' : 'Comment added.');
-    } catch {
-      showMessage('Unable to post comment.');
+    } catch (error) {
+      setCommentError(error?.response?.data?.message || 'Unable to post your comment. Please try again.');
+    } finally {
+      setCommentSubmitting(false);
     }
   };
 
   const activeCommentVideo = videos.find((video) => video.id === commentSheetVideoId) || null;
-  const activeCommentThread = Array.isArray(activeCommentVideo?.commentThread) ? activeCommentVideo.commentThread : [];
+  const activeCommentVideoId = activeCommentVideo?.id;
+  const activeCommentThread = buildCommentTree(activeCommentVideo?.commentThread);
+
+  useEffect(() => {
+    if (!activeCommentVideoId) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setCommentSheetVideoId(null);
+    };
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
+    commentComposerRef.current?.focus();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeCommentVideoId]);
 
   const handleShare = async (video) => {
     const shareText = `${video.title} by ${video.creatorName}`;
+    const sharePath = video.type === 'live' ? `/live/${video.id}` : `/video/${encodeURIComponent(video.id)}`;
+    const shareUrl = `${window.location.origin}${sharePath}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: video.title, text: shareText });
+        await navigator.share({ title: video.title, text: shareText, url: shareUrl });
       } else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(shareText);
-        showMessage('Post details copied to clipboard.');
+        await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+        showMessage('Post link copied to clipboard.');
       } else {
         showMessage('Share is not available in this browser.');
       }
-    } catch {
-      showMessage('Unable to complete sharing.');
+    } catch (error) {
+      if (error?.name !== 'AbortError') showMessage('Unable to complete sharing.');
     }
   };
 
@@ -394,10 +491,13 @@ function HomePage() {
   };
 
   return (
-    <DashboardShell
-      title="Your stage"
-      subtitle="The latest from creators and live comedy."
-    >
+    <>
+      <DashboardShell
+        title={videoId ? 'Video' : 'Your stage'}
+        subtitle={videoId ? 'Watching a creator post.' : 'The latest from creators and live comedy.'}
+        showBack={Boolean(videoId)}
+        backFallback="/home"
+      >
       <style>{`
         @keyframes feed-heart-burst {
           0% { opacity: 0; transform: scale(.35) rotate(-10deg); }
@@ -423,7 +523,7 @@ function HomePage() {
         </div>
       ) : null}
 
-      <div
+      {!videoId ? <div
         className="bg-transparent p-0"
         onTouchStart={(event) => {
           touchStartX.current = event.changedTouches[0].clientX;
@@ -453,8 +553,8 @@ function HomePage() {
               </button>
             );
           })}
-        </div>
       </div>
+      </div> : null}
 
       {loading ? (
         <div className="mt-4 flex min-h-72 items-center justify-center rounded-[28px] border border-white/[0.07] bg-[var(--ochi-surface)]/70">
@@ -466,7 +566,7 @@ function HomePage() {
       ) : error ? (
         <div role="alert" className="mt-4 rounded-[28px] border border-white/[0.08] bg-[var(--ochi-surface)] p-6 text-slate-100 sm:p-8">
           <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--ochi-accent-10)] text-lg text-[var(--ochi-accent-light)]">!</span>
-          <p className="text-lg font-semibold text-white">The room didn’t load.</p>
+          <p className="text-lg font-semibold text-white">{videoId ? 'The post didn’t load.' : 'The room didn’t load.'}</p>
           <p className="mt-2 text-sm text-slate-400">{error}</p>
           <div className="mt-5 flex flex-wrap gap-2">
             <button type="button" onClick={() => setRefreshKey((key) => key + 1)} className="rounded-full bg-[var(--ochi-accent-strong)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--ochi-accent)]">Try again</button>
@@ -605,19 +705,20 @@ function HomePage() {
                     />
                   </div>
                 ) : null}
-                <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-0.5 rounded-2xl border border-white/15 bg-black/40 p-1.5 text-white shadow-[0_8px_28px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:bottom-4 sm:right-4">
+                <div className="absolute bottom-3 right-3 z-10 flex w-[52px] flex-col items-center gap-0 rounded-[18px] border border-white/15 bg-black/40 p-1 text-white shadow-[0_8px_28px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:bottom-4 sm:right-4">
                   <button
                     type="button"
+                    disabled={pendingLikes.has(video.id)}
                     onClick={(event) => {
                       event.stopPropagation();
                       handleToggleLike(video.id);
                     }}
-                    className="flex min-h-9 min-w-[92px] items-center gap-2 rounded-xl px-2 text-left transition hover:bg-white/10 active:scale-95"
+                    className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-xl transition hover:bg-white/10 active:scale-90 disabled:opacity-60"
                     aria-label={video.liked ? 'Unlike post' : 'Like post'}
                     aria-pressed={Boolean(video.liked)}
                   >
                     <span className={video.liked ? 'text-rose-400' : 'text-white'}><FeedIcon type="like" active={video.liked} /></span>
-                    <span className="text-xs font-medium">Like <span className="text-[10px] text-slate-300">{Number(video.likes || 0).toLocaleString()}</span></span>
+                    <span className="text-[9px] font-medium leading-3 text-slate-200">{formatActionCount(video.likes)}</span>
                   </button>
                   <button
                     type="button"
@@ -625,11 +726,11 @@ function HomePage() {
                       event.stopPropagation();
                       handleOpenComments(video);
                     }}
-                    className="flex min-h-9 min-w-[92px] items-center gap-2 rounded-xl px-2 text-left transition hover:bg-white/10 active:scale-95"
+                    className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-xl transition hover:bg-white/10 active:scale-90"
                     aria-label="Comment on post"
                   >
                     <span><FeedIcon type="comment" /></span>
-                    <span className="text-xs font-medium">Comment <span className="text-[10px] text-slate-300">{Number(video.comments || 0).toLocaleString()}</span></span>
+                    <span className="text-[9px] font-medium leading-3 text-slate-200">{formatActionCount(video.comments)}</span>
                   </button>
                   <button
                     type="button"
@@ -637,12 +738,12 @@ function HomePage() {
                       event.stopPropagation();
                       handleToggleSave(video.id);
                     }}
-                    className="flex min-h-9 min-w-[92px] items-center gap-2 rounded-xl px-2 text-left transition hover:bg-white/10 active:scale-95"
+                    className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-xl transition hover:bg-white/10 active:scale-90"
                     aria-label={video.saved ? 'Remove from saved' : 'Save post'}
                     aria-pressed={Boolean(video.saved)}
                   >
                     <span className={video.saved ? 'text-emerald-300' : 'text-white'}><FeedIcon type="save" active={video.saved} /></span>
-                    <span className="text-xs font-medium">Save <span className="text-[10px] text-slate-300">{Number(video.saves || video.savedCount || 0).toLocaleString()}</span></span>
+                    <span className="text-[9px] font-medium leading-3 text-slate-200">{formatActionCount(video.saves || video.savedCount)}</span>
                   </button>
                   <button
                     type="button"
@@ -650,11 +751,11 @@ function HomePage() {
                       event.stopPropagation();
                       handleShare(video);
                     }}
-                    className="flex min-h-9 min-w-[92px] items-center gap-2 rounded-xl px-2 text-left transition hover:bg-white/10 active:scale-95"
+                    className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-xl transition hover:bg-white/10 active:scale-90"
                     aria-label="Share post"
                   >
                     <span><FeedIcon type="share" /></span>
-                    <span className="text-xs font-medium">Share <span className="text-[10px] text-slate-300">{Number(video.shares || video.shareCount || 0).toLocaleString()}</span></span>
+                    <span className="text-[9px] font-medium leading-3 text-slate-200">{formatActionCount(video.shares || video.shareCount)}</span>
                   </button>
                 </div>
                 </div>
@@ -690,7 +791,7 @@ function HomePage() {
       )}
       </section>
 
-      <aside className="hidden min-w-0 min-[1440px]:block">
+      {!videoId ? <aside className="hidden min-w-0 min-[1440px]:block">
         <LiveSection compact />
         <div className="mt-6 overflow-hidden rounded-[28px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(255,118,94,0.18),transparent_52%),linear-gradient(145deg,#17191f,#101115)] p-5">
           <p className="ochi-kicker">Your next move</p>
@@ -708,16 +809,16 @@ function HomePage() {
           <button type="button" onClick={() => navigate('/discover')} className="ml-3 text-sm font-semibold text-[var(--ochi-accent-light)] transition hover:text-white" aria-label="Discover creators">↗</button>
         </div>
         <p className="px-1 pt-5 text-[10px] leading-5 text-slate-600">Ochi is a space for creators and their communities. Find a seat, stay a while.</p>
-      </aside>
+      </aside> : null}
       </div>
 
       {activeCommentVideo ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-3 pb-0 pt-10 backdrop-blur-sm">
-          <div className="w-full max-w-xl overflow-hidden rounded-t-[28px] border border-slate-700 bg-slate-950/95 shadow-[0_-25px_60px_rgba(2,6,23,0.8)]">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-3 pb-0 pt-10 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) setCommentSheetVideoId(null); }}>
+          <div role="dialog" aria-modal="true" aria-labelledby="feed-comments-title" className="w-full max-w-xl overflow-hidden rounded-t-[28px] border border-slate-700 bg-slate-950/95 shadow-[0_-25px_60px_rgba(2,6,23,0.8)]">
             <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Comments</p>
-                <h3 className="text-lg font-semibold text-white">{Number(activeCommentVideo.comments || activeCommentThread.length || 0).toLocaleString()}</h3>
+                <h3 id="feed-comments-title" className="text-lg font-semibold text-white">{Number(activeCommentVideo.comments || activeCommentThread.length || 0).toLocaleString()}</h3>
               </div>
               <button
                 type="button"
@@ -727,6 +828,7 @@ function HomePage() {
                   setReplyTarget(null);
                 }}
                 className="rounded-full border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-300 hover:text-white"
+                aria-label="Close comments"
               >
                 Close
               </button>
@@ -741,7 +843,7 @@ function HomePage() {
                   const createdAt = comment.createdAt ? new Date(comment.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Now';
 
                   return (
-                    <div key={`${comment.userId || author}-${index}`} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3">
+                    <div key={comment.commentId || `${comment.userId || author}-${index}`} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3">
                       <div className="flex items-start gap-3">
                         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-sky-500 text-xs font-bold text-white">
                           {initial}
@@ -754,13 +856,30 @@ function HomePage() {
                             </div>
                             <button
                               type="button"
-                              onClick={() => setReplyTarget({ userName: author, userId: comment.userId || author })}
+                              onClick={() => {
+                                if (!getStoredSession().token) {
+                                  requireAccount('reply to comments');
+                                  return;
+                                }
+                                setReplyTarget({ userName: author, userId: comment.userId || author, commentId: comment.commentId });
+                              }}
                               className="text-[10px] uppercase tracking-[0.16em] text-sky-300 hover:text-sky-200"
+                              disabled={!comment.commentId}
                             >
                               Reply
                             </button>
                           </div>
                           <p className="mt-2 text-sm leading-6 text-slate-200">{commentText}</p>
+                          {comment.replies?.length ? (
+                            <div className="mt-3 space-y-2 border-l border-slate-700 pl-3">
+                              {comment.replies.map((reply, replyIndex) => (
+                                <div key={reply.commentId || `${reply.userId || 'reply'}-${replyIndex}`} className="text-sm">
+                                  <span className="font-medium text-slate-300">{reply.userName || 'Creator'} </span>
+                                  <span className="text-slate-300">{reply.text}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                     </div>
@@ -785,26 +904,34 @@ function HomePage() {
 
               <div className="flex items-end gap-2">
                 <textarea
+                  ref={commentComposerRef}
                   value={commentDraft}
                   onChange={(event) => setCommentDraft(event.target.value)}
+                  maxLength={500}
                   rows={1}
                   placeholder={replyTarget ? `Reply to ${replyTarget.userName}...` : 'Add a comment...'}
+                  disabled={activeCommentVideo.allowComments === false || commentSubmitting}
+                  aria-label={replyTarget ? `Reply to ${replyTarget.userName}` : 'Add a comment'}
                   className="max-h-28 min-h-[44px] flex-1 resize-none rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-sky-500 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={handleSubmitComment}
-                  disabled={!String(commentDraft || '').trim()}
+                  disabled={!String(commentDraft || '').trim() || commentSubmitting || activeCommentVideo.allowComments === false}
                   className="rounded-2xl border border-sky-500/40 bg-sky-500/15 px-4 py-2.5 text-sm font-semibold text-sky-100 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Post
+                  {commentSubmitting ? 'Posting…' : replyTarget ? 'Reply' : 'Post'}
                 </button>
               </div>
+              {activeCommentVideo.allowComments === false ? <p className="mt-2 text-xs text-slate-500">Comments are disabled for this post.</p> : null}
+              {commentError ? <p role="alert" className="mt-2 text-xs text-rose-300">{commentError}</p> : null}
             </div>
           </div>
         </div>
       ) : null}
-    </DashboardShell>
+      </DashboardShell>
+      {signupPromptAction ? <SignUpPrompt action={signupPromptAction} onClose={closeSignupPrompt} onSignUp={openSignup} onSignIn={openLogin} /> : null}
+    </>
   );
 }
 

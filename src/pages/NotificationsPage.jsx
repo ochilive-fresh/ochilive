@@ -64,17 +64,21 @@ function NotificationsPage() {
   const [filter, setFilter] = useState('all');
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     setLoading(true);
+    setLoadError('');
     getNotifications(filter)
       .then((data) => {
         setNotifications(data.notifications || []);
         setUnreadCount(data.unreadCount || 0);
       })
-      .catch(() => setNotifications([]))
+      .catch((error) => setLoadError(error?.response?.data?.message || 'We could not load notifications. Please try again.'))
       .finally(() => setLoading(false));
-  }, [filter]);
+  }, [filter, refreshKey]);
 
   useEffect(() => {
     if (!socket) return undefined;
@@ -93,7 +97,10 @@ function NotificationsPage() {
       getNotifications(filter).then((data) => {
         setNotifications(data.notifications || []);
         setUnreadCount(data.unreadCount || 0);
-      }).catch(() => {});
+        setLoadError('');
+      }).catch((error) => {
+        setLoadError(error?.response?.data?.message || 'We could not refresh notifications after reconnecting.');
+      });
     };
     socket.on('notification:new', handleNewNotification);
     socket.on('connect', handleReconnect);
@@ -104,19 +111,31 @@ function NotificationsPage() {
   }, [filter, socket]);
 
   const openNotification = async (note) => {
+    setActionError('');
     if (note.unread) {
-      await markNotificationRead(note.id).catch(() => {});
-      setNotifications((current) => current.map((item) => (item.id === note.id ? { ...item, unread: false } : item)));
-      setUnreadCount((current) => Math.max(0, current - 1));
+      try {
+        await markNotificationRead(note.id);
+        setNotifications((current) => current.map((item) => (item.id === note.id ? { ...item, unread: false } : item)));
+        setUnreadCount((current) => Math.max(0, current - 1));
+      } catch (error) {
+        setActionError(error?.response?.data?.message || 'Could not mark this notification as read. Please try again.');
+        return;
+      }
     }
-    if (note.actorUsername && ['follow', 'follow-back'].includes(note.type)) navigate(`/profile/${note.actorUsername.replace(/^@/, '')}`);
+    if (note.videoId) navigate(`/video/${encodeURIComponent(note.videoId)}`);
+    else if (note.actorUsername && ['follow', 'follow-back'].includes(note.type)) navigate(`/profile/${note.actorUsername.replace(/^@/, '')}`);
     else navigate('/home');
   };
 
   const markAllRead = async () => {
-    await markAllNotificationsRead().catch(() => {});
-    setNotifications((current) => current.map((item) => ({ ...item, unread: false })));
-    setUnreadCount(0);
+    setActionError('');
+    try {
+      await markAllNotificationsRead();
+      setNotifications((current) => current.map((item) => ({ ...item, unread: false })));
+      setUnreadCount(0);
+    } catch (error) {
+      setActionError(error?.response?.data?.message || 'Could not mark notifications as read. Please try again.');
+    }
   };
 
   return (
@@ -163,6 +182,8 @@ function NotificationsPage() {
           </button>
         </div>
 
+        {actionError ? <p role="alert" className="mx-3 mb-3 rounded-xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100 sm:mx-6">{actionError}</p> : null}
+
         <nav className="sticky top-0 z-10 flex gap-6 overflow-x-auto border-b border-slate-800 bg-slate-950/95 px-3 no-scrollbar backdrop-blur-xl sm:px-6" aria-label="Notification filters">
           {filters.map((item) => (
             <button key={item.key} type="button" onClick={() => setFilter(item.key)} className={`relative shrink-0 border-b-2 py-3 text-sm font-semibold transition ${filter === item.key ? 'border-rose-300 text-white' : 'border-transparent text-slate-500 hover:text-slate-200'}`}>
@@ -174,6 +195,13 @@ function NotificationsPage() {
         {loading ? (
           <div className="space-y-px border-t border-slate-800">
             {[1, 2, 3].map((item) => <div key={item} className="flex items-center gap-3 px-3 py-3 sm:px-6"><div className="h-11 w-11 animate-pulse rounded-full bg-slate-800" /><div className="flex-1 space-y-2"><div className="h-3 w-3/5 animate-pulse bg-slate-800" /><div className="h-2 w-2/5 animate-pulse bg-slate-900" /></div><div className="h-3 w-6 animate-pulse bg-slate-900" /></div>)}
+          </div>
+        ) : loadError ? (
+          <div role="alert" className="border-t border-slate-800 px-4 py-16 text-center">
+            <p className="text-sm font-semibold text-rose-100">{loadError}</p>
+            <button type="button" onClick={() => setRefreshKey((key) => key + 1)} className="mt-4 rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10">
+              Try again
+            </button>
           </div>
         ) : !notifications.length ? (
           <div className="border-t border-slate-800 px-4 py-16 text-center"><p className="text-base font-semibold text-white">You’re all caught up</p><p className="mt-2 text-sm text-slate-500">When people interact with your content, it will appear here.</p></div>
