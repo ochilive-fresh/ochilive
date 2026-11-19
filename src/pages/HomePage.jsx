@@ -97,10 +97,6 @@ function HomePage() {
   const [pendingLikes, setPendingLikes] = useState(() => new Set());
   const [signupPromptAction, setSignupPromptAction] = useState('');
   const commentComposerRef = useRef(null);
-  const touchStartX = useRef(null);
-  const touchEndX = useRef(null);
-  const touchStartY = useRef(null);
-  const touchEndY = useRef(null);
   const videoRefs = useRef({});
   const viewedIds = useRef(new Set());
   const viewTimers = useRef(new Map());
@@ -270,31 +266,6 @@ function HomePage() {
 
   const handleSelectTab = (tabKey) => {
     setActiveTab(tabKey);
-  };
-
-  const handleSwipe = () => {
-    if (
-      touchStartX.current === null ||
-      touchEndX.current === null ||
-      touchStartY.current === null ||
-      touchEndY.current === null
-    ) return;
-    const delta = touchStartX.current - touchEndX.current;
-    const verticalDelta = Math.abs(touchStartY.current - touchEndY.current);
-    if (Math.abs(delta) < 80 || Math.abs(delta) <= verticalDelta) return;
-
-    const currentIndex = tabs.findIndex((tab) => tab.key === activeTab);
-    if (delta > 0 && currentIndex < tabs.length - 1) {
-      setActiveTab(tabs[currentIndex + 1].key);
-    }
-    if (delta < 0 && currentIndex > 0) {
-      setActiveTab(tabs[currentIndex - 1].key);
-    }
-
-    touchStartX.current = null;
-    touchEndX.current = null;
-    touchStartY.current = null;
-    touchEndY.current = null;
   };
 
   const handleToggleLike = async (id) => {
@@ -535,14 +506,9 @@ function HomePage() {
           62% { opacity: 1; transform: scale(1) rotate(0deg); }
           100% { opacity: 0; transform: scale(1.35) rotate(8deg); }
         }
-        @keyframes feed-photo-drift {
-          0%, 100% { transform: scale(1.02); }
-          50% { transform: scale(1.08); }
-        }
         .feed-heart-burst { animation: feed-heart-burst .85s cubic-bezier(.2,.8,.2,1) both; }
-        .feed-photo-motion { animation: feed-photo-drift 12s ease-in-out infinite alternate; }
         @media (prefers-reduced-motion: reduce) {
-          .feed-heart-burst, .feed-photo-motion { animation: none !important; }
+          .feed-heart-burst { animation: none !important; }
         }
       `}</style>
       <div className="mx-auto grid w-full max-w-[1180px] gap-8 min-[1440px]:grid-cols-[minmax(0,600px)_minmax(260px,320px)] min-[1440px]:items-start">
@@ -553,18 +519,7 @@ function HomePage() {
         </div>
       ) : null}
 
-      {!videoId ? <div
-        className="bg-transparent p-0"
-        onTouchStart={(event) => {
-          touchStartX.current = event.changedTouches[0].clientX;
-          touchStartY.current = event.changedTouches[0].clientY;
-        }}
-        onTouchEnd={(event) => {
-          touchEndX.current = event.changedTouches[0].clientX;
-          touchEndY.current = event.changedTouches[0].clientY;
-          handleSwipe();
-        }}
-      >
+      {!videoId ? <div className="bg-transparent p-0">
         <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/[0.07] bg-white/[0.025] p-1 no-scrollbar sm:rounded-2xl">
           {tabs.map((tab) => {
             const active = tab.key === activeTab;
@@ -616,15 +571,6 @@ function HomePage() {
                   } else {
                   }
                 }}
-                onTouchStart={(event) => {
-                  touchStartX.current = event.changedTouches[0].clientX;
-                  touchStartY.current = event.changedTouches[0].clientY;
-                }}
-                onTouchEnd={(event) => {
-                  touchEndX.current = event.changedTouches[0].clientX;
-                  touchEndY.current = event.changedTouches[0].clientY;
-                  handleSwipe();
-                }}
               >
                 <div
                   className="relative w-full overflow-hidden bg-black sm:rounded-t-[29px]"
@@ -667,7 +613,7 @@ function HomePage() {
                   <img
                     src={getPreviewImage(video)}
                     alt={video.title}
-                    className="feed-photo-motion h-full w-full object-contain"
+                    className="h-full w-full object-contain"
                     onLoad={(event) => {
                       const { naturalWidth, naturalHeight } = event.currentTarget;
                       if (naturalWidth && naturalHeight) {
@@ -844,21 +790,21 @@ function HomePage() {
 
       {activeCommentVideo ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-5"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-0 backdrop-blur-sm sm:items-center sm:p-5"
           onMouseDown={(event) => { if (event.target === event.currentTarget) setCommentSheetVideoId(null); }}
         >
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="feed-comments-title"
-            className="flex h-[min(88dvh,780px)] w-full max-w-2xl flex-col overflow-hidden rounded-t-[28px] border border-white/[0.09] bg-[var(--ochi-surface)] shadow-[0_30px_100px_rgba(0,0,0,0.65)] sm:h-[min(82vh,760px)] sm:rounded-[28px]"
+            className="flex h-[min(62dvh,560px)] w-full max-w-xl flex-col overflow-hidden rounded-t-[24px] border border-white/[0.09] bg-[var(--ochi-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.55)] sm:h-[min(68vh,600px)] sm:rounded-[24px]"
           >
-            <div className="shrink-0 border-b border-white/[0.07] bg-[radial-gradient(ellipse_at_top_right,rgba(255,118,94,0.1),transparent_58%)] px-4 pb-4 pt-3 sm:px-6 sm:pt-5">
+            <div className="shrink-0 border-b border-white/[0.07] bg-[var(--ochi-surface)] px-4 pb-3 pt-2.5 sm:px-5 sm:pt-4">
               <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20 sm:hidden" aria-hidden="true" />
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 id="feed-comments-title" className="text-xl font-semibold tracking-tight text-white sm:text-2xl">Conversation</h3>
+                    <h3 id="feed-comments-title" className="text-lg font-semibold tracking-tight text-white sm:text-xl">Comments</h3>
                     <span className="inline-flex min-w-7 items-center justify-center rounded-full border border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] px-2 py-0.5 text-xs font-semibold tabular-nums text-[var(--ochi-accent-light)]">
                       {Number(activeCommentVideo.comments || activeCommentThread.length || 0).toLocaleString()}
                     </span>
@@ -882,14 +828,10 @@ function HomePage() {
                   </svg>
                 </button>
               </div>
-              {activeCommentVideo.title ? (
-                <div className="mt-4 rounded-xl border border-white/[0.06] bg-black/15 px-3.5 py-2.5">
-                  <p className="line-clamp-2 text-xs leading-5 text-slate-400">{activeCommentVideo.title}</p>
-                </div>
-              ) : null}
+              {activeCommentVideo.title ? <p className="mt-2 truncate text-xs text-slate-500">{activeCommentVideo.title}</p> : null}
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3.5 sm:px-5 sm:py-4">
               {activeCommentThread.length ? (
                 <div className="mx-auto max-w-xl space-y-5">
                   {activeCommentThread.map((comment, index) => {
@@ -975,7 +917,7 @@ function HomePage() {
                   event.preventDefault();
                   handleSubmitComment();
                 }}
-                className="mx-auto flex max-w-xl items-end gap-2 rounded-2xl border border-white/[0.09] bg-black/20 p-1.5 transition focus-within:border-[var(--ochi-accent-30)]"
+                className="mx-auto flex max-w-xl items-end gap-2 rounded-2xl border border-white/[0.09] bg-black/20 p-1 transition focus-within:border-[var(--ochi-accent-30)]"
               >
                 <textarea
                   ref={commentComposerRef}
@@ -986,12 +928,12 @@ function HomePage() {
                   placeholder={replyTarget ? `Reply to ${replyTarget.userName}...` : 'Add to the conversation...'}
                   disabled={activeCommentVideo.allowComments === false || commentSubmitting}
                   aria-label={replyTarget ? `Reply to ${replyTarget.userName}` : 'Add a comment'}
-                  className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none disabled:cursor-not-allowed"
+                  className="max-h-24 min-h-10 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none disabled:cursor-not-allowed"
                 />
                 <button
                   type="submit"
                   disabled={!String(commentDraft || '').trim() || commentSubmitting || activeCommentVideo.allowComments === false}
-                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[var(--ochi-accent)] px-4 text-sm font-semibold text-[#190d0a] transition hover:bg-[var(--ochi-accent-light)] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-[var(--ochi-accent)] px-3.5 text-sm font-semibold text-[#190d0a] transition hover:bg-[var(--ochi-accent-light)] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {commentSubmitting ? (
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#190d0a]/30 border-t-[#190d0a]" />

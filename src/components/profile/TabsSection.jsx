@@ -7,7 +7,7 @@ function TabsSection({ activeTab, onChange, isOwnProfile }) {
   ];
 
   return (
-    <div className="flex gap-7 border-b border-white/[0.08]" role="tablist" aria-label="Profile content">
+    <div className="flex gap-1 overflow-x-auto border-b border-white/[0.08] no-scrollbar" role="tablist" aria-label="Profile content">
       {tabs.map((tab) => (
         <button
           key={tab.id}
@@ -15,7 +15,7 @@ function TabsSection({ activeTab, onChange, isOwnProfile }) {
           role="tab"
           aria-selected={activeTab === tab.id}
           onClick={() => onChange(tab.id)}
-          className={`relative pb-3 text-sm font-semibold transition-colors ${activeTab === tab.id ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+          className={`relative min-h-11 shrink-0 px-4 pb-3 text-xs font-semibold transition-colors sm:text-sm ${activeTab === tab.id ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
         >
           {tab.label}
           {activeTab === tab.id ? <span className="absolute inset-x-0 -bottom-px h-0.5 bg-[var(--ochi-accent)]" /> : null}

@@ -255,7 +255,7 @@ function ProfilePage() {
         </div>
       ) : (
         <div className="mx-auto w-full max-w-[1040px]">
-          <div className="space-y-6 pb-8 pt-1">
+          <div className="space-y-4 pb-8 pt-1 sm:space-y-5">
             {profileError ? (
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-3 text-xs leading-5 text-slate-400">
                 {profileError}

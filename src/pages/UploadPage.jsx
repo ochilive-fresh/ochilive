@@ -805,9 +805,9 @@ function UploadPage() {
   const canPost = Boolean(previewUrl) && !uploading;
 
   return (
-    <DashboardShell title={comedian ? 'Comedian Studio' : 'Create'} subtitle={comedian ? 'Prepare your next performance on Ochi Live.' : 'Create posts now. Complete Try Comedy to unlock live rooms.'}>
+    <DashboardShell title={comedian ? 'Comedian Studio' : 'Create'} subtitle={comedian ? 'Set up your next performance on Ochi Live.' : 'Capture or upload a moment, then review it before sharing.'}>
       <style>{`
-        @keyframes up-fade-in { from { opacity: 0; transform: translateY(10px) scale(.995); } to { opacity: 1; transform: none; } }
+        @keyframes up-fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
         @keyframes up-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
         @keyframes up-ring { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(1.55); opacity: 0; } }
         @keyframes up-sheen { 0% { transform: translateX(-120%); } 100% { transform: translateX(220%); } }
@@ -1144,7 +1144,7 @@ function UploadPage() {
               {screen === 'preview' ? (
                 <div key="p-preview" className="space-y-3">
                   {/* caption */}
-                  <div className="up-rise rounded-[24px] border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.85)]">
+                  <div className="up-rise rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-base font-semibold text-white">Tell the story</p>
@@ -1164,7 +1164,7 @@ function UploadPage() {
                         rows={3}
                         maxLength={200}
                         placeholder="What’s happening in this moment?"
-                        className="w-full min-h-[112px] resize-none rounded-2xl border border-white/[0.08] bg-black/20 px-4 py-3.5 text-sm leading-6 text-white outline-none transition duration-200 placeholder:text-slate-500 focus:border-[var(--ochi-accent-40)] focus:ring-2 focus:ring-rose-400/15"
+                        className="w-full min-h-24 resize-none rounded-xl border border-white/[0.08] bg-black/20 px-3.5 py-3 text-sm leading-6 text-white outline-none transition duration-200 placeholder:text-slate-500 focus:border-[var(--ochi-accent-40)] focus:ring-2 focus:ring-rose-400/15"
                       />
                       <span className="pointer-events-none absolute bottom-3 right-3 text-xs font-medium tabular-nums text-slate-500">
                         {caption.length}/200
@@ -1192,7 +1192,7 @@ function UploadPage() {
                   </div>
 
                   {/* audience */}
-                  <div className="up-rise up-d1 rounded-[22px] border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4">
+                  <div className="up-rise up-d1 rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4">
                     <p className="text-sm font-semibold text-white">Audience & interaction</p>
                     <p className="mt-1 text-xs text-slate-500">Choose who can see this post.</p>
                     <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-xl border border-white/10 bg-white/5 p-1.5">

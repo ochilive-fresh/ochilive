@@ -62,8 +62,6 @@ function ContentCard({ item, tab, isAuthenticated, onRequireAuth }) {
   const [message, setMessage] = useState('');
   const [followingCreator, setFollowingCreator] = useState(Boolean(item.isFollowing || item.relationship?.isFollowing));
   const [followLoading, setFollowLoading] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-
   const recentComments = useMemo(() => {
     return commentThread.slice(-3).reverse();
   }, [commentThread]);
@@ -187,11 +185,8 @@ function ContentCard({ item, tab, isAuthenticated, onRequireAuth }) {
   const isVideo = (item.type === 'video') || isVideoUrl(mediaUrl);
 
   return (
-    <article className="group overflow-hidden bg-slate-950 shadow-[0_12px_26px_rgba(2,6,23,0.2)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(2,6,23,0.3)]">
-      <div className="relative aspect-[3/4] cursor-zoom-in overflow-hidden bg-slate-900" onClick={(event) => {
-        if (commentOpen || event.target.closest('button,input,textarea,form,video')) return;
-        setExpanded(true);
-      }}>
+    <article className="group overflow-hidden rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] transition-colors hover:border-white/[0.14]">
+      <div className="relative aspect-[3/4] overflow-hidden bg-slate-900">
         <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-2 p-3 text-white">
           <div className="flex items-center gap-2 min-w-0">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-950/70 text-[10px] font-bold text-white ring-1 ring-white/10">
@@ -230,7 +225,21 @@ function ContentCard({ item, tab, isAuthenticated, onRequireAuth }) {
               poster={item.thumbnailUrl || mediaUrl}
             />
           ) : (
-            <img src={mediaUrl} alt={item.title || 'post media'} className="relative z-10 h-full w-full object-cover" />
+            <img
+              src={mediaUrl}
+              alt={item.title || 'post media'}
+              role={item.id ? 'link' : undefined}
+              aria-label={item.id ? `Open post: ${item.title || 'post media'}` : undefined}
+              tabIndex={item.id ? 0 : undefined}
+              onClick={() => item.id && navigate(`/video/${encodeURIComponent(item.id)}`)}
+              onKeyDown={(event) => {
+                if (item.id && (event.key === 'Enter' || event.key === ' ')) {
+                  event.preventDefault();
+                  navigate(`/video/${encodeURIComponent(item.id)}`);
+                }
+              }}
+              className={`relative z-10 h-full w-full object-cover ${item.id ? 'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[var(--ochi-accent)]' : ''}`}
+            />
           )
         ) : (
           <div className="relative z-10 flex h-full items-center justify-center bg-slate-800 text-sm text-slate-400">No preview available</div>
@@ -421,14 +430,6 @@ function ContentCard({ item, tab, isAuthenticated, onRequireAuth }) {
 
         {message ? <p className="text-xs text-emerald-200">{message}</p> : null}
       </div>
-      {expanded ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-3 sm:p-8" onClick={() => setExpanded(false)}>
-          <button type="button" onClick={() => setExpanded(false)} className="absolute right-4 top-4 z-10 border border-white/20 bg-black/60 px-3 py-2 text-sm font-semibold text-white">Close</button>
-          <div className="flex h-full w-full items-center justify-center" onClick={(event) => event.stopPropagation()}>
-            {isVideo ? <video controls autoPlay playsInline className="max-h-full max-w-full object-contain" src={mediaUrl} poster={item.thumbnailUrl || mediaUrl} /> : <img className="max-h-full max-w-full object-contain" src={mediaUrl} alt={item.title || 'post media'} />}
-          </div>
-        </div>
-      ) : null}
     </article>
   );
 }
