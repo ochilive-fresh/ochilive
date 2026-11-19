@@ -37,9 +37,6 @@ const FeedIcon = ({ type, active = false }) => {
   if (type === 'share') {
     return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m21 3-7.2 18-3.9-7.9L2 9.2 21 3Z" /><path d="M21 3 9.9 13.1" /></svg>;
   }
-  if (type === 'sound') {
-    return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z" /><path d={active ? 'M15 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12' : 'm16 9 5 6m0-6-5 6'} /></svg>;
-  }
   return null;
 };
 
@@ -65,10 +62,10 @@ function HomePage() {
   const tapTimers = useRef(new Map());
   const playbackPositions = useRef(new Map());
   const [mutedVideos, setMutedVideos] = useState({});
-  const audioEnabledRef = useRef(true);
   const [heartBurstVideoId, setHeartBurstVideoId] = useState(null);
   const [videoProgress, setVideoProgress] = useState({});
   const [videoLoadState, setVideoLoadState] = useState({});
+  const [mediaAspectRatios, setMediaAspectRatios] = useState({});
 
   const getLikedStorageKey = () => {
     const userId = getStoredSession().user?.id || getStoredSession().user?.username || 'guest';
@@ -93,14 +90,6 @@ function HomePage() {
       // Persistent UI state is best-effort when storage is unavailable.
     }
   };
-
-  useEffect(() => {
-    try {
-      audioEnabledRef.current = localStorage.getItem('ochi-feed-audio') !== 'off';
-    } catch {
-      audioEnabledRef.current = true;
-    }
-  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -162,7 +151,7 @@ function HomePage() {
           if (savedPosition && Number.isFinite(savedPosition) && video.duration && savedPosition < video.duration - 0.5) {
             video.currentTime = savedPosition;
           }
-          video.muted = mutedVideos[id] ?? !audioEnabledRef.current;
+          video.muted = mutedVideos[id] ?? false;
           video.play().catch(() => {
             if (!video.muted) {
               video.muted = true;
@@ -194,7 +183,7 @@ function HomePage() {
       const element = videoRefs.current[video.id];
       if (element?.tagName === 'VIDEO') {
         element.dataset.videoId = video.id;
-        element.muted = mutedVideos[video.id] ?? !audioEnabledRef.current;
+        element.muted = mutedVideos[video.id] ?? false;
         element.playsInline = true;
         observer.observe(element);
       }
@@ -316,22 +305,6 @@ function HomePage() {
       setHeartBurstVideoId(video.id);
       window.setTimeout(() => setHeartBurstVideoId((current) => (current === video.id ? null : current)), 850);
     }
-  };
-
-  const handleToggleSound = (event, id) => {
-    event.stopPropagation();
-    const element = videoRefs.current[id];
-    if (!element) return;
-    const nextMuted = !element.muted;
-    element.muted = nextMuted;
-    setMutedVideos((current) => ({ ...current, [id]: nextMuted }));
-    audioEnabledRef.current = !nextMuted;
-    try {
-      localStorage.setItem('ochi-feed-audio', nextMuted ? 'off' : 'on');
-    } catch {
-      // Remembering audio preference is optional.
-    }
-    if (!nextMuted) element.play().catch(() => undefined);
   };
 
   const handleToggleSave = async (id) => {
@@ -501,12 +474,12 @@ function HomePage() {
           </div>
         </div>
       ) : (
-        <div className="-mx-4 mt-2 h-[calc(100dvh-244px)] min-h-[360px] overflow-y-auto overscroll-contain snap-y snap-mandatory sm:mx-0 sm:mt-4 sm:h-auto sm:max-h-[calc(100dvh-14rem)] sm:min-h-0 sm:space-y-4 sm:pr-1">
+        <div className="-mx-4 mt-2 max-h-[calc(100dvh-10rem)] overflow-y-auto overscroll-contain snap-y snap-mandatory sm:mx-0 sm:mt-4 sm:max-h-[calc(100dvh-14rem)] sm:space-y-4 sm:pr-1">
           {videos.length ? (
             videos.map((video) => (
               <article
                 key={video.id}
-                className="relative flex h-full min-h-0 w-full snap-start flex-col overflow-hidden bg-[#101114] sm:h-[72svh] sm:min-h-[460px] sm:max-h-[780px] sm:rounded-[30px] sm:border sm:border-white/[0.09] sm:shadow-[0_30px_90px_rgba(0,0,0,0.45)]"
+                className="w-full snap-start overflow-hidden sm:rounded-[30px] sm:border sm:border-white/[0.09] sm:bg-[#101114] sm:shadow-[0_30px_90px_rgba(0,0,0,0.45)]"
                 onClick={() => {
                   if (video.type === 'live') {
                     navigate(`/live/${video.id}`);
@@ -523,7 +496,10 @@ function HomePage() {
                   handleSwipe();
                 }}
               >
-                <div className="relative min-h-0 flex-1 overflow-hidden bg-black sm:rounded-t-[29px]">
+                <div
+                  className="relative w-full overflow-hidden bg-black sm:rounded-t-[29px]"
+                  style={{ aspectRatio: mediaAspectRatios[video.id] || (isVideoType(video) ? '9 / 16' : '4 / 5') }}
+                >
                 {isVideoType(video) ? (
                   <video
                     ref={(node) => {
@@ -531,16 +507,20 @@ function HomePage() {
                     }}
                     data-media-src={video.mediaUrl || video.thumbnailUrl}
                     poster={video.thumbnailUrl || video.mediaUrl}
-                    muted={mutedVideos[video.id] ?? !audioEnabledRef.current}
+                    muted={mutedVideos[video.id] ?? false}
                     autoPlay
                     loop
                     playsInline
                     preload="none"
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-contain"
                     onLoadStart={() => setVideoLoadState((current) => ({ ...current, [video.id]: 'loading' }))}
                     onCanPlay={() => setVideoLoadState((current) => ({ ...current, [video.id]: 'ready' }))}
                     onError={() => setVideoLoadState((current) => ({ ...current, [video.id]: 'error' }))}
                     onLoadedMetadata={(event) => {
+                      const { videoWidth, videoHeight } = event.currentTarget;
+                      if (videoWidth && videoHeight) {
+                        setMediaAspectRatios((current) => ({ ...current, [video.id]: videoWidth / videoHeight }));
+                      }
                       const savedPosition = playbackPositions.current.get(video.id);
                       if (savedPosition && savedPosition < event.currentTarget.duration - 0.5) {
                         event.currentTarget.currentTime = savedPosition;
@@ -557,7 +537,13 @@ function HomePage() {
                   <img
                     src={getPreviewImage(video)}
                     alt={video.title}
-                    className="feed-photo-motion h-full w-full object-cover"
+                    className="feed-photo-motion h-full w-full object-contain"
+                    onLoad={(event) => {
+                      const { naturalWidth, naturalHeight } = event.currentTarget;
+                      if (naturalWidth && naturalHeight) {
+                        setMediaAspectRatios((current) => ({ ...current, [video.id]: naturalWidth / naturalHeight }));
+                      }
+                    }}
                     onClick={(event) => {
                       if (video.type === 'live') navigate(`/live/${video.id}`);
                       else handlePhotoTap(event, video);
@@ -565,7 +551,7 @@ function HomePage() {
                   />
                 )}
 
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/20" />
 
                 {isVideoType(video) && videoLoadState[video.id] === 'loading' ? (
                   <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
@@ -601,29 +587,15 @@ function HomePage() {
                   </div>
                 ) : null}
 
-                <div className="absolute inset-x-0 top-3 z-10 flex items-center justify-between px-3 sm:top-4 sm:px-4">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full border border-white/10 bg-slate-950/40 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-100 backdrop-blur-sm sm:px-2.5 sm:py-1 sm:text-[10px]">
-                      {video.type === 'live' ? 'LIVE' : video.category || 'Creator'}
-                    </span>
-                    {video.creatorUsername && getStoredSession().user?.username !== video.creatorUsername ? (
-                      <button type="button" onClick={(event) => { event.stopPropagation(); handleToggleFollow(video); }} className="rounded-full bg-white px-2.5 py-1 text-[9px] font-bold text-slate-950 shadow-lg">
-                        {video.isFollowing ? 'Following' : 'Follow'}
-                      </button>
-                    ) : null}
-                  </div>
-                  {isVideoType(video) ? (
-                    <button
-                      type="button"
-                      onClick={(event) => handleToggleSound(event, video.id)}
-                      className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-black/45 px-3 text-white shadow-lg backdrop-blur-xl transition hover:bg-black/65"
-                      aria-label={(mutedVideos[video.id] ?? !audioEnabledRef.current) ? 'Unmute video' : 'Mute video'}
-                    >
-                      <FeedIcon type="sound" active={!(mutedVideos[video.id] ?? !audioEnabledRef.current)} />
-                      <span className="text-[11px] font-semibold">{(mutedVideos[video.id] ?? !audioEnabledRef.current) ? 'Sound off' : 'Sound on'}</span>
-                    </button>
-                  ) : <span className="rounded-full bg-slate-950/40 px-2.5 py-0.5 text-[9px] font-medium text-slate-200 backdrop-blur-sm sm:px-2.5 sm:py-1 sm:text-[10px]">{Number(video.views || 0).toLocaleString()} views</span>}
-                </div>
+                {video.creatorUsername && getStoredSession().user?.username !== video.creatorUsername ? (
+                  <button
+                    type="button"
+                    onClick={(event) => { event.stopPropagation(); handleToggleFollow(video); }}
+                    className="absolute left-3 top-3 z-10 rounded-full border border-white/20 bg-black/35 px-3.5 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur-xl transition hover:bg-black/55 active:scale-95 sm:left-4 sm:top-4"
+                  >
+                    {video.isFollowing ? 'Following' : 'Follow'}
+                  </button>
+                ) : null}
 
                 {isVideoType(video) ? (
                   <div className="absolute inset-x-0 bottom-0 z-10 h-1 bg-white/15">
@@ -633,22 +605,19 @@ function HomePage() {
                     />
                   </div>
                 ) : null}
-                </div>
-
-                <div className="shrink-0 border-t border-white/[0.06] px-3 pb-3 pt-1.5 sm:px-5 sm:pb-4">
-                  <div className="grid grid-cols-4 gap-1">
+                <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-0.5 rounded-2xl border border-white/15 bg-black/40 p-1.5 text-white shadow-[0_8px_28px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:bottom-4 sm:right-4">
                   <button
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleToggleLike(video.id);
                     }}
-                    className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl text-white transition hover:bg-white/[0.05] active:scale-95"
+                    className="flex min-h-9 min-w-[92px] items-center gap-2 rounded-xl px-2 text-left transition hover:bg-white/10 active:scale-95"
                     aria-label={video.liked ? 'Unlike post' : 'Like post'}
                     aria-pressed={Boolean(video.liked)}
                   >
                     <span className={video.liked ? 'text-rose-400' : 'text-white'}><FeedIcon type="like" active={video.liked} /></span>
-                    <span className="text-[10px] font-medium text-slate-400">{Number(video.likes || 0).toLocaleString()} likes</span>
+                    <span className="text-xs font-medium">Like <span className="text-[10px] text-slate-300">{Number(video.likes || 0).toLocaleString()}</span></span>
                   </button>
                   <button
                     type="button"
@@ -656,11 +625,11 @@ function HomePage() {
                       event.stopPropagation();
                       handleOpenComments(video);
                     }}
-                    className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl text-white transition hover:bg-white/[0.05] active:scale-95"
+                    className="flex min-h-9 min-w-[92px] items-center gap-2 rounded-xl px-2 text-left transition hover:bg-white/10 active:scale-95"
                     aria-label="Comment on post"
                   >
                     <span><FeedIcon type="comment" /></span>
-                    <span className="text-[10px] font-medium text-slate-400">{Number(video.comments || 0).toLocaleString()} comments</span>
+                    <span className="text-xs font-medium">Comment <span className="text-[10px] text-slate-300">{Number(video.comments || 0).toLocaleString()}</span></span>
                   </button>
                   <button
                     type="button"
@@ -668,12 +637,12 @@ function HomePage() {
                       event.stopPropagation();
                       handleToggleSave(video.id);
                     }}
-                    className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl text-white transition hover:bg-white/[0.05] active:scale-95"
+                    className="flex min-h-9 min-w-[92px] items-center gap-2 rounded-xl px-2 text-left transition hover:bg-white/10 active:scale-95"
                     aria-label={video.saved ? 'Remove from saved' : 'Save post'}
                     aria-pressed={Boolean(video.saved)}
                   >
                     <span className={video.saved ? 'text-emerald-300' : 'text-white'}><FeedIcon type="save" active={video.saved} /></span>
-                    <span className="text-[10px] font-medium text-slate-400">{Number(video.saves || video.savedCount || 0).toLocaleString()} saves</span>
+                    <span className="text-xs font-medium">Save <span className="text-[10px] text-slate-300">{Number(video.saves || video.savedCount || 0).toLocaleString()}</span></span>
                   </button>
                   <button
                     type="button"
@@ -681,20 +650,27 @@ function HomePage() {
                       event.stopPropagation();
                       handleShare(video);
                     }}
-                    className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl text-white transition hover:bg-white/[0.05] active:scale-95"
+                    className="flex min-h-9 min-w-[92px] items-center gap-2 rounded-xl px-2 text-left transition hover:bg-white/10 active:scale-95"
                     aria-label="Share post"
                   >
                     <span><FeedIcon type="share" /></span>
-                    <span className="text-[10px] font-medium text-slate-400">{Number(video.shares || video.shareCount || 0).toLocaleString()} shares</span>
+                    <span className="text-xs font-medium">Share <span className="text-[10px] text-slate-300">{Number(video.shares || video.shareCount || 0).toLocaleString()}</span></span>
                   </button>
-                  </div>
+                </div>
+                </div>
 
-                  <div className="mt-1 px-1">
-                    <p className="text-xs font-medium text-slate-300">@{video.creatorName}</p>
-                    <h2 className="mt-0.5 line-clamp-1 text-base font-semibold leading-5 text-white sm:text-lg">{video.title}</h2>
-                    <p className="mt-1 line-clamp-1 text-xs text-slate-400 sm:line-clamp-2">
+                <div className="flex min-w-0 items-start justify-between gap-4 px-3 py-3 sm:px-5">
+                  <div className="min-w-0 flex-1 text-left">
+                    <h2 className="line-clamp-1 text-sm font-semibold text-white sm:text-base">{video.title}</h2>
+                    <p className="mt-1 line-clamp-2 text-xs text-slate-400 sm:text-sm">
                       {video.description || 'Fresh creator content for your feed.'}
                     </p>
+                  </div>
+                  <div className="max-w-[38%] shrink-0 pt-0.5 text-right">
+                    <p className="truncate text-xs font-semibold text-slate-200 sm:text-sm">
+                      {video.creatorUsername ? `@${video.creatorUsername}` : video.creatorName}
+                    </p>
+                    <p className="mt-1 text-[10px] text-slate-500">{video.creatorName}</p>
                   </div>
                 </div>
               </article>
