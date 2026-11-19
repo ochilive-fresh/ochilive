@@ -152,13 +152,6 @@ const privacyOptions = [
 
 const suggestedTags = ['#comedy', '#standup', '#liveshow', '#backstage', '#fyp'];
 
-const blobToDataUrl = (blob) =>
-  new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.readAsDataURL(blob);
-  });
-
 const compressImageFile = (file) => new Promise((resolve, reject) => {
   const image = new Image();
   const sourceUrl = URL.createObjectURL(file);
@@ -824,15 +817,17 @@ function UploadPage() {
         .up-scroll::-webkit-scrollbar { width: 6px; }
         .up-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 99px; }
         @media (max-width: 767px) {
+          .up-mobile-stage { height: calc(100dvh - 220px); min-height: 280px; }
+          .up-capture-stage { height: calc(100dvh - 220px); }
           .up-scroll {
             position: relative !important;
             inset: auto !important;
             left: auto !important;
             right: auto !important;
             bottom: auto !important;
-            max-height: min(46vh, 560px);
+            max-height: min(38vh, 360px);
             margin-top: 10px;
-            border-radius: 24px;
+            border-radius: 24px 24px 0 0;
             border-color: rgba(255,255,255,0.12);
             background: rgba(15,23,42,0.96);
           }
@@ -875,14 +870,14 @@ function UploadPage() {
               navigate(-1);
             }}
             aria-label="Close upload"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-slate-200 transition hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035] text-slate-200 transition hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)]"
           >
             <CloseIcon />
           </button>
 
           <div className="min-w-0 flex-1">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ochi-accent-light)]">{comedian ? `Creator studio · Level ${comedianProfile?.level || 1} ${comedianProfile?.levelName || 'Rookie'}` : 'Creator studio'}</p>
-            <h1 className="truncate text-base font-semibold tracking-tight text-white sm:text-lg">{screen === 'live' ? 'Go live' : screen === 'preview' ? 'Review & share' : 'Create a post'}</h1>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ochi-accent-light)]">{comedian ? 'Comedian studio' : 'New post'}</p>
+            <h1 className="truncate text-[17px] font-bold tracking-tight text-white sm:text-lg">{screen === 'live' ? 'Live room' : screen === 'preview' ? 'Edit and share' : 'Create'}</h1>
           </div>
 
           {/* step indicator — Capture → Details → Publish */}
@@ -918,7 +913,7 @@ function UploadPage() {
           </nav>
 
           <span className="hidden shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-medium tracking-wide text-slate-300 sm:inline-flex md:hidden">
-            <span className={`h-1.5 w-1.5 rounded-full ${screen === 'preview' ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+            <span className={`h-1.5 w-1.5 rounded-full ${screen === 'preview' ? 'bg-emerald-400' : 'bg-[var(--ochi-accent-light)]'}`} />
             {stageLabel}
           </span>
 
@@ -927,7 +922,7 @@ function UploadPage() {
               type="button"
               onClick={handlePublish}
               disabled={!canPost}
-              className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-[var(--ochi-accent)] px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-[var(--ochi-accent-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-slate-500"
+              className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-[var(--ochi-accent)] px-4 py-2 text-[13px] font-bold text-white transition hover:bg-[var(--ochi-accent-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)] disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-slate-500"
             >
               {uploading ? (
                 <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
@@ -947,14 +942,15 @@ function UploadPage() {
         {/* upload progress rail */}
         <div className="relative z-10 h-0.5 w-full shrink-0 bg-white/5">
           <div
-            className={`h-full rounded-r-full bg-rose-500 transition-[width] duration-300 ease-out ${uploading ? 'up-bar-stripes' : ''}`}
+            className={`h-full rounded-r-full bg-[var(--ochi-accent)] transition-[width] duration-300 ease-out ${uploading ? 'up-bar-stripes' : ''}`}
             style={{ width: `${uploading ? progress : 0}%` }}
           />
         </div>
 
         {/* ---------------- Body ---------------- */}
         <main className="relative z-10 flex min-h-0 flex-1 flex-col lg:mx-auto lg:grid lg:w-full lg:max-w-[1320px] lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-[auto_minmax(0,1fr)] lg:items-center lg:gap-x-8 lg:gap-y-5 lg:p-6 xl:gap-x-10 xl:p-8">
-          <aside className="hidden lg:col-span-2 lg:flex lg:items-center lg:gap-2 lg:border-b lg:border-white/[0.07] lg:pb-4" aria-label="Create mode">
+          <aside className="hidden lg:col-span-2 lg:flex lg:items-center lg:justify-center lg:pb-1" aria-label="Create mode">
+            <div className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.035] p-1">
             {options.filter((option) => comedian || option.key !== 'live').map((option) => {
               const active = activeTab === option.key;
               const { Glyph } = option;
@@ -964,22 +960,22 @@ function UploadPage() {
                   type="button"
                   aria-pressed={active}
                   onClick={() => handleOption(option.key)}
-                  className={`group relative flex min-h-12 min-w-[132px] items-center gap-3 rounded-xl border px-4 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 ${
+                  className={`group relative flex min-h-10 min-w-[118px] items-center justify-center gap-2 rounded-full px-3.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)] ${
                     active
-                      ? 'border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] text-white'
-                      : 'border-transparent text-slate-400 hover:border-white/10 hover:bg-white/5 hover:text-slate-200'
+                      ? 'bg-[var(--ochi-accent)] text-white shadow-[0_8px_24px_rgba(77,35,36,0.28)]'
+                      : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                   }`}
                 >
                   <Glyph
                     className={`h-5 w-5 shrink-0 ${active ? 'text-[var(--ochi-accent-light)]' : ''}`}
                   />
                   <span className="min-w-0">
-                    <span className="block text-xs font-semibold">{option.label}</span>
-                    <span className="mt-0.5 block text-[10px] text-slate-500">{option.hint} a moment</span>
+                    <span className="block text-xs font-bold">{option.label}</span>
                   </span>
                 </button>
               );
             })}
+            </div>
           </aside>
 
           {/* Stage */}
@@ -991,7 +987,7 @@ function UploadPage() {
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
             className={`up-mobile-stage ${screen !== 'preview' ? 'up-capture-stage' : ''} relative min-h-0 flex-1 overflow-hidden bg-[#050506] transition-colors lg:col-start-1 lg:row-start-2 lg:h-auto lg:aspect-[9/16] lg:max-h-[calc(100dvh-10rem)] lg:w-full lg:max-w-[480px] lg:shrink-0 lg:justify-self-center lg:rounded-[24px] lg:border lg:shadow-[0_24px_70px_rgba(0,0,0,0.35)] ${
-              dragging ? 'lg:border-rose-400/60 lg:ring-2 lg:ring-rose-400/30' : 'lg:border-white/10'
+              dragging ? 'lg:border-[var(--ochi-accent-light)] lg:ring-2 lg:ring-[var(--ochi-accent-30)]' : 'lg:border-white/10'
             }`}
           >
             {(screen === 'camera' || screen === 'live') && (
@@ -1015,7 +1011,7 @@ function UploadPage() {
             {screen === 'live' && (
               <div key="live" className="pointer-events-none absolute inset-0">
                 <div className="absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent px-4 pb-10 pt-4">
-                  <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] ${liveStarted ? 'bg-rose-500 text-white' : 'border border-white/15 bg-black/45 text-slate-200'}`}>
+                  <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] ${liveStarted ? 'bg-[var(--ochi-accent)] text-white' : 'border border-white/15 bg-black/45 text-slate-200'}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${liveStarted ? 'animate-pulse bg-white' : 'bg-amber-300'}`} />
                     {liveStarted ? 'Live now' : cameraLoading ? 'Checking camera' : 'Preview'}
                   </span>
@@ -1048,11 +1044,11 @@ function UploadPage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="up-stage-in flex h-full w-full flex-col items-center justify-center gap-5 bg-slate-950 px-6 text-center transition hover:bg-slate-900/60"
+                className="up-stage-in flex h-full w-full flex-col items-center justify-center gap-5 bg-[#101115] px-6 text-center transition hover:bg-[#15171c]"
               >
                 <span
                   className={`inline-flex h-20 w-20 items-center justify-center rounded-3xl border border-dashed transition-all duration-300 ${
-                    dragging ? 'scale-105 border-rose-400/70 bg-rose-500/10 text-rose-200' : 'border-white/20 bg-white/5 text-slate-300'
+                    dragging ? 'scale-105 border-[var(--ochi-accent-light)] bg-[var(--ochi-accent-15)] text-white' : 'border-white/20 bg-white/5 text-slate-300'
                   }`}
                 >
                   <UploadCloudIcon className="h-8 w-8" />
@@ -1074,7 +1070,7 @@ function UploadPage() {
             {/* drag overlay */}
             {dragging && screen !== 'gallery' && (
               <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm">
-                <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-rose-400/50 px-8 py-6 text-rose-100">
+                <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-[var(--ochi-accent-light)] px-8 py-6 text-[var(--ochi-accent-light)]">
                   <UploadCloudIcon className="h-7 w-7" />
                   <p className="text-sm font-semibold">Drop your file to upload</p>
                 </div>
@@ -1087,7 +1083,7 @@ function UploadPage() {
                 {stageLabel}
               </span>
               {recording && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-rose-500/90 px-3 py-1 text-[11px] font-semibold tabular-nums tracking-wide text-white">
+                <span className="inline-flex items-center gap-2 rounded-full bg-[var(--ochi-accent)] px-3 py-1 text-[11px] font-semibold tabular-nums tracking-wide text-white">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
                   {mmss}
                 </span>
@@ -1125,13 +1121,13 @@ function UploadPage() {
                     aria-selected={active}
                     type="button"
                     onClick={() => handleOption(option.key)}
-                    className={`group flex flex-row items-center justify-center gap-1 rounded-lg px-1.5 py-1.5 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 sm:flex-col sm:gap-1.5 sm:py-2.5 ${
-                      active ? 'bg-white/10 text-white shadow-lg shadow-black/30' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                    className={`group flex flex-row items-center justify-center gap-1.5 rounded-lg px-1.5 py-2 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)] sm:flex-col sm:gap-1.5 sm:py-2.5 ${
+                      active ? 'bg-[var(--ochi-accent)] text-white shadow-lg shadow-black/30' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                     }`}
                   >
                     <Glyph className={`h-4 w-4 shrink-0 transition-transform duration-300 sm:h-5 sm:w-5 ${active ? 'scale-110' : 'group-hover:scale-105'}`} />
                     <span className="text-[10px] font-semibold tracking-tight sm:text-[11px]">{option.label}</span>
-                    <span className={`h-0.5 w-5 rounded-full transition-all duration-300 ${active ? 'bg-rose-500 opacity-100' : 'opacity-0'}`} />
+                    <span className={`hidden h-0.5 w-5 rounded-full bg-white transition-all duration-300 sm:block ${active ? 'opacity-100' : 'opacity-0'}`} />
                   </button>
                 );
               })}
@@ -1142,10 +1138,10 @@ function UploadPage() {
               {screen === 'preview' ? (
                 <div key="p-preview" className="space-y-3">
                   {/* caption */}
-                  <div className="up-rise rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4 sm:p-5">
+                  <div className="up-rise rounded-[20px] border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4 sm:p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-sm font-semibold text-white">Caption</p>
+                        <p className="text-[15px] font-bold text-white">Caption</p>
                         <p className="mt-1 max-w-sm text-xs leading-5 text-slate-500">
                           Add context or start a conversation.
                         </p>
@@ -1162,7 +1158,7 @@ function UploadPage() {
                         rows={4}
                         maxLength={200}
                         placeholder="Write a caption..."
-                        className="w-full min-h-28 resize-none rounded-xl border border-white/[0.08] bg-black/20 px-3.5 py-3 pb-8 text-sm leading-6 text-white outline-none transition duration-200 placeholder:text-slate-500 focus:border-[var(--ochi-accent-40)] focus:ring-2 focus:ring-rose-400/15"
+                        className="w-full min-h-24 resize-none rounded-xl border border-white/[0.08] bg-black/20 px-3.5 py-3 pb-8 text-[14px] font-semibold leading-6 text-white outline-none transition duration-200 placeholder:text-slate-500 focus:border-[var(--ochi-accent-40)] focus:ring-2 focus:ring-[var(--ochi-accent-20)]"
                       />
                       <span className="pointer-events-none absolute bottom-3 right-3 text-[10px] font-medium tabular-nums text-slate-500">
                         {caption.length}/200
@@ -1181,7 +1177,7 @@ function UploadPage() {
                               (c.includes(tag) ? c : `${c}${c && !c.endsWith(' ') ? ' ' : ''}${tag} `).slice(0, 200),
                             )
                           }
-                          className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[11px] font-medium text-slate-400 transition hover:border-rose-400/40 hover:bg-rose-500/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40"
+                          className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] font-bold text-slate-400 transition hover:border-[var(--ochi-accent-40)] hover:bg-[var(--ochi-accent-10)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)]"
                         >
                           {tag}
                         </button>
@@ -1190,10 +1186,10 @@ function UploadPage() {
                   </div>
 
                   {/* audience */}
-                  <div className="up-rise up-d1 rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4 sm:p-5">
+                  <div className="up-rise up-d1 rounded-[20px] border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4 sm:p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-white">Post settings</p>
+                        <p className="text-[15px] font-bold text-white">Audience</p>
                         <p className="mt-1 text-xs text-slate-500">Choose your audience and interactions.</p>
                       </div>
                     </div>
@@ -1207,8 +1203,8 @@ function UploadPage() {
                             type="button"
                             aria-pressed={active}
                             onClick={() => setPrivacy(opt.key)}
-                            className={`flex min-h-[68px] flex-col items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40 ${
-                              active ? 'bg-white/[0.09] text-white' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                            className={`flex min-h-[68px] flex-col items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)] ${
+                              active ? 'bg-[var(--ochi-accent)] text-white' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                             }`}
                           >
                             <Glyph className="h-4 w-4" />
@@ -1230,7 +1226,7 @@ function UploadPage() {
                           onChange={(e) => setAllowComments(e.target.checked)}
                           className="peer sr-only"
                         />
-                        <span className="h-6 w-11 rounded-full bg-white/10 transition-colors duration-300 peer-checked:bg-rose-500 peer-focus-visible:ring-2 peer-focus-visible:ring-rose-400/50" />
+                        <span className="h-6 w-11 rounded-full bg-white/10 transition-colors duration-300 peer-checked:bg-[var(--ochi-accent)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--ochi-accent-light)]" />
                         <span className="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-300 peer-checked:translate-x-5" />
                       </span>
                     </label>
@@ -1282,13 +1278,13 @@ function UploadPage() {
                   </div> : null}
                   {!liveStarted ? <label className="block text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
                     Room title
-                    <input autoFocus={false} value={liveTitle} onChange={(event) => { setLiveTitle(event.target.value); setLiveRoomId(''); }} maxLength={80} placeholder="Late-night crowd work" className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none placeholder:text-slate-600 focus:border-rose-400" />
+                    <input autoFocus={false} value={liveTitle} onChange={(event) => { setLiveTitle(event.target.value); setLiveRoomId(''); }} maxLength={80} placeholder="Late-night crowd work" className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none placeholder:text-slate-600 focus:border-[var(--ochi-accent-light)]" />
                   </label> : null}
                   {liveDetailsOpen ? (
                     <div className="space-y-3 rounded-xl border border-white/10 bg-slate-950/45 p-3">
                       <label className="block text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
                         Description
-                        <textarea value={liveDescription} onChange={(event) => setLiveDescription(event.target.value)} maxLength={280} rows={2} placeholder="Tell people what kind of room this is." className="mt-1.5 w-full resize-none rounded-lg border border-white/10 bg-slate-950 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none placeholder:text-slate-600 focus:border-rose-400" />
+                        <textarea value={liveDescription} onChange={(event) => setLiveDescription(event.target.value)} maxLength={280} rows={2} placeholder="Tell people what kind of room this is." className="mt-1.5 w-full resize-none rounded-lg border border-white/10 bg-slate-950 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none placeholder:text-slate-600 focus:border-[var(--ochi-accent-light)]" />
                       </label>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <label className="block text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Format<select value={liveFormat} onChange={(event) => setLiveFormat(event.target.value)} className="mt-1.5 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none"><option value="standup">Stand-up</option><option value="sketch">Sketch</option><option value="storytelling">Storytelling</option><option value="crowd-work">Crowd work</option><option value="open-mic">Open mic</option></select></label>
@@ -1308,8 +1304,8 @@ function UploadPage() {
                         className={`up-rise up-d${i + 1} flex items-center justify-between rounded-xl border border-white/10 bg-slate-950/60 px-3.5 py-2.5 text-sm text-slate-300`}
                       >
                         {item.label}
-                        <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${item.pending ? 'text-amber-300' : item.ready ? 'text-emerald-300' : 'text-rose-300'}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${item.pending ? 'animate-pulse bg-amber-400' : item.ready ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                        <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${item.pending ? 'text-amber-300' : item.ready ? 'text-emerald-300' : 'text-[var(--ochi-accent-light)]'}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${item.pending ? 'animate-pulse bg-amber-400' : item.ready ? 'bg-emerald-400' : 'bg-[var(--ochi-accent-light)]'}`} />
                           {item.pending ? 'Checking' : item.label === 'Browser network' ? (item.ready ? 'Online' : 'Offline') : item.ready ? 'Ready' : 'Required'}
                         </span>
                       </li>
@@ -1320,7 +1316,7 @@ function UploadPage() {
                     </li>
                   </ul> : null}
                   {!liveStarted ? (
-                    <button type="button" disabled={liveStarting || !stream || !networkOnline || !liveTitle.trim()} onClick={startPreparedLive} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 disabled:cursor-not-allowed disabled:opacity-50">
+                    <button type="button" disabled={liveStarting || !stream || !networkOnline || !liveTitle.trim()} onClick={startPreparedLive} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--ochi-accent)] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--ochi-accent-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)] disabled:cursor-not-allowed disabled:opacity-50">
                       <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
                       {liveStarting ? (liveRoomId ? 'Starting room...' : 'Preparing room...') : liveRoomId ? 'Start live room' : 'Prepare live room'}
                     </button>
@@ -1332,13 +1328,13 @@ function UploadPage() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-slate-950/60 p-3 text-xs">
                       <div><p className="text-slate-500">Stream connection</p><p className={`mt-1 font-semibold capitalize ${['excellent', 'good'].includes(liveConnectionQuality) ? 'text-emerald-300' : liveConnectionQuality === 'poor' || liveConnectionQuality === 'lost' ? 'text-amber-300' : 'text-slate-300'}`}>{liveConnectionQuality}</p></div>
-                      <div><p className="text-slate-500">Browser network</p><p className={`mt-1 font-semibold ${networkOnline ? 'text-emerald-300' : 'text-rose-300'}`}>{networkOnline ? 'Online' : 'Offline'}</p></div>
+                      <div><p className="text-slate-500">Browser network</p><p className={`mt-1 font-semibold ${networkOnline ? 'text-emerald-300' : 'text-[var(--ochi-accent-light)]'}`}>{networkOnline ? 'Online' : 'Offline'}</p></div>
                       <div><p className="text-slate-500">Outbound bitrate</p><p className="mt-1 font-semibold text-slate-200">{liveNetworkStats ? `${Math.round(liveNetworkStats.bitrateKbps)} kbps` : liveStatsError ? 'Unavailable' : 'Measuring…'}</p></div>
                       <div><p className="text-slate-500">Reported packet loss</p><p className="mt-1 font-semibold text-slate-200">{liveNetworkStats ? `${liveNetworkStats.packetLoss.toFixed(1)}%` : liveStatsError ? 'Unavailable' : 'Measuring…'}</p></div>
                     </div>
                     <div className="pointer-events-auto mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-2xl border border-white/15 bg-slate-950/80 p-2.5 shadow-[0_18px_50px_rgba(2,6,23,0.5)] backdrop-blur-xl lg:mx-0 lg:max-w-none">
                       <div className="flex min-w-0 items-center gap-2.5 px-2">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-200">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ochi-accent-15)] text-[var(--ochi-accent-light)]">
                           <UsersIcon className="h-4 w-4" />
                         </span>
                         <div className="min-w-0">
@@ -1396,10 +1392,10 @@ function UploadPage() {
                   </ul>
                 </div>
               ) : (
-                <div key="p-camera" className="up-rise rounded-[22px] border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4 sm:p-5">
+                <div key="p-camera" className="up-rise rounded-t-[22px] border border-white/[0.07] bg-[var(--ochi-surface-raised)] px-4 py-3 sm:rounded-[22px] sm:p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-white">
+                      <p className="text-[15px] font-bold text-white">
                         {activeTab === 'photo' ? 'Capture a photo' : recording ? 'You’re recording' : 'Capture a video'}
                       </p>
                       <p className="mt-1.5 text-sm leading-relaxed text-slate-400">
@@ -1430,13 +1426,13 @@ function UploadPage() {
                       type="button"
                       aria-label={activeTab === 'photo' ? 'Take photo' : recording ? 'Stop recording' : 'Start recording'}
                       onClick={activeTab === 'photo' ? takePhoto : recording ? stopRecording : startRecording}
-                      className="group relative inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white/5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60"
+                      className="group relative inline-flex h-16 w-16 items-center justify-center rounded-full border-2 border-white/90 bg-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.35)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)]"
                     >
-                      {recording && <span className="up-ring absolute inset-0 rounded-full border-2 border-rose-500/60" />}
+                      {recording && <span className="up-ring absolute inset-0 rounded-full border-2 border-[var(--ochi-accent-light)]" />}
                       <span className="absolute inset-1 rounded-full bg-white shadow-2xl shadow-black/40 transition-transform duration-150 group-active:scale-95" />
                       <span
                         className={`relative transition-all duration-300 ${
-                          recording ? 'h-4 w-4 rounded-[5px] bg-slate-950' : 'h-4 w-4 rounded-full bg-rose-500'
+                          recording ? 'h-5 w-5 rounded-[6px] bg-[var(--ochi-accent)]' : 'h-12 w-12 rounded-full bg-[var(--ochi-accent)]'
                         }`}
                       />
                     </button>
@@ -1452,7 +1448,7 @@ function UploadPage() {
                   </div>
 
                   {recording && (
-                    <p className="mt-4 text-center text-[11px] font-semibold tabular-nums tracking-[0.2em] text-rose-300">{mmss}</p>
+                    <p className="mt-4 text-center text-[11px] font-semibold tabular-nums tracking-[0.2em] text-[var(--ochi-accent-light)]">{mmss}</p>
                   )}
                 </div>
               )}
