@@ -11,6 +11,7 @@ import {
   unfollowProfile,
 } from '../api/dashboardApi';
 import { getStoredSession } from '../utils/session';
+import LiveSection from '../components/discovery/LiveSection';
 
 const placeholderImage =
   'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&h=800&fit=crop&q=80';
@@ -41,6 +42,7 @@ function HomePage() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState('for_you');
   const [commentSheetVideoId, setCommentSheetVideoId] = useState(null);
@@ -101,11 +103,12 @@ function HomePage() {
         setError('Unable to load the feed. Please refresh.');
       })
       .finally(() => setLoading(false));
-  }, [activeTab]);
+  }, [activeTab, refreshKey]);
 
   useEffect(() => {
     if (!videos.length || typeof IntersectionObserver === 'undefined') return undefined;
 
+    const activeViewTimers = viewTimers.current;
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         const id = entry.target.dataset.videoId;
@@ -176,8 +179,8 @@ function HomePage() {
     });
 
     return () => {
-      viewTimers.current.forEach((timer) => window.clearTimeout(timer));
-      viewTimers.current.clear();
+      activeViewTimers.forEach((timer) => window.clearTimeout(timer));
+      activeViewTimers.clear();
       observer.disconnect();
     };
   }, [videos, mutedVideos]);
@@ -237,7 +240,7 @@ function HomePage() {
         likes: Number(updated?.likes ?? Number(video.likes || 0) + 1),
       }));
       showMessage(updated?.message || 'You liked this post.');
-    } catch (err) {
+    } catch {
       if (!previousVideo?.liked) {
         setVideoState(id, (video) => ({ ...video, liked: false, likes: Math.max(0, Number(video.likes || 0) - 1) }));
       }
@@ -296,7 +299,7 @@ function HomePage() {
       const response = await toggleSaveVideo(id);
       setVideoState(id, (video) => ({ ...video, saved: response.saved }));
       showMessage(response.saved ? 'Saved to your library.' : 'Removed from saved posts.');
-    } catch (err) {
+    } catch {
       showMessage('Unable to save this post.');
     }
   };
@@ -342,7 +345,7 @@ function HomePage() {
       setCommentDraft('');
       setReplyTarget(null);
       showMessage(replyTarget ? 'Reply sent.' : 'Comment added.');
-    } catch (err) {
+    } catch {
       showMessage('Unable to post comment.');
     }
   };
@@ -361,42 +364,26 @@ function HomePage() {
       } else {
         showMessage('Share is not available in this browser.');
       }
-    } catch (err) {
+    } catch {
       showMessage('Unable to complete sharing.');
     }
   };
 
   const isVideoType = (video) => String(video?.type || '').toLowerCase() === 'video' || /\.(mp4|webm|mov|m4v)(\?|$)/i.test(String(video?.mediaUrl || video?.thumbnailUrl || ''));
 
-  const handleDownload = (video) => {
-    if (!video.mediaUrl) {
-      showMessage('No media available to download.');
-      return;
-    }
-
-    const link = document.createElement('a');
-    link.href = video.mediaUrl;
-    link.download = `${(video.title || 'ochi-post').replace(/\s+/g, '_')}`;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showMessage('Download started.');
-  };
-
   const handleIncrementView = async (id) => {
     try {
       const updated = await incrementView(id);
       setVideoState(id, (video) => ({ ...video, ...updated }));
-    } catch (err) {
+    } catch {
       showMessage('Unable to update view count.');
     }
   };
 
   return (
     <DashboardShell
-      title="Discover every moment"
-      subtitle="Browse the latest videos and photos from creators across the community."
+      title="Your stage"
+      subtitle="The latest from creators and live comedy."
     >
       <style>{`
         @keyframes feed-heart-burst {
@@ -415,8 +402,15 @@ function HomePage() {
           .feed-heart-burst, .feed-photo-motion { animation: none !important; }
         }
       `}</style>
+      <div className="mx-auto grid w-full max-w-[1180px] gap-8 min-[1440px]:grid-cols-[minmax(0,600px)_minmax(260px,320px)] min-[1440px]:items-start">
+      <section className="min-w-0">
+      <div className="mb-5">
+        <p className="ochi-kicker">Your daily dose of live</p>
+        <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white sm:text-3xl">The room is yours.</h2>
+        <p className="mt-1 text-sm text-slate-400">Fresh voices, live moments, and the people behind them.</p>
+      </div>
       {message ? (
-        <div className="rounded-2xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200 ring-1 ring-emerald-500/20">
+        <div role="status" className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${/^(Unable|No media|Share is not)/.test(message) ? 'border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] text-[var(--ochi-accent-light)]' : 'border-emerald-300/15 bg-emerald-400/[0.08] text-emerald-100'}`}>
           {message}
         </div>
       ) : null}
@@ -433,7 +427,7 @@ function HomePage() {
           handleSwipe();
         }}
       >
-        <div className="flex gap-5 overflow-x-auto border-b border-slate-800/80 no-scrollbar sm:gap-7">
+        <div className="flex gap-1 overflow-x-auto rounded-2xl border border-white/[0.07] bg-white/[0.025] p-1 no-scrollbar">
           {tabs.map((tab) => {
             const active = tab.key === activeTab;
             return (
@@ -441,10 +435,10 @@ function HomePage() {
                 key={tab.key}
                 type="button"
                 onClick={() => handleSelectTab(tab.key)}
-                className={`relative shrink-0 border-b-2 px-0 pb-2.5 pt-1 text-sm font-semibold tracking-normal transition-all duration-200 sm:pb-3 sm:text-sm ${
+                className={`relative shrink-0 rounded-xl px-3 py-2 text-xs font-semibold tracking-normal transition-all duration-200 sm:px-4 sm:py-2.5 sm:text-sm ${
                   active
-                    ? 'border-rose-300 text-white'
-                    : 'border-transparent text-slate-400 hover:border-slate-600 hover:text-slate-200'
+                    ? 'bg-[var(--ochi-surface-raised)] text-white shadow-sm ring-1 ring-white/[0.06]'
+                    : 'text-slate-500 hover:bg-white/[0.04] hover:text-slate-200'
                 }`}
               >
                 {tab.label}
@@ -455,19 +449,29 @@ function HomePage() {
       </div>
 
       {loading ? (
-        <div className="rounded-[28px] bg-slate-900/95 p-6 text-slate-400">Loading feed…</div>
+        <div className="mt-4 flex min-h-72 items-center justify-center rounded-[28px] border border-white/[0.07] bg-[var(--ochi-surface)]/70">
+          <div className="flex items-center gap-3 text-sm text-slate-400">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/15 border-t-[var(--ochi-accent)]" />
+            Finding your next favorite…
+          </div>
+        </div>
       ) : error ? (
-        <div className="rounded-[28px] bg-slate-900/95 p-6 text-slate-100">
-          <p className="text-lg font-semibold text-rose-300">Unable to load the feed.</p>
-          <p className="mt-3 text-sm text-slate-400">{error}</p>
+        <div role="alert" className="mt-4 rounded-[28px] border border-white/[0.08] bg-[var(--ochi-surface)] p-6 text-slate-100 sm:p-8">
+          <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--ochi-accent-10)] text-lg text-[var(--ochi-accent-light)]">!</span>
+          <p className="text-lg font-semibold text-white">The room didn’t load.</p>
+          <p className="mt-2 text-sm text-slate-400">{error}</p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <button type="button" onClick={() => setRefreshKey((key) => key + 1)} className="rounded-full bg-[var(--ochi-accent-strong)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--ochi-accent)]">Try again</button>
+            {!getStoredSession().token ? <button type="button" onClick={() => navigate('/login')} className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06]">Sign in</button> : null}
+          </div>
         </div>
       ) : (
-        <div className="max-h-[calc(100dvh-11rem)] space-y-3 overflow-y-auto overscroll-contain pr-1 snap-y snap-mandatory sm:max-h-[calc(100dvh-12rem)]">
+        <div className="mt-4 max-h-[calc(100dvh-15rem)] space-y-4 overflow-y-auto overscroll-contain pr-1 snap-y snap-mandatory sm:max-h-[calc(100dvh-14rem)]">
           {videos.length ? (
             videos.map((video) => (
               <article
                 key={video.id}
-                className="relative h-[78vh] snap-start overflow-hidden rounded-[22px] bg-slate-950 shadow-[0_24px_60px_rgba(15,23,42,0.35)] sm:h-[84vh] sm:rounded-[30px]"
+                className="relative h-[72svh] min-h-[460px] max-h-[780px] snap-start overflow-hidden rounded-[26px] border border-white/[0.09] bg-black shadow-[0_30px_90px_rgba(0,0,0,0.45)] sm:rounded-[30px]"
                 onClick={() => {
                   if (video.type === 'live') {
                     navigate(`/live/${video.id}`);
@@ -666,12 +670,40 @@ function HomePage() {
               </article>
             ))
           ) : (
-            <div className="rounded-[30px] border border-white/6 bg-slate-900/95 p-6 text-center text-slate-400">
-              No posts available right now.
+            <div className="rounded-[28px] border border-white/[0.08] bg-[var(--ochi-surface)] p-7 text-center sm:p-10">
+              <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--ochi-accent-10)] text-xl text-[var(--ochi-accent-light)]">✦</span>
+              <p className="text-base font-semibold text-white">Your feed is ready for its first moment.</p>
+              <p className="mt-2 text-sm text-slate-400">Discover creators or share a clip to get the conversation started.</p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <button type="button" onClick={() => navigate('/discover')} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-white/[0.06]">Explore creators</button>
+                <button type="button" onClick={() => navigate('/upload')} className="rounded-xl bg-[var(--ochi-accent-strong)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--ochi-accent)]">Create a post</button>
+              </div>
             </div>
           )}
         </div>
       )}
+      </section>
+
+      <aside className="hidden min-w-0 min-[1440px]:block">
+        <LiveSection compact />
+        <div className="mt-6 overflow-hidden rounded-[28px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(255,118,94,0.18),transparent_52%),linear-gradient(145deg,#17191f,#101115)] p-5">
+          <p className="ochi-kicker">Your next move</p>
+          <h3 className="mt-3 text-xl font-semibold tracking-tight text-white">Make a moment of your own.</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-400">Drop a clip for the community or start a live set when you’re ready.</p>
+          <button type="button" onClick={() => navigate('/upload')} className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[var(--ochi-accent)] px-4 text-sm font-semibold text-[#1a100e] transition hover:brightness-110">
+            <span className="text-lg leading-none">+</span> Create something
+          </button>
+        </div>
+        <div className="mt-4 flex items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-3.5">
+          <div>
+            <p className="text-sm font-semibold text-slate-200">Looking for a new voice?</p>
+            <p className="mt-0.5 text-xs text-slate-500">Meet your next favorite creator.</p>
+          </div>
+          <button type="button" onClick={() => navigate('/discover')} className="ml-3 text-sm font-semibold text-[var(--ochi-accent-light)] transition hover:text-white" aria-label="Discover creators">↗</button>
+        </div>
+        <p className="px-1 pt-5 text-[10px] leading-5 text-slate-600">Ochi is a space for creators and their communities. Find a seat, stay a while.</p>
+      </aside>
+      </div>
 
       {activeCommentVideo ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-3 pb-0 pt-10 backdrop-blur-sm">
@@ -771,4 +803,3 @@ function HomePage() {
 }
 
 export default HomePage;
-

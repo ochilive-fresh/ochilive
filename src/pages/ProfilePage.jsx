@@ -181,12 +181,18 @@ function ProfilePage() {
       subtitle="Your presence on Ochi Live"
     >
       {loading ? (
-        <div className="border border-slate-800 bg-slate-950 p-8 text-slate-400">Loading profile details...</div>
+        <div className="mx-auto w-full max-w-[1040px] space-y-5">
+          <div className="h-52 animate-pulse rounded-[28px] border border-white/[0.07] bg-[var(--ochi-surface)]" />
+          <div className="grid grid-cols-3 gap-3">
+            {[0, 1, 2].map((key) => <div key={key} className="h-20 animate-pulse rounded-2xl bg-[var(--ochi-surface)]" />)}
+          </div>
+          <div className="h-64 animate-pulse rounded-2xl bg-[var(--ochi-surface)]" />
+        </div>
       ) : (
-        <div className="bg-slate-950/20">
-          <div className="px-4 pb-8 pt-7 sm:px-8 sm:pt-10">
+        <div className="mx-auto w-full max-w-[1040px]">
+          <div className="space-y-6 pb-8 pt-1">
             {profileError ? (
-              <div className="mb-4 rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-2 text-xs text-slate-400">
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-3 text-xs leading-5 text-slate-400">
                 {profileError}
               </div>
             ) : null}
@@ -218,34 +224,34 @@ function ProfilePage() {
             <TabsSection activeTab={activeTab} onChange={setActiveTab} />
             {activeTab === 'about' ? (
               <div className="mt-6 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
-                <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5">
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Bio</p>
+                <div className="rounded-2xl border border-white/[0.08] bg-[var(--ochi-surface)] p-5 sm:p-6">
+                  <p className="ochi-kicker">The person behind the posts</p>
                   <p className="mt-4 text-base leading-7 text-slate-200">{profile.user.bio || 'No bio added yet.'}</p>
-                  <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+                  <div className="mt-6 rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
                     <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Handle</p>
                     <p className="mt-2 text-lg font-medium text-white">@{profile.user.username}</p>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5">
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Profile status</p>
+                <div className="rounded-2xl border border-white/[0.08] bg-[var(--ochi-surface)] p-5 sm:p-6">
+                  <p className="ochi-kicker">At a glance</p>
                   <div className="mt-4 space-y-3 text-sm text-slate-300">
-                    <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5">
                       <span>Account type</span>
                       <span className="font-medium text-white">{profile.user.accountType || 'creator'}</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5">
                       <span>Followers</span>
                       <span className="font-medium text-white">{profile.stats.followers?.toLocaleString() || '0'}</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5">
                       <span>Following</span>
                       <span className="font-medium text-white">{profile.stats.following?.toLocaleString() || '0'}</span>
                     </div>
                   </div>
                 </div>
               </div>
-            ) : contentLoading ? <div className="border-t border-slate-800 py-12 text-center text-sm text-slate-500">Loading {activeTab}...</div> : contentError ? <div className="border-t border-slate-800 py-12 text-center"><p className="text-sm text-rose-300">{contentError}</p><button type="button" onClick={() => { setContentError(''); setContentRequestKey((key) => key + 1); }} className="mt-4 text-sm text-slate-300 underline">Retry</button></div> : <ContentGrid items={content[activeTab]} tab={activeTab} isOwnProfile={profile.relationship?.isOwnProfile} />}
+            ) : contentLoading ? <div className="rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] py-12 text-center text-sm text-slate-500">Loading {activeTab}...</div> : contentError ? <div className="rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] py-12 text-center"><p className="text-sm text-[var(--ochi-accent-light)]">{contentError}</p><button type="button" onClick={() => { setContentError(''); setContentRequestKey((key) => key + 1); }} className="mt-4 rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/[0.05] hover:text-white">Retry</button></div> : <ContentGrid items={content[activeTab]} tab={activeTab} isOwnProfile={profile.relationship?.isOwnProfile} />}
           </div>
         </div>
       )}
@@ -255,5 +261,4 @@ function ProfilePage() {
 }
 
 export default ProfilePage;
-
 

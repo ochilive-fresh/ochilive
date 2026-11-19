@@ -1,20 +1,20 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
-import SponsoredBanner from '../components/discovery/SponsoredBanner';
-import screenLogo from '../assets/animations/screen.png';
 import LiveSection from '../components/discovery/LiveSection';
 import UpcomingShowsSection from '../components/discovery/UpcomingShowsSection';
 import PopularClipsSection from '../components/discovery/PopularClipsSection';
 import RecommendedSection from '../components/discovery/RecommendedSection';
 import FreshOnTheMicSection from '../components/discovery/FreshOnTheMicSection';
-import { getDiscoverItems, searchProfiles, followProfile, unfollowProfile } from '../api/dashboardApi';
+import { searchProfiles, followProfile, unfollowProfile } from '../api/dashboardApi';
+import { getStoredSession } from '../utils/session';
 
 const RECENT_SEARCH_KEY = 'ochi_recent_searches';
 
 function DiscoverPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const isSignedIn = Boolean(getStoredSession().token);
   const searchInputRef = useRef(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -23,7 +23,8 @@ function DiscoverPage() {
   const [selectedResultIndex, setSelectedResultIndex] = useState(0);
   const [recentSearches, setRecentSearches] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem(RECENT_SEARCH_KEY) || '[]');
+      const searches = JSON.parse(localStorage.getItem(RECENT_SEARCH_KEY) || '[]');
+      return Array.isArray(searches) ? searches.filter((item) => typeof item === 'string').slice(0, 6) : [];
     } catch {
       return [];
     }
@@ -36,10 +37,6 @@ function DiscoverPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    getDiscoverItems().catch(() => {});
-  }, []);
-
-  useEffect(() => {
     setSelectedResultIndex(0);
   }, [searchResults.length, searchTerm]);
 
@@ -50,6 +47,11 @@ function DiscoverPage() {
       setSearchError('');
       return undefined;
     }
+    if (!isSignedIn) {
+      setSearchResults([]);
+      setSearchError('Sign in to search creators on Ochi.');
+      return undefined;
+    }
 
     const timer = setTimeout(async () => {
       setSearchLoading(true);
@@ -58,7 +60,9 @@ function DiscoverPage() {
         const response = await searchProfiles(q);
         setSearchResults(response.results || []);
       } catch (error) {
-        setSearchError('We could not find any profiles matching that search.');
+        setSearchError(error?.response?.status === 401
+          ? 'Sign in to search creators on Ochi.'
+          : 'We could not search creators right now. Please try again.');
         setSearchResults([]);
       } finally {
         setSearchLoading(false);
@@ -66,7 +70,7 @@ function DiscoverPage() {
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, isSignedIn]);
 
   const saveRecentSearch = (value) => {
     const trimmed = String(value || '').trim();
@@ -74,7 +78,11 @@ function DiscoverPage() {
 
     const next = [trimmed, ...recentSearches.filter((item) => item.toLowerCase() !== trimmed.toLowerCase())].slice(0, 6);
     setRecentSearches(next);
-    localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(next));
+    try {
+      localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(next));
+    } catch {
+      // Recent searches improve the experience but are not required for search.
+    }
   };
 
   const handleInputChange = (value) => {
@@ -89,6 +97,11 @@ function DiscoverPage() {
       setSearchError('');
       return;
     }
+    if (!isSignedIn) {
+      setSearchError('Sign in to search creators on Ochi.');
+      setSearchResults([]);
+      return;
+    }
 
     saveRecentSearch(q);
     setSearchLoading(true);
@@ -97,7 +110,9 @@ function DiscoverPage() {
       const response = await searchProfiles(q);
       setSearchResults(response.results || []);
     } catch (error) {
-      setSearchError('We could not find any profiles matching that search.');
+      setSearchError(error?.response?.status === 401
+        ? 'Sign in to search creators on Ochi.'
+        : 'We could not search creators right now. Please try again.');
       setSearchResults([]);
     } finally {
       setSearchLoading(false);
@@ -148,34 +163,84 @@ function DiscoverPage() {
           followers: result.stats?.followers ?? item.stats?.followers ?? 0,
         },
       } : item)));
-    } catch (error) {
+    } catch {
       setSearchError('Unable to update that follow status right now.');
     }
   };
 
-  const placeholder = screenLogo;
+  const clearRecentSearches = () => {
+    setRecentSearches([]);
+    try {
+      localStorage.removeItem(RECENT_SEARCH_KEY);
+    } catch {
+      // Search remains usable when browser storage is unavailable.
+    }
+  };
 
   return (
-    <>
       <DashboardShell
         title="Discover"
-        subtitle="Curated and trending content"
-        className="px-0"
+        subtitle="Find your next favorite creator"
         searchValue={searchTerm}
+        searchPlaceholder={isSignedIn ? 'Search creators by name or username' : 'Sign in to search creators'}
         searchInputRef={searchInputRef}
         onSearchChange={handleInputChange}
         onSearchSubmit={handleSearch}
         onSearchKeyDown={handleSearchKeyDown}
       >
-        <div className="mx-auto w-full max-w-6xl px-4">
-          {searchError ? <div className="mb-4 rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">{searchError}</div> : null}
+        <div className="mx-auto w-full max-w-[1180px]">
+          {searchError ? (
+            <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] px-4 py-3 text-sm text-[var(--ochi-accent-light)]">
+              <span>{searchError}</span>
+              {searchError.startsWith('Sign in') ? <button type="button" onClick={() => navigate('/login')} className="rounded-full bg-[var(--ochi-accent-strong)] px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--ochi-accent)]">Sign in</button> : null}
+            </div>
+          ) : null}
 
-          {!searchLoading && searchTerm.trim() && !searchResults.length ? (
-            <section className="mb-8 rounded-3xl border border-slate-800 bg-slate-950/80 p-4 md:p-8">
+          {!searchTerm.trim() ? (
+            <section className="relative mb-8 overflow-hidden rounded-[32px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_92%_6%,rgba(255,118,94,0.22),transparent_35%),radial-gradient(ellipse_at_10%_100%,rgba(215,245,106,0.07),transparent_38%),linear-gradient(130deg,#17191f,#101115_70%)] px-5 py-7 sm:px-8 sm:py-9 lg:px-10 lg:py-11">
+              <div className="absolute -right-10 -top-20 h-64 w-64 rounded-full border border-white/[0.05]" />
+              <div className="absolute -right-2 -top-12 h-48 w-48 rounded-full border border-white/[0.05]" />
+              <div className="relative max-w-2xl">
+                <p className="ochi-kicker">Explore the Ochi universe</p>
+                <h2 className="mt-4 max-w-xl text-3xl font-semibold leading-[1.08] tracking-[-0.05em] text-white sm:text-5xl">
+                  Find your people.<br /><span className="text-[var(--ochi-accent)]">Catch the moment.</span>
+                </h2>
+                <p className="mt-4 max-w-lg text-sm leading-6 text-slate-400 sm:text-base sm:leading-7">
+                  Drop into a live set, discover a fresh voice, or save a clip worth passing around.
+                </p>
+                <div className="mt-7 flex flex-wrap gap-2">
+                  {[
+                    { label: 'Live now', target: 'discover-live' },
+                    { label: 'Upcoming shows', target: 'discover-shows' },
+                    { label: 'Popular clips', target: 'discover-clips' },
+                    { label: 'Creators', target: 'discover-creators' },
+                  ].map((item) => (
+                    <a
+                      key={item.target}
+                      href={`#${item.target}`}
+                      className="rounded-full border border-white/[0.12] bg-black/20 px-3.5 py-2 text-xs font-medium text-slate-200 transition hover:border-[var(--ochi-accent-40)] hover:bg-[var(--ochi-accent-10)] hover:text-white"
+                    >
+                      {item.label}<span className="ml-2 text-[var(--ochi-accent)]">↘</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <div className="relative mt-8 flex items-center justify-between gap-3 border-t border-white/[0.08] pt-5 sm:mt-10">
+                <div>
+                  <p className="text-sm font-semibold text-white">Your next favorite is out there.</p>
+                  <p className="mt-1 text-xs text-slate-500">Start with what’s happening right now.</p>
+                </div>
+                <button type="button" onClick={() => navigate(isSignedIn ? '/upload' : '/signup')} className="shrink-0 rounded-full bg-[var(--ochi-accent)] px-4 py-2.5 text-xs font-bold text-[#1a100e] transition hover:brightness-110 sm:text-sm">{isSignedIn ? 'Create a moment' : 'Join the stage'}</button>
+              </div>
+            </section>
+          ) : null}
+
+          {!searchLoading && !searchError && searchTerm.trim() && !searchResults.length ? (
+            <section className="mb-8 rounded-[28px] border border-white/[0.08] bg-[var(--ochi-surface)] p-5 sm:p-8">
               <div className="flex items-start gap-3 sm:gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-700 bg-slate-900 text-lg text-slate-200 sm:h-12 sm:w-12 sm:text-xl">⌕</div>
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/[0.05] text-lg text-slate-200 sm:h-12 sm:w-12 sm:text-xl">⌕</div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500 sm:text-xs">No creator found</p>
+                  <p className="ochi-kicker">Search the stage</p>
                   <h2 className="mt-2 text-lg font-semibold text-white sm:text-xl">No results for “{searchTerm.trim()}”</h2>
                   <p className="mt-2 text-sm leading-6 text-slate-400">
                     Try a username, full name, or a broader keyword. Profiles are shown only when the creator is already registered on Ochi Live.
@@ -199,20 +264,27 @@ function DiscoverPage() {
             </section>
           ) : null}
 
+        {searchLoading ? (
+          <div className="mb-8 flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-4 text-sm text-slate-400">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/15 border-t-[var(--ochi-accent)]" />
+            Finding creators…
+          </div>
+        ) : null}
+
         {searchResults.length ? (
-          <section className="mb-8 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 md:p-6">
+          <section className="mb-8 rounded-[28px] border border-white/[0.08] bg-[var(--ochi-surface)]/75 p-4 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-white">Creator results</h2>
               <span className="text-xs uppercase tracking-[0.2em] text-slate-500">{searchResults.length} matches</span>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {searchResults.map((profile) => {
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {searchResults.map((profile, index) => {
                 const isMutual = Boolean(profile.relationship?.isMutual || profile.isMutual);
                 const isFollowedBy = Boolean(profile.relationship?.isFollowedBy || profile.isFollowedBy);
                 const isFollowing = Boolean(profile.relationship?.isFollowing || profile.isFollowing);
 
                 return (
-                  <article key={profile.username} className="rounded-[1.5rem] border border-slate-800 bg-gradient-to-b from-slate-900/90 to-slate-950/90 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.28)]">
+                  <article key={profile.username} className={`rounded-2xl border bg-white/[0.025] p-4 transition hover:border-white/[0.13] ${index === selectedResultIndex ? 'border-[var(--ochi-accent-30)]' : 'border-white/[0.07]'}`}>
                     <div className="flex items-center gap-3">
                       <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-slate-700 bg-slate-800 text-sm font-semibold text-slate-100">
                         {profile.profilePictureUrl ? <img src={profile.profilePictureUrl} alt={profile.name || profile.username} className="h-full w-full object-cover" /> : (profile.name?.charAt(0)?.toUpperCase() || profile.username?.charAt(0)?.toUpperCase() || '@')}
@@ -248,78 +320,43 @@ function DiscoverPage() {
           </section>
         ) : null}
 
-          <SponsoredBanner image={placeholder} />
-          <LiveSection />
-          <UpcomingShowsSection />
-          <PopularClipsSection />
-          <RecommendedSection />
-          <FreshOnTheMicSection />
+          {!isSignedIn ? (
+            <section className="rounded-[28px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(255,118,94,0.12),transparent_52%),linear-gradient(145deg,#17191f,#111318)] p-5 sm:p-7">
+              <p className="ochi-kicker">A seat is waiting</p>
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-white sm:text-2xl">Come in and find your people.</h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">Sign in to browse live rooms, follow creators, and get recommendations shaped around what you love.</p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button type="button" onClick={() => navigate('/login')} className="rounded-full bg-[var(--ochi-accent)] px-5 py-2.5 text-sm font-semibold text-[#190d0a] transition hover:brightness-110">Sign in</button>
+                <button type="button" onClick={() => navigate('/signup')} className="rounded-full border border-white/10 px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06]">Create an account</button>
+              </div>
+            </section>
+          ) : !searchTerm.trim() ? (
+            <>
+              {recentSearches.length ? (
+                <section className="mb-8 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Your recent searches</p>
+                    <button type="button" onClick={clearRecentSearches} className="text-xs text-slate-500 transition hover:text-white">Clear</button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {recentSearches.map((term) => (
+                      <button key={term} type="button" onClick={() => setSearchTerm(term)} className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-slate-300 transition hover:border-[var(--ochi-accent-30)] hover:text-white">{term}</button>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+              <div id="discover-live" className="scroll-mt-24"><LiveSection /></div>
+              <div id="discover-shows" className="scroll-mt-24"><UpcomingShowsSection /></div>
+              <div id="discover-clips" className="scroll-mt-24"><PopularClipsSection /></div>
+              <div id="discover-creators" className="scroll-mt-24 space-y-8">
+                <RecommendedSection />
+                <FreshOnTheMicSection />
+              </div>
+            </>
+          ) : null}
         </div>
       </DashboardShell>
-
-      {(searchTerm.trim() || recentSearches.length) ? (
-        <div className="fixed inset-x-0 top-16 z-50 mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="mx-auto w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-950/95 p-2 shadow-[0_20px_80px_rgba(15,23,42,0.6)] backdrop-blur-xl">
-            {!searchTerm.trim() && recentSearches.length ? (
-              <div className="mb-2 flex flex-wrap gap-2 px-2 pt-1">
-                {recentSearches.map((term) => (
-                  <button
-                    key={term}
-                    type="button"
-                    onClick={() => {
-                      setSearchTerm(term);
-                      saveRecentSearch(term);
-                    }}
-                    className="rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs text-slate-300 transition hover:border-slate-500 hover:text-white"
-                  >
-                    {term}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
-            {searchLoading ? (
-              <div className="px-3 py-2 text-sm text-slate-400">Searching creators...</div>
-            ) : searchResults.length ? (
-              <div className="max-h-80 overflow-y-auto">
-                {searchResults.map((profile, index) => (
-                  <button
-                    key={profile.username}
-                    type="button"
-                    onClick={() => {
-                      saveRecentSearch(profile.username);
-                      navigate(`/profile/${profile.username}`);
-                    }}
-                    className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition ${index === selectedResultIndex ? 'bg-slate-900/90 ring-1 ring-slate-700' : 'hover:bg-slate-900/80'}`}
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      {profile.profilePictureUrl ? (
-                        <img src={profile.profilePictureUrl} alt={profile.name || profile.username} className="h-9 w-9 rounded-full object-cover border border-slate-700" />
-                      ) : (
-                        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-700 bg-slate-800 text-xs font-semibold text-slate-100">
-                          {profile.name?.charAt(0)?.toUpperCase() || profile.username?.charAt(0)?.toUpperCase() || '@'}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-white">{profile.name}</p>
-                        <p className="truncate text-xs text-slate-400">@{profile.username}</p>
-                      </div>
-                    </div>
-                    <span className="shrink-0 text-[10px] uppercase tracking-[0.2em] text-slate-500">
-                      {profile.stats?.followers ? `${profile.stats.followers.toLocaleString()} fol` : 'creator'}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="px-3 py-2 text-sm text-slate-400">No creators match “{searchTerm.trim()}”.</div>
-            )}
-          </div>
-        </div>
-      ) : null}
-    </>
   );
 }
 
 export default DiscoverPage;
-

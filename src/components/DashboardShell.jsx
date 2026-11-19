@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import messageApi from '../api/messageApi';
-import screenLogo from '../assets/animations/screen.png';
+import { isAuthenticated } from '../utils/session';
 
 const navItems = [
   { label: 'Home', path: '/home', icon: 'home' },
   { label: 'Discover', path: '/discover', icon: 'search' },
+  { label: 'Create', path: '/upload', icon: 'plus' },
   { label: 'Activity', path: '/activity', icon: 'activity' },
   { label: 'Messages', path: '/messages', icon: 'message' },
   { label: 'Profile', path: '/profile', icon: 'user' },
@@ -109,6 +110,11 @@ export default function DashboardShell({
   const isProfileToolbarRoute = isProfileRoute || isSettingsRoute;
 
   useEffect(() => {
+    if (!isAuthenticated()) {
+      setMessageUnreadCount(0);
+      return undefined;
+    }
+
     let ignore = false;
 
     const refreshMessageCount = async () => {
@@ -143,40 +149,35 @@ export default function DashboardShell({
 
   return (
     <div className="min-h-screen bg-[var(--ochi-bg)] text-[var(--ochi-text)]">
-      <div className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.06] bg-[var(--ochi-bg)]/95 backdrop-blur-xl">
+      <div className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.07] bg-[var(--ochi-bg)]/90 backdrop-blur-2xl lg:left-64">
         {isHome ? (
-          <div className="mx-auto max-w-6xl px-2 py-2 sm:px-6">
-            <div className="rounded-2xl border border-white/[0.06] bg-[var(--ochi-surface)]/90 px-2 py-1.5 shadow-sm backdrop-blur-sm sm:px-3 sm:py-2">
-              <div className="flex items-center justify-between gap-2 sm:gap-3">
-                <Link to="/home" className="flex min-w-0 items-center gap-2 rounded-xl px-2 py-1" aria-label="Ochi Live home">
-                  <img src={screenLogo} alt="" className="h-8 w-8 rounded-lg object-cover sm:h-9 sm:w-9" />
-                  <span className="text-sm font-bold tracking-tight text-white">ochi<span className="text-[var(--ochi-accent)]">.</span>live</span>
-                </Link>
-
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <Link to="/notifications" className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.04] text-slate-300 transition hover:bg-white/[0.08] hover:text-white sm:h-10 sm:w-10" aria-label="Notifications">
-                    <Icon name="bell" className="h-4 w-4" />
-                  </Link>
-                  <Link
-                    to="/discover?focus=search"
-                    className="group inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.04] text-slate-300 shadow-sm transition hover:bg-white/[0.08] hover:text-white focus:outline-none focus:ring-2 focus:ring-[var(--ochi-accent)]/40 sm:h-10 sm:w-10"
-                    aria-label="Search creators and content"
-                    title="Search"
-                  >
-                    <Icon name="search" className="h-4 w-4 transition-transform group-hover:scale-110 sm:h-5 sm:w-5" />
-                  </Link>
-                </div>
-              </div>
+          <div className="mx-auto flex h-[68px] max-w-[1360px] items-center justify-between gap-3 px-4 sm:px-8 lg:px-10">
+            <div className="flex min-w-0 items-center gap-4">
+              <span className="hidden text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500 sm:block">The creator stage</span>
+              <span className="hidden h-4 w-px bg-white/10 sm:block" />
+              <p className="truncate text-sm font-medium text-slate-300 sm:text-base">Good things happen live.</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Link to="/notifications" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035] text-slate-300 transition hover:border-white/15 hover:bg-white/[0.08] hover:text-white" aria-label="Notifications">
+                <Icon name="bell" className="h-[18px] w-[18px]" />
+              </Link>
+              <Link
+                to="/discover?focus=search"
+                className="group inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035] text-slate-300 transition hover:border-white/15 hover:bg-white/[0.08] hover:text-white focus:outline-none focus:ring-2 focus:ring-[var(--ochi-accent)]/40"
+                aria-label="Search creators and content"
+                title="Search"
+              >
+                <Icon name="search" className="h-[18px] w-[18px] transition-transform group-hover:scale-110" />
+              </Link>
             </div>
           </div>
         ) : (
-          <div className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.06] bg-[var(--ochi-bg)]/95 backdrop-blur-xl">
-            <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-6">
+          <div className="mx-auto flex h-[68px] max-w-[1360px] items-center justify-between gap-2 px-3 sm:gap-3 sm:px-8 lg:px-10">
               {showBack ? (
                 <button
                   type="button"
                   onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(backFallback))}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-300 transition hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/30"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/[0.08] text-slate-300 transition hover:bg-white/[0.06] hover:text-white focus:outline-none focus:ring-2 focus:ring-slate-300/30"
                   aria-label="Go back"
                   title="Go back"
                 >
@@ -193,7 +194,7 @@ export default function DashboardShell({
                 <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
                   <Link
                     to="/upload"
-                    className="group inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-rose-300/60 bg-gradient-to-br from-rose-500 to-amber-500 px-3 text-white shadow-[0_8px_22px_-8px_rgba(244,63,94,0.85)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-8px_rgba(244,63,94,0.95)] focus:outline-none focus:ring-2 focus:ring-rose-300/50"
+                    className="group inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[var(--ochi-accent-strong)] px-4 text-white shadow-[0_8px_22px_-8px_rgba(255,118,94,0.65)] transition hover:-translate-y-0.5 hover:bg-[var(--ochi-accent)] focus:outline-none focus:ring-2 focus:ring-rose-300/50"
                     aria-label="Upload content"
                     title="Upload content"
                   >
@@ -203,7 +204,7 @@ export default function DashboardShell({
 
                   <Link
                     to="/settings"
-                    className="group inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-700 bg-slate-900/80 text-slate-200 shadow-[0_10px_30px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:border-sky-300/50 hover:bg-slate-800 hover:text-sky-200 hover:shadow-[0_16px_35px_rgba(15,23,42,0.45)] focus:outline-none focus:ring-2 focus:ring-sky-300/30"
+                    className="group inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035] text-slate-300 transition hover:bg-white/[0.08] hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-300/30"
                     aria-label="Profile settings"
                   >
                     <Icon name="settings" className="h-5 w-5 transition-transform group-hover:rotate-12" />
@@ -211,7 +212,7 @@ export default function DashboardShell({
                 </div>
               ) : showSearch ? (
                 <div className="flex min-w-0 flex-1 items-center justify-end">
-                  <div className="flex w-full max-w-xl min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-[var(--ochi-surface)] px-2.5 py-2 shadow-[0_8px_30px_rgba(15,23,42,0.32)] sm:gap-3 sm:px-3">
+                  <div className="flex w-full max-w-xl min-w-0 items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-2.5 transition focus-within:border-[var(--ochi-accent-40)] sm:gap-3 sm:px-4">
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-slate-500" aria-hidden="true">
                       <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="2" />
                       <path d="m16 16 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -229,21 +230,33 @@ export default function DashboardShell({
                 </div>
               ) : null}
             </div>
-          </div>
         )}
       </div>
 
-      <main className="mx-auto max-w-6xl px-3 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-20 sm:px-6 sm:pb-28 sm:pt-24">
-        <div className="space-y-4 sm:space-y-6">{children}</div>
+      <main className="mx-auto max-w-6xl px-3 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-[5.5rem] sm:px-6 sm:pb-28 sm:pt-24 lg:mx-0 lg:ml-64 lg:max-w-none lg:px-0 lg:pt-24">
+        <div className="mx-auto w-full max-w-[1360px] space-y-5 px-1 sm:space-y-7 sm:px-2 lg:px-10">{children}</div>
       </main>
 
-      <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/[0.08] bg-[var(--ochi-bg)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
-        <div className="mx-auto grid max-w-6xl grid-cols-5 items-stretch px-1 py-1.5 sm:flex sm:items-center sm:justify-center sm:gap-6 sm:px-6 sm:py-1.5">
+      <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/[0.08] bg-[#0b0c0f]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl lg:bottom-0 lg:left-0 lg:right-auto lg:top-0 lg:w-64 lg:border-r lg:border-t-0 lg:bg-[#0b0c0f]/90 lg:pb-0">
+        <div className="mx-auto grid max-w-6xl grid-cols-6 items-stretch px-1 py-1.5 sm:flex sm:items-center sm:justify-center sm:gap-6 sm:px-6 sm:py-1.5 lg:flex lg:h-full lg:flex-col lg:items-stretch lg:justify-start lg:gap-1 lg:px-5 lg:py-7">
+          <Link to="/home" className="mb-7 hidden items-center gap-3 rounded-2xl px-3 py-2 lg:flex" aria-label="Ochi Live home">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--ochi-accent)] text-lg font-black tracking-tighter text-[#17100e] shadow-[0_8px_25px_rgba(255,118,94,0.22)]">O.</span>
+            <span>
+              <span className="block text-base font-bold tracking-tight text-white">ochi<span className="text-[var(--ochi-accent)]">.</span>live</span>
+              <span className="mt-0.5 block text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-500">The creator stage</span>
+            </span>
+          </Link>
+          <Link to="/upload" className="mb-7 hidden h-12 items-center justify-center gap-2 rounded-xl bg-[var(--ochi-accent-strong)] px-4 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(236,95,69,0.18)] transition hover:bg-[var(--ochi-accent)] lg:flex">
+            <Icon name="plus" className="h-5 w-5" />
+            Create something
+          </Link>
+          <p className="mb-2 hidden px-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-600 lg:block">Your space</p>
           {navItems.map((item) => {
             const colorMap = {
               home: 'text-slate-400',
               search: 'text-slate-400',
               upload: 'text-slate-400',
+              plus: 'text-slate-400',
               message: 'text-slate-400',
               user: 'text-slate-400',
               activity: 'text-slate-400',
@@ -254,17 +267,17 @@ export default function DashboardShell({
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
-                  `group relative flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 py-1.5 text-[10px] font-medium transition-colors sm:min-h-0 sm:flex-row sm:gap-1 sm:px-3 sm:py-2 sm:text-sm ${
-                    isActive ? 'font-semibold text-[var(--ochi-accent)]' : 'text-slate-400 hover:text-slate-200'
+                  `group relative flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1.5 text-[10px] font-medium transition-colors sm:min-h-0 sm:flex-row sm:gap-1 sm:px-3 sm:py-2 sm:text-sm lg:min-h-11 lg:justify-start lg:gap-3 lg:px-3 lg:text-sm ${item.path === '/upload' ? 'lg:hidden' : ''} ${
+                    isActive ? 'bg-white/[0.07] font-semibold text-white shadow-inner shadow-white/[0.02]' : 'text-slate-400 hover:bg-white/[0.035] hover:text-slate-100'
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <span className={`inline-flex h-7 w-7 items-center justify-center ${isActive ? 'text-[var(--ochi-accent)]' : colorMap[item.icon]}`}>
+                    <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center ${item.path === '/upload' ? 'rounded-xl bg-[var(--ochi-accent)] text-[#190d0a]' : isActive ? 'text-[var(--ochi-accent)]' : colorMap[item.icon]}`}>
                       <Icon name={item.icon} className="h-5 w-5 transition-transform group-active:scale-90" />
                     </span>
-                    <span className="truncate leading-4">{item.label}</span>
+                    <span className="truncate leading-4 lg:text-sm">{item.label}</span>
                     {item.path === '/messages' && messageUnreadCount > 0 && (
                       <span className="absolute -right-1 top-1 inline-flex min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-bold text-white ring-2 ring-slate-950">
                         {messageUnreadCount > 9 ? '9+' : messageUnreadCount}
@@ -276,6 +289,12 @@ export default function DashboardShell({
               </NavLink>
             );
           })}
+          <div className="mt-auto hidden border-t border-white/[0.07] pt-5 lg:block">
+            <p className="px-3 text-xs leading-5 text-slate-500">A little stage for the moments worth sharing.</p>
+            <Link to="/discover" className="mt-3 inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-[var(--ochi-accent-light)] transition hover:text-white">
+              Explore Ochi <span aria-hidden="true">↗</span>
+            </Link>
+          </div>
         </div>
       </nav>
     </div>

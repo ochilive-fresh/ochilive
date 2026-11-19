@@ -2,51 +2,85 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getVideoFeed } from '../../api/dashboardApi';
 
-function Clip({ src }) {
-  return (
-    <div className="overflow-hidden rounded-xl bg-slate-800">
-      <img src={src} className="h-56 w-full object-cover" alt="clip" />
-    </div>
-  );
-}
-
 export default function PopularClipsSection() {
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
+    setLoading(true);
+    setError(false);
     getVideoFeed()
-      .then((d) => mounted && setItems((d || []).slice(0, 6)))
-      .catch(() => {})
-      .finally(() => {});
+      .then((data) => mounted && setItems((Array.isArray(data) ? data : []).slice(0, 6)))
+      .catch(() => {
+        if (mounted) {
+          setItems([]);
+          setError(true);
+        }
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
     return () => (mounted = false);
-  }, []);
-
-  const visibleItems = items.length > 0 ? items : Array.from({ length: 6 }, (_, i) => ({ id: `placeholder-${i}` }));
+  }, [refreshKey]);
 
   return (
     <section className="mb-6">
-      <h3 className="mb-3 px-1 text-lg font-semibold text-white">Popular clips</h3>
-      <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar scroll-smooth">
-        {visibleItems.map((it, index) =>
-          items.length > 0 ? (
-            <div key={it.id} className="min-w-[70%] sm:min-w-[48%] lg:min-w-[32%] overflow-hidden rounded-xl bg-slate-800">
-              <img src={it.thumbnail || it.poster} alt={it.title} className="h-48 sm:h-72 w-full object-cover" />
-            </div>
-          ) : (
-            <div key={it.id || index} className="h-48 min-w-[70%] sm:h-72 sm:min-w-[48%] lg:min-w-[32%] animate-pulse rounded-xl bg-slate-800" />
-          )
-        )}
-        <button
-          type="button"
-          onClick={() => navigate('/discover/more-popular-clips')}
-          className="flex min-w-[70%] shrink-0 flex-col items-center justify-center rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-6 text-center text-sm font-medium text-slate-200 sm:min-w-[48%] lg:min-w-[32%]"
-        >
-          <span className="mb-2 text-2xl text-amber-400">↗</span>
-          <span>See more</span>
-        </button>
+      <div className="mb-4 flex items-end justify-between gap-4 px-1">
+        <div>
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--ochi-accent)]">Made for you</p>
+          <h3 className="text-xl font-semibold tracking-tight text-white">Popular clips</h3>
+        </div>
+        {items.length > 0 && !error ? (
+          <button type="button" onClick={() => navigate('/discover/more-popular-clips')} className="text-sm font-medium text-slate-400 transition hover:text-white">
+            See all
+          </button>
+        ) : null}
       </div>
+
+      {loading ? (
+        <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar sm:mx-0 sm:px-0">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="aspect-[3/4] w-[62%] shrink-0 animate-pulse rounded-2xl bg-[var(--ochi-surface)] sm:w-[calc(33.333%-0.5rem)]" />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="rounded-2xl border border-white/[0.08] bg-[var(--ochi-surface)] px-4 py-5">
+          <p className="text-sm font-medium text-slate-200">Clips couldn’t load.</p>
+          <button type="button" onClick={() => setRefreshKey((key) => key + 1)} className="mt-2 text-sm font-medium text-[var(--ochi-accent)] transition hover:text-white">
+            Try again
+          </button>
+        </div>
+      ) : items.length ? (
+        <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar sm:mx-0 sm:px-0">
+          {items.map((item) => {
+            const thumbnail = item.thumbnailUrl || item.thumbnail || item.poster;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => navigate('/discover/more-popular-clips')}
+                className="group relative aspect-[3/4] w-[62%] shrink-0 overflow-hidden rounded-2xl border border-white/[0.08] bg-[var(--ochi-surface)] text-left sm:w-[calc(33.333%-0.5rem)]"
+              >
+                {thumbnail ? <img src={thumbnail} alt={item.title || 'Popular clip'} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : null}
+                <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/10" />
+                <span className="absolute inset-x-0 bottom-0 p-3">
+                  <span className="block truncate text-sm font-semibold text-white">{item.title || 'Untitled clip'}</span>
+                  <span className="mt-1 block truncate text-xs text-white/70">{item.creatorName || 'Ochi creator'}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-white/[0.08] bg-[var(--ochi-surface)] px-4 py-5">
+          <p className="text-sm font-medium text-slate-200">No clips to show just yet.</p>
+          <p className="mt-1 text-xs text-slate-500">New creator posts will appear here.</p>
+        </div>
+      )}
     </section>
   );
 }

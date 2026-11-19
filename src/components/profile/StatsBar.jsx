@@ -6,16 +6,16 @@ function StatsBar({ stats, onSelect }) {
   ];
 
   return (
-    <div className="mt-8 grid max-w-xl grid-cols-3 gap-2 sm:gap-3">
+    <div className="grid grid-cols-3 gap-2 sm:gap-3">
       {items.map((item, index) => (
         <button
           key={item.label}
           type="button"
           onClick={() => onSelect?.(item.key)}
-          className={`rounded-xl border border-slate-800 bg-slate-900/80 px-2 py-3 text-left transition hover:border-slate-600 hover:bg-slate-900 active:scale-[0.99] sm:rounded-2xl sm:px-4 sm:py-4 ${index > 0 ? 'sm:px-5' : ''}`}
+          className={`rounded-2xl border border-white/[0.07] bg-white/[0.025] px-3 py-3.5 text-left transition hover:border-white/[0.14] hover:bg-white/[0.045] active:scale-[0.99] sm:px-5 sm:py-5 ${index > 0 ? 'sm:px-5' : ''}`}
         >
           <p className="text-lg font-semibold text-white sm:text-xl">{item.value}</p>
-          <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-slate-500 sm:text-[10px] sm:text-xs">{item.label}</p>
+          <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.16em] text-slate-500 sm:text-[10px]">{item.label}</p>
         </button>
       ))}
     </div>
