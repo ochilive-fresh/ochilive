@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
 import { getProfileSummary } from '../api/dashboardApi';
@@ -140,7 +140,10 @@ function MessagesPage() {
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [messageText, setMessageText] = useState('');const [chatError, setChatError] = useState('');  const [loading, setLoading] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const [chatError, setChatError] = useState('');
+  const [conversationSearch, setConversationSearch] = useState('');
+  const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState(null);
   const [typingUsers, setTypingUsers] = useState({});
@@ -440,6 +443,16 @@ function MessagesPage() {
   };
 
   const totalUnread = conversations.filter((conversation) => conversation.isUnread).length;
+  const visibleConversations = useMemo(() => {
+    const query = conversationSearch.trim().toLowerCase();
+    if (!query) return conversations;
+    return conversations.filter((conversation) => {
+      const otherUser = conversation.otherUser || {};
+      return `${otherUser.name || ''} ${otherUser.username || ''} ${conversation.lastMessage || ''}`
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [conversationSearch, conversations]);
 
   const showMobileChat = Boolean(selectedConversation || directMessageTarget) && isMobileConversationOpen;
 
@@ -451,36 +464,53 @@ function MessagesPage() {
       showBack={false}
     >
       <div className="-mx-3 h-[calc(100dvh-118px)] px-0 pb-1 sm:mx-0 sm:h-[calc(100vh-158px)] lg:h-[calc(100vh-175px)]">
-        <div className="grid h-full gap-3 lg:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className={`${showMobileChat ? 'hidden' : 'flex'} h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-950/60 lg:flex`}>
-            <div className="border-b border-slate-800/80 px-3 py-3">
+        <div className="grid h-full gap-3 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <aside className={`${showMobileChat ? 'hidden' : 'flex'} h-full min-h-0 flex-col overflow-hidden rounded-[24px] border border-white/[0.08] bg-[var(--ochi-surface)] shadow-[var(--ochi-shadow-card)] lg:flex`}>
+            <div className="border-b border-white/[0.07] bg-[radial-gradient(ellipse_at_top_right,rgba(255,118,94,0.08),transparent_60%)] px-4 py-4 sm:px-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Inbox</p>
-                  <h2 className="mt-1 text-xl font-semibold text-white">Messages</h2>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[var(--ochi-accent-light)]">Your conversations</p>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white">Messages</h2>
                 </div>
                 {totalUnread > 0 && (
-                  <span className="inline-flex min-w-[22px] items-center justify-center rounded-full bg-slate-200 px-1.5 py-0.5 text-[9px] font-semibold text-slate-900">
+                  <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full border border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] px-2 text-xs font-semibold text-[var(--ochi-accent-light)]">
                     {totalUnread > 9 ? '9+' : totalUnread}
                   </span>
                 )}
               </div>
 
-              <div className="mt-3 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              <label className="mt-4 flex items-center gap-2.5 rounded-xl border border-white/[0.08] bg-black/20 px-3 py-2.5 transition focus-within:border-[var(--ochi-accent-30)]">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-slate-500" aria-hidden="true">
+                  <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="m15.5 15.5 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+                <input
+                  type="search"
+                  value={conversationSearch}
+                  onChange={(event) => setConversationSearch(event.target.value)}
+                  placeholder="Search conversations"
+                  aria-label="Search conversations"
+                  className="min-w-0 flex-1 bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-500"
+                />
+              </label>
+
+              <div className="mt-4 flex gap-1.5 overflow-x-auto no-scrollbar" role="tablist" aria-label="Message inbox">
                 {TABS.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
+                    role="tab"
+                    aria-selected={activeTab === tab.id}
                     className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[12px] font-medium whitespace-nowrap transition ${
                       activeTab === tab.id
-                        ? 'border-slate-700 bg-slate-200 text-slate-950'
-                        : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                        ? 'border-[var(--ochi-accent-30)] bg-[var(--ochi-accent-10)] text-white'
+                        : 'border-white/[0.07] bg-black/15 text-slate-400 hover:border-white/15 hover:text-slate-200'
                     }`}
                   >
                     <Icon name={tab.icon} className="h-3.5 w-3.5" />
                     {tab.label}
                     {tab.count > 0 && (
-                      <span className="inline-flex min-w-[16px] items-center justify-center rounded-full bg-slate-700 px-1 py-0.5 text-[9px] font-semibold text-slate-100">
+                      <span className="inline-flex min-w-[16px] items-center justify-center rounded-full bg-white/10 px-1 py-0.5 text-[9px] font-semibold text-slate-200">
                         {tab.count > 9 ? '9+' : tab.count}
                       </span>
                     )}
@@ -489,32 +519,26 @@ function MessagesPage() {
               </div>
             </div>
 
-            <div className="no-scrollbar flex-1 overflow-y-auto p-2">
+            <div className="no-scrollbar flex-1 overflow-y-auto p-2.5">
               {loading ? (
                 <div className="space-y-2 pt-2">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-16 animate-pulse rounded-xl bg-slate-800/60" />
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-[76px] animate-pulse rounded-2xl bg-white/[0.035]" />
                   ))}
                 </div>
-              ) : conversations.length === 0 ? (
-                <div className="flex h-full items-center justify-center px-4 pt-8 text-center">
+              ) : visibleConversations.length === 0 ? (
+                <div className="flex h-full items-center justify-center px-4 pt-4 text-center">
                   <div>
-                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-lg text-slate-200">✦</div>
-                    <p className="text-sm font-medium text-slate-200">
-                      {activeTab === 'messages' && 'No messages yet'}
-                      {activeTab === 'connections' && 'No connections yet'}
-                      {activeTab === 'requests' && 'No requests'}
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] text-lg text-[var(--ochi-accent-light)]">✦</div>
+                    <p className="text-sm font-semibold text-slate-200">
+                      {conversationSearch.trim() ? 'No matching conversations' : activeTab === 'messages' ? 'Your inbox is quiet' : activeTab === 'connections' ? 'No connections yet' : 'No requests right now'}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {activeTab === 'messages' && 'New chats will appear here.'}
-                      {activeTab === 'connections' && 'Connect with creators you care about.'}
-                      {activeTab === 'requests' && 'Requests will show up here.'}
-                    </p>
+                    <p className="mt-1 max-w-[220px] text-xs leading-5 text-slate-500">{conversationSearch.trim() ? 'Try another name or message.' : 'Conversations with your community will show up here.'}</p>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-1.5">
-                  {conversations.map((conv) => {
+                <div className="space-y-1">
+                  {visibleConversations.map((conv) => {
                     const isSelected = selectedConversation?.conversationId === conv.conversationId;
                     const otherUser = conv.otherUser || {};
 
@@ -522,16 +546,16 @@ function MessagesPage() {
                       <button
                         key={conv.conversationId}
                         onClick={() => handleOpenConversation(conv)}
-                        className={`w-full rounded-xl border px-2.5 py-2.5 text-left transition ${
+                        className={`w-full rounded-2xl border px-3 py-3 text-left transition ${
                           isSelected
-                            ? 'border-slate-700 bg-slate-900'
+                            ? 'border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)]'
                             : conv.isUnread
-                              ? 'border-slate-800 bg-slate-900/75 hover:bg-slate-900'
-                              : 'border-transparent bg-slate-950/30 hover:bg-slate-900/60'
+                              ? 'border-white/[0.06] bg-white/[0.035] hover:bg-white/[0.06]'
+                              : 'border-transparent hover:bg-white/[0.035]'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="relative h-11 w-11 flex-shrink-0 overflow-hidden rounded-full bg-slate-700 ring-1 ring-slate-800">
+                          <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-2xl bg-slate-800 ring-1 ring-white/10">
                             {otherUser.profilePictureUrl ? (
                               <img src={otherUser.profilePictureUrl} alt={otherUser.name || otherUser.username} className="h-full w-full object-cover" />
                             ) : (
@@ -540,7 +564,7 @@ function MessagesPage() {
                               </span>
                             )}
                             {conv.isUnread && (
-                              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-slate-950 bg-slate-200" aria-label="Unread message" />
+                              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[var(--ochi-surface)] bg-[var(--ochi-accent)]" aria-label="Unread message" />
                             )}
                           </div>
 
@@ -555,7 +579,7 @@ function MessagesPage() {
                             <div className="mt-0.5 flex items-center justify-between gap-2">
                               <p className="truncate text-[11px] text-slate-400">@{otherUser.username || 'user'}</p>
                               {conv.isUnread && (
-                                <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-slate-900">
+                                <span className="rounded-full bg-[var(--ochi-accent)] px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-[#190d0a]">
                                   New
                                 </span>
                               )}
@@ -568,7 +592,7 @@ function MessagesPage() {
                             )}
 
                             {conv.inboxType === 'requests' && (
-                              <div className="mt-1 inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-amber-200">
+                              <div className="mt-1 inline-flex items-center rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-amber-200">
                                 Request
                               </div>
                             )}
@@ -582,20 +606,20 @@ function MessagesPage() {
             </div>
           </aside>
 
-          <main className={`${showMobileChat ? 'flex' : 'hidden'} h-full min-h-0 flex-col overflow-hidden border-y border-slate-800/80 bg-slate-950/60 lg:flex lg:rounded-2xl lg:border`}>
+          <main className={`${showMobileChat ? 'flex' : 'hidden'} h-full min-h-0 flex-col overflow-hidden border-y border-white/[0.08] bg-[var(--ochi-surface)] lg:flex lg:rounded-[24px] lg:border lg:shadow-[var(--ochi-shadow-card)]`}>
             {selectedConversation || directMessageTarget ? (
               <>
-                <header className="flex items-center justify-between border-b border-slate-800/80 bg-slate-950/80 px-3 py-2.5 pt-[max(0.7rem,env(safe-area-inset-top))] sm:px-4">
+                <header className="flex items-center justify-between border-b border-white/[0.07] bg-[radial-gradient(ellipse_at_top_right,rgba(255,118,94,0.07),transparent_60%)] px-3 py-3 pt-[max(0.7rem,env(safe-area-inset-top))] sm:px-5 sm:py-4">
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={handleCloseConversation}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-base text-slate-200 lg:hidden"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-base text-slate-200 transition hover:bg-white/[0.08] lg:hidden"
                       aria-label="Back to inbox"
                     >
                       ←
                     </button>
-                    <div className="relative h-10 w-10 overflow-hidden rounded-full bg-slate-700 ring-1 ring-slate-800">
+                    <div className="relative h-11 w-11 overflow-hidden rounded-2xl bg-slate-800 ring-1 ring-white/10">
                       {(selectedConversation?.otherUser || directMessageTarget)?.profilePictureUrl ? (
                         <img src={(selectedConversation?.otherUser || directMessageTarget).profilePictureUrl} alt={(selectedConversation?.otherUser || directMessageTarget).name} className="h-full w-full object-cover" />
                       ) : (
@@ -603,13 +627,14 @@ function MessagesPage() {
                           {((selectedConversation?.otherUser || directMessageTarget)?.username || 'U').slice(0, 1).toUpperCase()}
                         </span>
                       )}
+                      <span className="absolute bottom-0.5 right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[var(--ochi-surface)] bg-emerald-400" aria-hidden="true" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white">{(selectedConversation?.otherUser || directMessageTarget)?.name}</p>
+                      <p className="text-sm font-semibold text-white">{(selectedConversation?.otherUser || directMessageTarget)?.name}</p>
                       <div className="flex items-center gap-2">
                         <p className="text-[11px] text-slate-400">@{(selectedConversation?.otherUser || directMessageTarget)?.username}</p>
                         {(selectedConversation?.otherUser || directMessageTarget)?.accountType === 'comedian' && (
-                          <span className="inline-flex items-center rounded-full border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-[0.08em] text-slate-200">
+                          <span className="inline-flex items-center rounded-full border border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-[var(--ochi-accent-light)]">
                             Comedian
                           </span>
                         )}
@@ -617,12 +642,12 @@ function MessagesPage() {
                     </div>
                   </div>
 
-                  <button className="rounded-full border border-slate-700 bg-slate-900 p-2 text-slate-300 transition hover:text-white" title="More actions">
+                  <button type="button" className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-lg text-slate-300 transition hover:bg-white/[0.08] hover:text-white" title="More actions" aria-label="More conversation actions">
                     ⋯
                   </button>
                 </header>
 
-                <div className="no-scrollbar flex-1 overflow-y-auto bg-slate-950/40 p-3 pb-4 sm:p-4 sm:pb-5">
+                <div className="no-scrollbar flex-1 overflow-y-auto bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.018),transparent_55%)] p-3 pb-4 sm:p-5 sm:pb-6">
                   {chatLoading ? (
                     <div className="space-y-3">
                       {[1, 2, 3].map((i) => (
@@ -638,14 +663,14 @@ function MessagesPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="mx-auto max-w-3xl space-y-4">
                       {messages.map((msg) => (
                         <div key={msg._id} className={`flex ${msg.senderId === sessionUser.id ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[82%] rounded-2xl px-3 py-2.5 ${msg.senderId === sessionUser.id ? 'bg-slate-200 text-slate-950' : 'border border-slate-800 bg-slate-900 text-slate-100'}`}>
+                        <div className={`max-w-[88%] rounded-[20px] px-4 py-3 sm:max-w-[76%] ${msg.senderId === sessionUser.id ? 'rounded-br-md bg-[var(--ochi-accent-strong)] text-white shadow-[0_8px_24px_rgba(236,95,69,0.14)]' : 'rounded-bl-md border border-white/[0.07] bg-[var(--ochi-surface-raised)] text-slate-100'}`}>
                             {msg.text && <p className="text-sm leading-6 break-words">{msg.text}</p>}
-                            <div className={`mt-1 flex items-center justify-between gap-2 text-[10px] ${msg.senderId === sessionUser.id ? 'text-slate-600' : 'text-slate-400'}`}>
+                          <div className={`mt-1.5 flex items-center justify-between gap-2 text-[10px] ${msg.senderId === sessionUser.id ? 'text-white/65' : 'text-slate-500'}`}>
                               <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                              {msg.senderId === sessionUser.id && msg.isRead && <span>✓✓</span>}
+                            {msg.senderId === sessionUser.id && msg.isRead && <span aria-label="Read">✓✓</span>}
                             </div>
                             <MessageReactions message={msg} onAddReaction={handleAddReaction} />
                           </div>
@@ -669,10 +694,10 @@ function MessagesPage() {
                 </div>
 
                 {selectedConversation && !selectedConversation.isAccepted && activeTab === 'requests' && (
-                  <div className="border-t border-slate-800 bg-slate-900/80 p-3">
+                  <div className="border-t border-white/[0.07] bg-amber-400/[0.04] p-3 sm:px-5">
                     <button
                       onClick={handleAcceptRequest}
-                      className="w-full rounded-xl bg-slate-200 px-4 py-2.5 text-sm font-medium text-slate-900 transition hover:bg-white"
+                      className="w-full rounded-xl bg-[var(--ochi-accent)] px-4 py-3 text-sm font-semibold text-[#190d0a] transition hover:bg-[var(--ochi-accent-light)]"
                     >
                       Accept message request
                     </button>
@@ -680,15 +705,15 @@ function MessagesPage() {
                 )}
 
                 {selectedConversation?.isUnread && (
-                  <div className="border-b border-slate-800 bg-slate-900/80 px-3 py-2 text-[10px] font-medium uppercase tracking-[0.12em] text-slate-300">
+                  <div className="border-b border-white/[0.07] bg-[var(--ochi-accent-10)] px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ochi-accent-light)]">
                     New message
                   </div>
                 )}
 
-                <form onSubmit={handleSendMessage} className="flex-shrink-0 border-t border-slate-800 bg-slate-950/80 p-3 pb-[max(0.8rem,calc(env(safe-area-inset-bottom)+0.5rem))] sm:p-4 sm:pb-[max(1rem,calc(env(safe-area-inset-bottom)+0.75rem))]">
-                  {chatError ? <div className="mb-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">{chatError}</div> : null}
-                  <div className="flex w-full items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-2 py-1.5 shadow-[0_-8px_20px_rgba(15,23,42,0.2)]">
-                    <button type="button" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-lg text-slate-300 transition hover:bg-slate-700 hover:text-white" aria-label="Add attachment">
+                <form onSubmit={handleSendMessage} className="flex-shrink-0 border-t border-white/[0.07] bg-[var(--ochi-surface)] p-3 pb-[max(0.8rem,calc(env(safe-area-inset-bottom)+0.5rem))] sm:px-5 sm:py-4 sm:pb-[max(1rem,calc(env(safe-area-inset-bottom)+0.75rem))]">
+                  {chatError ? <div className="mb-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200" role="alert">{chatError}</div> : null}
+                  <div className="mx-auto flex w-full max-w-3xl items-center gap-2 rounded-2xl border border-white/[0.09] bg-black/20 p-1.5 transition focus-within:border-[var(--ochi-accent-30)]">
+                    <button type="button" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg text-slate-400 transition hover:bg-white/[0.06] hover:text-white" aria-label="Add attachment">
                       +
                     </button>
                     <input
@@ -696,12 +721,12 @@ function MessagesPage() {
                       value={messageText}
                       onChange={handleTyping}
                       placeholder={((selectedConversation?.otherUser || directMessageTarget)?.username) ? `Message @${(selectedConversation?.otherUser || directMessageTarget).username}` : 'Type a message...'}
-                      className="min-w-0 flex-1 border-0 bg-transparent px-2 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none"
+                      className="min-w-0 flex-1 border-0 bg-transparent px-1 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none"
                     />
                     <button
                       type="submit"
                       disabled={!messageText.trim()}
-                      className="shrink-0 rounded-full bg-slate-200 px-3.5 py-2 text-sm font-medium text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45"
+                      className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--ochi-accent)] px-4 text-sm font-semibold text-[#190d0a] transition hover:bg-[var(--ochi-accent-light)] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Send
                     </button>
@@ -709,11 +734,11 @@ function MessagesPage() {
                 </form>
               </>
             ) : (
-              <div className="flex h-full items-center justify-center text-center">
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-5 py-6">
-                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-xl">✦</div>
-                  <p className="text-sm font-medium text-white">Choose a conversation</p>
-                  <p className="mt-1 text-xs text-slate-400">Your messages will appear here.</p>
+              <div className="flex h-full items-center justify-center bg-[radial-gradient(ellipse_at_center,rgba(255,118,94,0.06),transparent_55%)] px-5 text-center">
+              <div className="max-w-sm">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[22px] border border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] text-2xl text-[var(--ochi-accent-light)]">✦</div>
+                <p className="text-lg font-semibold tracking-tight text-white">Good conversations start here</p>
+                <p className="mt-2 text-sm leading-6 text-slate-500">Choose a conversation to catch up with your community.</p>
                 </div>
               </div>
             )}

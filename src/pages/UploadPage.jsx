@@ -864,15 +864,15 @@ function UploadPage() {
         }
       `}</style>
 
-      <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-slate-950 text-white">
+      <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[var(--ochi-bg)] text-[var(--ochi-text)]">
         {/* ambient depth */}
-        <div className="pointer-events-none absolute inset-0 opacity-70">
-          <div className="absolute -left-24 top-[-10%] h-72 w-72 rounded-full bg-rose-500/10 blur-3xl" />
-          <div className="absolute -right-24 bottom-[-10%] h-80 w-80 rounded-full bg-slate-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 opacity-80">
+          <div className="absolute -left-24 top-[-10%] h-72 w-72 rounded-full bg-[var(--ochi-accent-10)] blur-3xl" />
+          <div className="absolute -right-24 bottom-[-10%] h-80 w-80 rounded-full bg-[var(--ochi-lime)]/[0.035] blur-3xl" />
         </div>
 
         {/* ---------------- Header ---------------- */}
-        <header className="relative z-10 flex shrink-0 items-center gap-3 border-b border-white/10 bg-slate-950/80 px-4 py-3 backdrop-blur-xl sm:gap-4 sm:px-6">
+        <header className="relative z-10 flex shrink-0 items-center gap-3 border-b border-white/[0.07] bg-[var(--ochi-bg)]/90 px-3 py-3 backdrop-blur-xl sm:gap-4 sm:px-6 sm:py-4">
           <button
             type="button"
             onClick={() => {
@@ -880,14 +880,14 @@ function UploadPage() {
               navigate(-1);
             }}
             aria-label="Close upload"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-slate-200 transition hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60"
           >
             <CloseIcon />
           </button>
 
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-medium uppercase tracking-[0.34em] text-slate-500">{comedian ? `Comedian Studio · Level ${comedianProfile?.level || 1} ${comedianProfile?.levelName || 'Rookie'}` : 'Creator Studio'}</p>
-            <h1 className="truncate text-sm font-semibold tracking-tight text-white">{screen === 'live' ? 'Prepare a live room' : 'Create a post'}</h1>
+            <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[var(--ochi-accent-light)]">{comedian ? `Creator studio · Level ${comedianProfile?.level || 1} ${comedianProfile?.levelName || 'Rookie'}` : 'Creator studio'}</p>
+            <h1 className="truncate text-base font-semibold tracking-tight text-white sm:text-lg">{screen === 'live' ? 'Go live' : screen === 'preview' ? 'Review your post' : 'Create something new'}</h1>
           </div>
 
           {/* step indicator — Capture → Details → Publish */}
@@ -901,7 +901,7 @@ function UploadPage() {
                   <span
                     className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-medium tracking-wide transition-all duration-300 ${
                       active
-                        ? 'border-rose-400/40 bg-rose-500/15 text-white'
+                        ? 'border-[var(--ochi-accent-40)] bg-[var(--ochi-accent-15)] text-white'
                         : done
                           ? 'border-white/10 bg-white/5 text-slate-300'
                           : 'border-white/10 bg-transparent text-slate-500'
@@ -909,7 +909,7 @@ function UploadPage() {
                   >
                     <span
                       className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${
-                        active ? 'bg-rose-500 text-white' : done ? 'bg-white/15 text-white' : 'bg-white/10 text-slate-400'
+                        active ? 'bg-[var(--ochi-accent)] text-[#190d0a]' : done ? 'bg-white/15 text-white' : 'bg-white/10 text-slate-400'
                       }`}
                     >
                       {done ? <CheckIcon className="h-2.5 w-2.5" /> : n}
@@ -931,7 +931,7 @@ function UploadPage() {
             type="button"
             onClick={handlePublish}
             disabled={!canPost}
-            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-rose-500 px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-slate-500"
+            className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-[var(--ochi-accent)] px-4 py-2 text-[13px] font-semibold text-[#190d0a] transition hover:bg-[var(--ochi-accent-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-slate-500"
           >
             {uploading ? (
               <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
@@ -951,7 +951,7 @@ function UploadPage() {
         </div>
 
         {/* ---------------- Body ---------------- */}
-        <main className="relative z-10 flex min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-[1200px] lg:flex-row lg:gap-6 lg:p-6">
+        <main className="relative z-10 flex min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-[1320px] lg:flex-row lg:items-center lg:gap-7 lg:p-6 xl:gap-9 xl:p-8">
           {/* left rail — desktop mode switcher (TikTok/Twitch style) */}
           <aside className="hidden shrink-0 flex-col gap-2 lg:flex" aria-label="Upload mode">
             {options.filter((option) => comedian || option.key !== 'live').map((option) => {
@@ -963,15 +963,15 @@ function UploadPage() {
                   type="button"
                   aria-pressed={active}
                   onClick={() => handleOption(option.key)}
-                  className={`group relative flex w-[78px] flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 ${
+                  className={`group relative flex w-[84px] flex-col items-center gap-1.5 rounded-2xl border px-2 py-4 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 ${
                     active
-                      ? 'border-white/15 bg-white/10 text-white shadow-lg shadow-black/40'
+                      ? 'border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] text-white shadow-lg shadow-black/30'
                       : 'border-transparent text-slate-400 hover:border-white/10 hover:bg-white/5 hover:text-slate-200'
                   }`}
                 >
                   <span
                     className={`absolute left-0 top-1/2 h-7 -translate-y-1/2 rounded-r-full bg-rose-500 transition-all duration-300 ${
-                      active ? 'w-[3px] opacity-100' : 'w-0 opacity-0'
+                      active ? 'w-1 opacity-100' : 'w-0 opacity-0'
                     }`}
                   />
                   <Glyph
@@ -992,7 +992,7 @@ function UploadPage() {
             }}
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
-            className={`up-mobile-stage ${screen !== 'preview' ? 'up-capture-stage' : ''} relative min-h-0 flex-1 overflow-hidden bg-black transition-all duration-300 lg:h-auto lg:min-h-0 lg:flex-1 lg:shrink lg:rounded-[28px] lg:border lg:shadow-2xl lg:shadow-black/40 lg:max-h-[calc(100dvh-8rem)] lg:aspect-[9/16] lg:max-w-[420px] ${
+            className={`up-mobile-stage ${screen !== 'preview' ? 'up-capture-stage' : ''} relative min-h-0 flex-1 overflow-hidden bg-[#050506] transition-all duration-300 lg:h-auto lg:min-h-0 lg:flex-1 lg:shrink lg:rounded-[30px] lg:border lg:shadow-[0_32px_100px_rgba(0,0,0,0.5)] lg:max-h-[calc(100dvh-8rem)] lg:aspect-[9/16] lg:max-w-[440px] ${
               dragging ? 'lg:border-rose-400/60 lg:ring-2 lg:ring-rose-400/30' : 'lg:border-white/10'
             }`}
           >
@@ -1110,7 +1110,7 @@ function UploadPage() {
           </section>
 
           {/* Controls / details */}
-          <section className={`up-scroll ${screen !== 'preview' ? 'up-capture-controls' : ''} pointer-events-auto absolute inset-x-0 bottom-0 z-20 min-h-0 touch-manipulation overflow-y-auto overscroll-contain px-3 pb-[calc(.65rem+env(safe-area-inset-bottom))] pt-2 sm:px-6 lg:relative lg:inset-auto lg:max-h-none lg:w-[380px] lg:flex-none lg:rounded-[28px] lg:border lg:px-5 lg:py-5 lg:shadow-none ${liveStarted && screen === 'live' ? 'max-h-none bg-transparent' : `rounded-t-2xl border-t border-white/15 bg-slate-950/95 ${screen === 'live' ? 'max-h-[34dvh] sm:max-h-[42dvh]' : 'max-h-[44dvh]'}`} ${screen !== 'live' ? 'lg:bg-transparent' : ''}`}>
+          <section className={`up-scroll ${screen !== 'preview' ? 'up-capture-controls' : ''} pointer-events-auto absolute inset-x-0 bottom-0 z-20 min-h-0 touch-manipulation overflow-y-auto overscroll-contain px-3 pb-[calc(.65rem+env(safe-area-inset-bottom))] pt-2 sm:px-6 lg:relative lg:inset-auto lg:max-h-[calc(100dvh-8rem)] lg:w-[400px] lg:flex-none lg:rounded-[28px] lg:border lg:border-white/[0.07] lg:bg-[var(--ochi-surface)] lg:px-5 lg:py-5 lg:shadow-[var(--ochi-shadow-card)] ${liveStarted && screen === 'live' ? 'max-h-none bg-transparent' : `rounded-t-2xl border-t border-white/15 bg-[var(--ochi-bg)]/95 ${screen === 'live' ? 'max-h-[34dvh] sm:max-h-[42dvh]' : 'max-h-[44dvh]'}`} ${screen !== 'live' ? 'lg:bg-[var(--ochi-surface)]' : ''}`}>
             {/* mobile mode switcher */}
             <div
               role="tablist"
@@ -1144,15 +1144,15 @@ function UploadPage() {
               {screen === 'preview' ? (
                 <div key="p-preview" className="space-y-3">
                   {/* caption */}
-                  <div className="up-rise rounded-[28px] border border-white/10 bg-slate-950/90 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.85)]">
+                  <div className="up-rise rounded-[24px] border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.85)]">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-sm font-semibold text-white">Caption</p>
-                        <p className="mt-2 max-w-sm text-sm leading-6 text-slate-400">
-                          Add hashtags and a short description that feels polished and on-brand.
+                        <p className="text-base font-semibold text-white">Tell the story</p>
+                        <p className="mt-1.5 max-w-sm text-xs leading-5 text-slate-400">
+                          Add a caption that gives people a reason to watch and respond.
                         </p>
                       </div>
-                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                      <span className="rounded-full border border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ochi-accent-light)]">
                         {previewType}
                       </span>
                     </div>
@@ -1161,10 +1161,10 @@ function UploadPage() {
                       <textarea
                         value={caption}
                         onChange={(e) => setCaption(e.target.value)}
-                        rows={4}
+                        rows={3}
                         maxLength={200}
-                        placeholder="Write a caption with hashtags and a strong hook…"
-                        className="w-full min-h-[140px] resize-none rounded-[24px] border border-white/10 bg-slate-950/90 px-4 py-4 text-sm leading-6 text-white outline-none transition duration-200 placeholder:text-slate-500 focus:border-rose-400/50 focus:ring-2 focus:ring-rose-400/15"
+                        placeholder="What’s happening in this moment?"
+                        className="w-full min-h-[112px] resize-none rounded-2xl border border-white/[0.08] bg-black/20 px-4 py-3.5 text-sm leading-6 text-white outline-none transition duration-200 placeholder:text-slate-500 focus:border-[var(--ochi-accent-40)] focus:ring-2 focus:ring-rose-400/15"
                       />
                       <span className="pointer-events-none absolute bottom-3 right-3 text-xs font-medium tabular-nums text-slate-500">
                         {caption.length}/200
@@ -1192,8 +1192,9 @@ function UploadPage() {
                   </div>
 
                   {/* audience */}
-                  <div className="up-rise up-d1 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-                    <p className="text-sm font-semibold text-white">Who can watch</p>
+                  <div className="up-rise up-d1 rounded-[22px] border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4">
+                    <p className="text-sm font-semibold text-white">Audience & interaction</p>
+                    <p className="mt-1 text-xs text-slate-500">Choose who can see this post.</p>
                     <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-xl border border-white/10 bg-white/5 p-1.5">
                       {privacyOptions.map((opt) => {
                         const active = privacy === opt.key;
@@ -1266,7 +1267,7 @@ function UploadPage() {
                 </div>
               ) : screen === 'live' ? (
                 <>
-                <div key="p-live" className={`up-rise rounded-2xl border border-white/10 bg-slate-900/70 p-3.5 sm:p-4 ${liveStarted ? 'hidden' : 'space-y-3'}`}>
+                <div key="p-live" className={`up-rise rounded-[22px] border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4 sm:p-5 ${liveStarted ? 'hidden' : 'space-y-3'}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-white">Live room setup</p>
@@ -1388,10 +1389,10 @@ function UploadPage() {
                 ) : null}
                 </>
               ) : screen === 'gallery' ? (
-                <div key="p-gallery" className="up-rise space-y-4 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+                <div key="p-gallery" className="up-rise space-y-4 rounded-[22px] border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4 sm:p-5">
                   <div>
-                    <p className="text-sm font-semibold text-white">Upload from device</p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-slate-400">Choose a photo or video, or drop it on the canvas.</p>
+                    <p className="text-base font-semibold text-white">Bring your moment to the stage</p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-slate-400">Choose a photo or video from your device, or drop it on the preview.</p>
                   </div>
                   <button
                     type="button"
@@ -1411,18 +1412,18 @@ function UploadPage() {
                   </ul>
                 </div>
               ) : (
-                <div key="p-camera" className="up-rise rounded-xl border border-white/10 bg-slate-900/70 p-3">
+                <div key="p-camera" className="up-rise rounded-[22px] border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4 sm:p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-white">
-                        {activeTab === 'photo' ? 'Snap a photo' : recording ? 'Recording' : 'Record a video'}
+                        {activeTab === 'photo' ? 'Capture a photo' : recording ? 'You’re recording' : 'Capture a video'}
                       </p>
                       <p className="mt-1.5 text-sm leading-relaxed text-slate-400">
                         {activeTab === 'photo'
-                          ? 'Press the shutter to capture.'
+                          ? 'Frame the moment, then tap the shutter.'
                           : recording
-                            ? 'Tap again to stop and review.'
-                            : 'Tap to start capturing.'}
+                            ? 'Tap the center button when you’re ready to review.'
+                            : 'Keep it natural. You can review before sharing.'}
                       </p>
                     </div>
                     <span className="mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.2em] text-slate-400">
@@ -1474,7 +1475,7 @@ function UploadPage() {
             </div>
 
             {status && (
-              <p className="mt-4 text-center text-[11px] font-medium uppercase tracking-[0.24em] text-slate-500">{status}</p>
+              <p className="mt-4 text-center text-[11px] font-medium tracking-wide text-slate-500" role="status">{status}</p>
             )}
           </section>
         </main>
