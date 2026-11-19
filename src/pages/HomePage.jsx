@@ -49,6 +49,19 @@ const buildCommentTree = (comments) => {
   return roots;
 };
 
+const formatCommentTime = (value) => {
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return 'Just now';
+  const elapsedMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+  if (elapsedMinutes < 1) return 'Just now';
+  if (elapsedMinutes < 60) return `${elapsedMinutes}m ago`;
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) return `${elapsedHours}h ago`;
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  if (elapsedDays < 7) return `${elapsedDays}d ago`;
+  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(timestamp);
+};
+
 const FeedIcon = ({ type, active = false }) => {
   const common = 'h-5 w-5';
   if (type === 'like') {
@@ -453,6 +466,17 @@ function HomePage() {
   const activeCommentThread = buildCommentTree(activeCommentVideo?.commentThread);
 
   useEffect(() => {
+    if (!videoId || new URLSearchParams(location.search).get('comments') !== '1') return;
+    const targetVideo = videos.find((video) => String(video.id) === String(videoId));
+    if (targetVideo) {
+      setCommentSheetVideoId(targetVideo.id);
+      setCommentDraft('');
+      setReplyTarget(null);
+      setCommentError('');
+    }
+  }, [location.search, videoId, videos]);
+
+  useEffect(() => {
     if (!activeCommentVideoId) return undefined;
     const previousOverflow = document.body.style.overflow;
     const handleKeyDown = (event) => {
@@ -819,118 +843,177 @@ function HomePage() {
       </div>
 
       {activeCommentVideo ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-3 pb-0 pt-10 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) setCommentSheetVideoId(null); }}>
-          <div role="dialog" aria-modal="true" aria-labelledby="feed-comments-title" className="w-full max-w-xl overflow-hidden rounded-t-[28px] border border-slate-700 bg-slate-950/95 shadow-[0_-25px_60px_rgba(2,6,23,0.8)]">
-            <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Comments</p>
-                <h3 id="feed-comments-title" className="text-lg font-semibold text-white">{Number(activeCommentVideo.comments || activeCommentThread.length || 0).toLocaleString()}</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-5"
+          onMouseDown={(event) => { if (event.target === event.currentTarget) setCommentSheetVideoId(null); }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="feed-comments-title"
+            className="flex h-[min(88dvh,780px)] w-full max-w-2xl flex-col overflow-hidden rounded-t-[28px] border border-white/[0.09] bg-[var(--ochi-surface)] shadow-[0_30px_100px_rgba(0,0,0,0.65)] sm:h-[min(82vh,760px)] sm:rounded-[28px]"
+          >
+            <div className="shrink-0 border-b border-white/[0.07] bg-[radial-gradient(ellipse_at_top_right,rgba(255,118,94,0.1),transparent_58%)] px-4 pb-4 pt-3 sm:px-6 sm:pt-5">
+              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20 sm:hidden" aria-hidden="true" />
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 id="feed-comments-title" className="text-xl font-semibold tracking-tight text-white sm:text-2xl">Conversation</h3>
+                    <span className="inline-flex min-w-7 items-center justify-center rounded-full border border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] px-2 py-0.5 text-xs font-semibold tabular-nums text-[var(--ochi-accent-light)]">
+                      {Number(activeCommentVideo.comments || activeCommentThread.length || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="mt-1 truncate text-sm text-slate-400">
+                    Join the conversation on <span className="font-medium text-slate-200">{activeCommentVideo.creatorName || 'this post'}’s post</span>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCommentSheetVideoId(null);
+                    setCommentDraft('');
+                    setReplyTarget(null);
+                  }}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
+                  aria-label="Close comments"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                    <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setCommentSheetVideoId(null);
-                  setCommentDraft('');
-                  setReplyTarget(null);
-                }}
-                className="rounded-full border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-300 hover:text-white"
-                aria-label="Close comments"
-              >
-                Close
-              </button>
+              {activeCommentVideo.title ? (
+                <div className="mt-4 rounded-xl border border-white/[0.06] bg-black/15 px-3.5 py-2.5">
+                  <p className="line-clamp-2 text-xs leading-5 text-slate-400">{activeCommentVideo.title}</p>
+                </div>
+              ) : null}
             </div>
 
-            <div className="max-h-[52vh] space-y-3 overflow-y-auto px-4 py-4">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
               {activeCommentThread.length ? (
-                activeCommentThread.map((comment, index) => {
-                  const author = comment.userName || 'Creator';
-                  const initial = author.charAt(0).toUpperCase() || 'C';
-                  const commentText = typeof comment.text === 'string' ? comment.text : '';
-                  const createdAt = comment.createdAt ? new Date(comment.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Now';
+                <div className="mx-auto max-w-xl space-y-5">
+                  {activeCommentThread.map((comment, index) => {
+                    const author = comment.userName || 'Creator';
+                    const initial = author.charAt(0).toUpperCase() || 'C';
+                    const commentText = typeof comment.text === 'string' ? comment.text : '';
 
-                  return (
-                    <div key={comment.commentId || `${comment.userId || author}-${index}`} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-sky-500 text-xs font-bold text-white">
+                    return (
+                      <article key={comment.commentId || `${comment.userId || author}-${index}`} className="flex gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08] bg-[var(--ochi-surface-raised)] text-sm font-semibold text-[var(--ochi-accent-light)]">
                           {initial}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-medium text-white">{author}</p>
-                              <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">{createdAt}</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (!getStoredSession().token) {
-                                  requireAccount('reply to comments');
-                                  return;
-                                }
-                                setReplyTarget({ userName: author, userId: comment.userId || author, commentId: comment.commentId });
-                              }}
-                              className="text-[10px] uppercase tracking-[0.16em] text-sky-300 hover:text-sky-200"
-                              disabled={!comment.commentId}
-                            >
-                              Reply
-                            </button>
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-sm font-semibold text-white">{author}</p>
+                            <span className="text-xs text-slate-500">· {formatCommentTime(comment.createdAt)}</span>
                           </div>
-                          <p className="mt-2 text-sm leading-6 text-slate-200">{commentText}</p>
+                          <p className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-6 text-slate-300">{commentText}</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!getStoredSession().token) {
+                                requireAccount('reply to comments');
+                                return;
+                              }
+                              setReplyTarget({ userName: author, userId: comment.userId || author, commentId: comment.commentId });
+                              commentComposerRef.current?.focus();
+                            }}
+                            className="mt-2 rounded-md text-xs font-semibold text-slate-500 transition hover:text-[var(--ochi-accent-light)] focus-visible:text-[var(--ochi-accent-light)]"
+                            disabled={!comment.commentId || activeCommentVideo.allowComments === false}
+                          >
+                            Reply
+                          </button>
                           {comment.replies?.length ? (
-                            <div className="mt-3 space-y-2 border-l border-slate-700 pl-3">
-                              {comment.replies.map((reply, replyIndex) => (
-                                <div key={reply.commentId || `${reply.userId || 'reply'}-${replyIndex}`} className="text-sm">
-                                  <span className="font-medium text-slate-300">{reply.userName || 'Creator'} </span>
-                                  <span className="text-slate-300">{reply.text}</span>
-                                </div>
-                              ))}
+                            <div className="mt-3 space-y-4 border-l border-white/[0.1] pl-3 sm:pl-4">
+                              {comment.replies.map((reply, replyIndex) => {
+                                const replyAuthor = reply.userName || 'Creator';
+                                return (
+                                  <div key={reply.commentId || `${reply.userId || 'reply'}-${replyIndex}`} className="flex gap-2.5">
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-[11px] font-semibold text-slate-300">
+                                      {replyAuthor.charAt(0).toUpperCase() || 'C'}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <p className="truncate text-xs font-semibold text-slate-200">{replyAuthor}</p>
+                                        <span className="text-[10px] text-slate-500">· {formatCommentTime(reply.createdAt)}</span>
+                                      </div>
+                                      <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-5 text-slate-400">{reply.text}</p>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           ) : null}
                         </div>
-                      </div>
-                    </div>
-                  );
-                })
+                      </article>
+                    );
+                  })}
+                </div>
               ) : (
-                <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/60 p-5 text-center text-sm text-slate-400">
-                  Be the first to comment on this post.
+                <div className="flex h-full min-h-56 items-center justify-center px-5 text-center">
+                  <div className="max-w-xs">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[20px] border border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] text-xl text-[var(--ochi-accent-light)]">
+                      <FeedIcon type="comment" />
+                    </div>
+                    <p className="mt-4 text-base font-semibold text-white">Start a good conversation</p>
+                    <p className="mt-1.5 text-sm leading-6 text-slate-500">Be the first to share a thought about this post.</p>
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="border-t border-slate-800 bg-slate-950/90 p-4">
+            <div className="shrink-0 border-t border-white/[0.07] bg-[var(--ochi-surface)] px-3 py-3 pb-[max(.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-4">
               {replyTarget ? (
-                <div className="mb-2 flex items-center justify-between gap-3 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs text-sky-200">
-                  <span>Replying to @{replyTarget.userName}</span>
-                  <button type="button" onClick={() => setReplyTarget(null)} className="text-sky-200 hover:text-white">
-                    Cancel
-                  </button>
+                <div className="mb-2 flex items-center justify-between gap-3 rounded-xl border border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] px-3 py-2 text-xs text-[var(--ochi-accent-light)]">
+                  <span>Replying to <strong>@{replyTarget.userName}</strong></span>
+                  <button type="button" onClick={() => setReplyTarget(null)} className="font-semibold text-slate-300 transition hover:text-white">Cancel</button>
                 </div>
               ) : null}
 
-              <div className="flex items-end gap-2">
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleSubmitComment();
+                }}
+                className="mx-auto flex max-w-xl items-end gap-2 rounded-2xl border border-white/[0.09] bg-black/20 p-1.5 transition focus-within:border-[var(--ochi-accent-30)]"
+              >
                 <textarea
                   ref={commentComposerRef}
                   value={commentDraft}
                   onChange={(event) => setCommentDraft(event.target.value)}
                   maxLength={500}
                   rows={1}
-                  placeholder={replyTarget ? `Reply to ${replyTarget.userName}...` : 'Add a comment...'}
+                  placeholder={replyTarget ? `Reply to ${replyTarget.userName}...` : 'Add to the conversation...'}
                   disabled={activeCommentVideo.allowComments === false || commentSubmitting}
                   aria-label={replyTarget ? `Reply to ${replyTarget.userName}` : 'Add a comment'}
-                  className="max-h-28 min-h-[44px] flex-1 resize-none rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none disabled:cursor-not-allowed"
                 />
                 <button
-                  type="button"
-                  onClick={handleSubmitComment}
+                  type="submit"
                   disabled={!String(commentDraft || '').trim() || commentSubmitting || activeCommentVideo.allowComments === false}
-                  className="rounded-2xl border border-sky-500/40 bg-sky-500/15 px-4 py-2.5 text-sm font-semibold text-sky-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[var(--ochi-accent)] px-4 text-sm font-semibold text-[#190d0a] transition hover:bg-[var(--ochi-accent-light)] disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {commentSubmitting ? 'Posting…' : replyTarget ? 'Reply' : 'Post'}
+                  {commentSubmitting ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#190d0a]/30 border-t-[#190d0a]" />
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                      <path d="M22 2 15 22l-4-9-9-4 20-7Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M22 2 11 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
+                  )}
+                  <span className="hidden sm:inline">{commentSubmitting ? 'Posting' : replyTarget ? 'Reply' : 'Send'}</span>
                 </button>
+              </form>
+              <div className="mx-auto mt-2 flex max-w-xl items-center justify-between gap-3 px-1">
+                {activeCommentVideo.allowComments === false ? (
+                  <p className="text-xs text-slate-500">Comments are disabled for this post.</p>
+                ) : commentError ? (
+                  <p role="alert" className="text-xs text-rose-300">{commentError}</p>
+                ) : (
+                  <p className="text-[10px] text-slate-600">Keep it kind. Your words are public.</p>
+                )}
+                <span className="shrink-0 text-[10px] tabular-nums text-slate-600">{commentDraft.length}/500</span>
               </div>
-              {activeCommentVideo.allowComments === false ? <p className="mt-2 text-xs text-slate-500">Comments are disabled for this post.</p> : null}
-              {commentError ? <p role="alert" className="mt-2 text-xs text-rose-300">{commentError}</p> : null}
             </div>
           </div>
         </div>
