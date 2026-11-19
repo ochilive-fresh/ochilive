@@ -7,15 +7,15 @@
   --ochi-bg: #090a0d;
   --ochi-surface: #111318;
   --ochi-surface-raised: #191c23;
-  --ochi-accent: #4d2324;
-  --ochi-accent-strong: #4d2324;
-  --ochi-accent-light: #c58f91;
-  --ochi-accent-10: rgba(77, 35, 36, 0.1);
-  --ochi-accent-15: rgba(77, 35, 36, 0.15);
-  --ochi-accent-20: rgba(77, 35, 36, 0.2);
-  --ochi-accent-30: rgba(77, 35, 36, 0.3);
-  --ochi-accent-40: rgba(77, 35, 36, 0.4);
-  --ochi-accent-80: rgba(77, 35, 36, 0.8);
+  --ochi-accent: #c5e84c;
+  --ochi-accent-strong: #b7d93e;
+  --ochi-accent-light: #d8f57e;
+  --ochi-accent-10: rgba(197, 232, 76, 0.1);
+  --ochi-accent-15: rgba(197, 232, 76, 0.15);
+  --ochi-accent-20: rgba(197, 232, 76, 0.2);
+  --ochi-accent-30: rgba(197, 232, 76, 0.3);
+  --ochi-accent-40: rgba(197, 232, 76, 0.4);
+  --ochi-accent-80: rgba(197, 232, 76, 0.8);
   --ochi-muted: #9699a4;
   --ochi-text: #f4f3ef;
   --ochi-line: rgba(255, 255, 255, 0.075);
@@ -93,14 +93,14 @@
 }
 .from-rose-500 {
   --tw-gradient-from: var(--ochi-accent-strong);
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(77, 35, 36, 0));
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(197, 232, 76, 0));
 }
 .to-rose-500 {
   --tw-gradient-to: var(--ochi-accent-strong);
 }
 .from-pink-500 {
   --tw-gradient-from: var(--ochi-accent-strong);
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(77, 35, 36, 0));
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(197, 232, 76, 0));
 }
 .to-pink-500 {
   --tw-gradient-to: var(--ochi-accent-strong);
@@ -122,7 +122,7 @@ html, body, #root {
   overflow-x: clip;
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background:
-    radial-gradient(ellipse at 78% -18%, rgba(77, 35, 36, 0.09), transparent 34%),
+    radial-gradient(ellipse at 78% -18%, rgba(197, 232, 76, 0.09), transparent 34%),
     radial-gradient(ellipse at 7% 26%, rgba(215, 245, 106, 0.025), transparent 28%),
     #090a0d;
   color: var(--ochi-text);
@@ -197,7 +197,7 @@ textarea {
 }
 
 ::selection {
-  background: rgba(77, 35, 36, 0.7);
+  background: rgba(197, 232, 76, 0.7);
   color: white;
 }
 

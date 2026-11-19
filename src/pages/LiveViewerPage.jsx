@@ -242,7 +242,7 @@ export default function LiveViewerPage() {
               <span aria-hidden="true">↗</span> Share this room
             </button>
           </div>
-          <div className="rounded-[26px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(77,35,36,0.12),transparent_52%),linear-gradient(145deg,#17191f,#111318)] p-5">
+          <div className="rounded-[26px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(197,232,76,0.12),transparent_52%),linear-gradient(145deg,#17191f,#111318)] p-5">
             <p className="ochi-kicker">Keep exploring</p>
             <p className="mt-2 text-sm leading-6 text-slate-300">Find another live set, discover a fresh voice, or join the feed.</p>
             <button type="button" onClick={() => navigate('/home')} className="mt-4 text-sm font-semibold text-[var(--ochi-accent-light)] transition hover:text-white">Back to your stage →</button>

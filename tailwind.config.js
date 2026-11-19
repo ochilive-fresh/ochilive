@@ -10,10 +10,10 @@ export default {
         ochi: {
           bg: '#0b0c10',
           surface: '#15171d',
-          accent: '#4d2324',
+          accent: '#c5e84c',
           muted: '#a4a5ad',
           text: '#f4f1eb',
-          accentSoft: '#c58f91',
+          accentSoft: '#d8f57e',
         },
       },
     },

@@ -446,7 +446,7 @@ function ContentGrid({ items, tab, isOwnProfile, isAuthenticated = true, onRequi
   }
 
   return (
-    <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:gap-4" role="tabpanel">
+    <div className="mt-3 grid grid-cols-3 gap-1 sm:gap-2" role="tabpanel">
       {items.map((item) => (
         <ContentCard key={item.id} item={item} tab={tab} isAuthenticated={isAuthenticated} onRequireAuth={onRequireAuth} />
       ))}

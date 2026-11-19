@@ -16,14 +16,14 @@ function ProfileHeader({ user, relationship, onFollowChange, onShare, onTryComed
 
   return (
     <header className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-[var(--ochi-surface)] sm:rounded-[28px]">
-      <div className="relative h-20 overflow-hidden bg-[radial-gradient(ellipse_at_78%_10%,rgba(77,35,36,0.18),transparent_38%),linear-gradient(115deg,#202128,#111318_74%)] sm:h-28">
+      <div className="relative h-20 overflow-hidden bg-[radial-gradient(ellipse_at_78%_10%,rgba(197,232,76,0.18),transparent_38%),linear-gradient(115deg,#202128,#111318_74%)] sm:h-28">
         <div className="absolute -right-8 -top-28 h-56 w-56 rounded-full border border-white/[0.06]" />
         <div className="absolute -right-1 -top-20 h-40 w-40 rounded-full border border-white/[0.06]" />
       </div>
       <div className="px-4 pb-5 pt-0 sm:px-6 sm:pb-6">
         <div className="-mt-10 flex flex-col gap-4 sm:-mt-12">
           <div className="flex items-end gap-3 sm:gap-4">
-            <div className="relative flex h-[76px] w-[76px] shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-[var(--ochi-surface)] bg-[radial-gradient(ellipse_at_80%_10%,rgba(77,35,36,0.2),transparent_52%),#20232b] text-xl font-bold tracking-wide text-[var(--ochi-accent-light)] sm:h-24 sm:w-24 sm:text-2xl">
+            <div className="relative flex h-[76px] w-[76px] shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-[var(--ochi-surface)] bg-[radial-gradient(ellipse_at_80%_10%,rgba(197,232,76,0.2),transparent_52%),#20232b] text-xl font-bold tracking-wide text-[var(--ochi-accent-light)] sm:h-24 sm:w-24 sm:text-2xl">
               {user?.profilePictureUrl ? <img src={user.profilePictureUrl} alt={`${name} profile`} className="h-full w-full object-cover" /> : <span>{initials}</span>}
             </div>
 

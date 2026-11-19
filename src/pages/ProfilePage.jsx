@@ -246,7 +246,7 @@ function ProfilePage() {
       subtitle="Your presence on Ochi Live"
     >
       {loading ? (
-        <div className="mx-auto w-full max-w-[1040px] space-y-5">
+        <div className="mx-auto w-full max-w-[1180px] space-y-4">
           <div className="h-52 animate-pulse rounded-[28px] border border-white/[0.07] bg-[var(--ochi-surface)]" />
           <div className="grid grid-cols-3 gap-3">
             {[0, 1, 2].map((key) => <div key={key} className="h-20 animate-pulse rounded-2xl bg-[var(--ochi-surface)]" />)}
@@ -254,8 +254,8 @@ function ProfilePage() {
           <div className="h-64 animate-pulse rounded-2xl bg-[var(--ochi-surface)]" />
         </div>
       ) : (
-        <div className="mx-auto w-full max-w-[1040px]">
-          <div className="space-y-4 pb-8 pt-1 sm:space-y-5">
+        <div className="mx-auto w-full max-w-[1180px]">
+          <div className="space-y-3 pb-4 pt-1 sm:space-y-4">
             {profileError ? (
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-3 text-xs leading-5 text-slate-400">
                 {profileError}

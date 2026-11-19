@@ -65,6 +65,11 @@ export const markVideoWatched = async (id, completed = false) => {
   return data;
 };
 
+export const deleteVideoPost = async (id) => {
+  const { data } = await videoApi.delete(`/videos/${encodeURIComponent(id)}`);
+  return data;
+};
+
 export const likeVideo = async (id) => {
   const { data } = await videoApi.post(`/videos/${id}/like`);
   return data;

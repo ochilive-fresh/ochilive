@@ -67,7 +67,7 @@ function ActivityPage() {
           </div>
         ) : (
           <div>
-            <div className="border-b border-white/[0.07] bg-[radial-gradient(ellipse_at_top_right,rgba(77,35,36,0.11),transparent_48%),linear-gradient(135deg,var(--ochi-surface-raised),var(--ochi-surface))] px-5 py-6 sm:px-8 sm:py-8">
+            <div className="border-b border-white/[0.07] bg-[radial-gradient(ellipse_at_top_right,rgba(197,232,76,0.11),transparent_48%),linear-gradient(135deg,var(--ochi-surface-raised),var(--ochi-surface))] px-5 py-6 sm:px-8 sm:py-8">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--ochi-accent-light)]">Your space · Your updates</p>

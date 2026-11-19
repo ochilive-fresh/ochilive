@@ -246,15 +246,14 @@ function UploadPage() {
     getUploadDraft(draftUserId)
       .then((draft) => {
         if (!active || draftHydratedRef.current || !draft) return;
-        if (draft.mediaBlob) {
-          setPreviewUrl(URL.createObjectURL(draft.mediaBlob));
-          setPreviewType(draft.previewType === 'photo' ? 'photo' : 'video');
-          setScreen('preview');
-        }
         setCaption(String(draft.caption || ''));
         setPrivacy(['public', 'followers', 'private'].includes(draft.privacy) ? draft.privacy : 'public');
         setAllowComments(draft.allowComments !== false);
-        if (draft.caption || draft.mediaBlob) setStatus('Draft restored. Continue editing or publish when ready.');
+        setPreviewUrl('');
+        setPreviewType('video');
+        setScreen('camera');
+        if (draft.caption) setStatus('Draft details restored. No file is preselected.');
+        if (fileInputRef.current) fileInputRef.current.value = '';
       })
       .catch((error) => {
         if (active) setStatus(error?.message || 'Unable to restore the saved draft.');
@@ -705,6 +704,7 @@ function UploadPage() {
     setPreviewType(preparedFile.type.startsWith('image/') ? 'photo' : 'video');
     setScreen('preview');
     setStatus('Selected from gallery.');
+    event.target.value = '';
   };
 
   /* drag & drop reuses the exact same selection logic */
@@ -782,6 +782,7 @@ function UploadPage() {
   const resetToCamera = () => {
     setPreviewUrl('');
     setCaption('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setScreen('camera');
     setActiveTab('video');
     setStatus('Ready to capture.');
@@ -962,7 +963,7 @@ function UploadPage() {
                   onClick={() => handleOption(option.key)}
                   className={`group relative flex min-h-10 min-w-[118px] items-center justify-center gap-2 rounded-full px-3.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)] ${
                     active
-                      ? 'bg-[var(--ochi-accent)] text-white shadow-[0_8px_24px_rgba(77,35,36,0.28)]'
+                      ? 'bg-[var(--ochi-accent)] text-[#15170f] shadow-[0_8px_24px_rgba(197,232,76,0.22)]'
                       : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                   }`}
                 >

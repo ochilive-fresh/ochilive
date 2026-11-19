@@ -197,7 +197,7 @@ function DiscoverPage() {
           ) : null}
 
           {!searchTerm.trim() ? (
-            <section className="relative mb-8 overflow-hidden rounded-[32px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_92%_6%,rgba(77,35,36,0.22),transparent_35%),radial-gradient(ellipse_at_10%_100%,rgba(215,245,106,0.07),transparent_38%),linear-gradient(130deg,#17191f,#101115_70%)] px-5 py-7 sm:px-8 sm:py-9 lg:px-10 lg:py-11">
+            <section className="relative mb-8 overflow-hidden rounded-[32px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_92%_6%,rgba(197,232,76,0.22),transparent_35%),radial-gradient(ellipse_at_10%_100%,rgba(215,245,106,0.07),transparent_38%),linear-gradient(130deg,#17191f,#101115_70%)] px-5 py-7 sm:px-8 sm:py-9 lg:px-10 lg:py-11">
               <div className="absolute -right-10 -top-20 h-64 w-64 rounded-full border border-white/[0.05]" />
               <div className="absolute -right-2 -top-12 h-48 w-48 rounded-full border border-white/[0.05]" />
               <div className="relative max-w-2xl">
@@ -321,7 +321,7 @@ function DiscoverPage() {
         ) : null}
 
           {!isSignedIn ? (
-            <section className="rounded-[28px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(77,35,36,0.12),transparent_52%),linear-gradient(145deg,#17191f,#111318)] p-5 sm:p-7">
+            <section className="rounded-[28px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(197,232,76,0.12),transparent_52%),linear-gradient(145deg,#17191f,#111318)] p-5 sm:p-7">
               <p className="ochi-kicker">A seat is waiting</p>
               <h2 className="mt-3 text-xl font-semibold tracking-tight text-white sm:text-2xl">Come in and find your people.</h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">Sign in to browse live rooms, follow creators, and get recommendations shaped around what you love.</p>

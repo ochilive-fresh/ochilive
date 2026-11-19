@@ -6,6 +6,7 @@ import {
   getVideoFeed,
   incrementView,
   markVideoWatched,
+  deleteVideoPost,
   likeVideo,
   commentOnVideo,
   toggleSaveVideo,
@@ -20,7 +21,7 @@ const placeholderImage =
   'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&h=800&fit=crop&q=80';
 
 const homeTabs = [
-  { key: 'recent_live', label: 'Recent Live' },
+  { key: 'recent_live', label: 'Live' },
   { key: 'for_you', label: 'For You' },
 ];
 
@@ -118,6 +119,7 @@ function HomePage() {
   const [heartBurstVideoId, setHeartBurstVideoId] = useState(null);
   const [videoProgress, setVideoProgress] = useState({});
   const [videoLoadState, setVideoLoadState] = useState({});
+  const [mediaAspectRatios, setMediaAspectRatios] = useState({});
 
   const getLikedStorageKey = () => {
     const userId = getStoredSession().user?.id || getStoredSession().user?.username || 'guest';
@@ -382,6 +384,21 @@ function HomePage() {
       showMessage(response.saved ? 'Saved to your library.' : 'Removed from saved posts.');
     } catch {
       showMessage('Unable to save this post.');
+    }
+  };
+
+  const handleDeletePost = async (video) => {
+    if (!getStoredSession().token) {
+      requireAccount('delete posts');
+      return;
+    }
+    if (!window.confirm('Delete this post permanently?')) return;
+    try {
+      await deleteVideoPost(video.id);
+      setVideos((current) => current.filter((item) => String(item.id) !== String(video.id)));
+      showMessage('Post deleted.');
+    } catch (error) {
+      showMessage(error?.response?.data?.message || 'Unable to delete this post.');
     }
   };
 
@@ -685,8 +702,8 @@ function HomePage() {
                 }}
               >
                 <div
-                  className="relative w-full max-h-[700px] overflow-hidden bg-black sm:rounded-t-[29px]"
-                  style={{ height: 'min(70vh, 700px)', minHeight: 'min(280px, 40vh)' }}
+                  className="relative w-full max-h-[70vh] overflow-hidden bg-black sm:rounded-t-[29px]"
+                  style={{ aspectRatio: mediaAspectRatios[video.id] || (isVideoType(video) ? '9 / 16' : '4 / 5'), maxHeight: '70vh' }}
                 >
                 {isVideoType(video) ? (
                   <video
@@ -704,6 +721,10 @@ function HomePage() {
                     onCanPlay={() => setVideoLoadState((current) => ({ ...current, [video.id]: 'ready' }))}
                     onError={() => setVideoLoadState((current) => ({ ...current, [video.id]: 'error' }))}
                     onLoadedMetadata={(event) => {
+                      const { videoWidth, videoHeight } = event.currentTarget;
+                      if (videoWidth && videoHeight) {
+                        setMediaAspectRatios((current) => ({ ...current, [video.id]: `${videoWidth} / ${videoHeight}` }));
+                      }
                       const savedPosition = playbackPositions.current.get(video.id);
                       if (savedPosition && savedPosition < event.currentTarget.duration - 0.5) {
                         event.currentTarget.currentTime = savedPosition;
@@ -722,6 +743,12 @@ function HomePage() {
                     src={getPreviewImage(video)}
                     alt={video.title}
                     className="h-full w-full object-contain"
+                    onLoad={(event) => {
+                      const { naturalWidth, naturalHeight } = event.currentTarget;
+                      if (naturalWidth && naturalHeight) {
+                        setMediaAspectRatios((current) => ({ ...current, [video.id]: `${naturalWidth} / ${naturalHeight}` }));
+                      }
+                    }}
                     onClick={(event) => {
                       if (video.type === 'live') navigate(`/live/${video.id}`);
                       else handlePhotoTap(event, video);
@@ -783,7 +810,7 @@ function HomePage() {
                     />
                   </div>
                 ) : null}
-                <div className="absolute bottom-3 right-3 z-10 flex w-[52px] flex-col items-center gap-0 rounded-[18px] border border-white/15 bg-black/40 p-1 text-white shadow-[0_8px_28px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:bottom-4 sm:right-4">
+                <div className="absolute bottom-3 right-3 z-10 flex flex-row-reverse items-center gap-0.5 rounded-full border border-white/15 bg-black/45 px-1 py-1 text-white shadow-[0_8px_28px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:bottom-4 sm:right-4">
                   <button
                     type="button"
                     disabled={pendingLikes.has(video.id)}
@@ -791,7 +818,7 @@ function HomePage() {
                       event.stopPropagation();
                       handleToggleLike(video.id);
                     }}
-                    className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-xl transition hover:bg-white/10 active:scale-90 disabled:opacity-60"
+                    className="flex h-9 min-w-9 items-center justify-center gap-1 rounded-full px-1.5 transition hover:bg-white/10 active:scale-90 disabled:opacity-60"
                     aria-label={video.liked ? 'Unlike post' : 'Like post'}
                     aria-pressed={Boolean(video.liked)}
                   >
@@ -804,7 +831,7 @@ function HomePage() {
                       event.stopPropagation();
                       handleOpenComments(video, event);
                     }}
-                    className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-xl transition hover:bg-white/10 active:scale-90"
+                    className="flex h-9 min-w-9 items-center justify-center gap-1 rounded-full px-1.5 transition hover:bg-white/10 active:scale-90"
                     aria-label="Comment on post"
                   >
                     <span><FeedIcon type="comment" /></span>
@@ -816,7 +843,7 @@ function HomePage() {
                       event.stopPropagation();
                       handleToggleSave(video.id);
                     }}
-                    className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-xl transition hover:bg-white/10 active:scale-90"
+                    className="flex h-9 min-w-9 items-center justify-center gap-1 rounded-full px-1.5 transition hover:bg-white/10 active:scale-90"
                     aria-label={video.saved ? 'Remove from saved' : 'Save post'}
                     aria-pressed={Boolean(video.saved)}
                   >
@@ -829,29 +856,46 @@ function HomePage() {
                       event.stopPropagation();
                       handleShare(video);
                     }}
-                    className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-xl transition hover:bg-white/10 active:scale-90"
+                    className="flex h-9 min-w-9 items-center justify-center gap-1 rounded-full px-1.5 transition hover:bg-white/10 active:scale-90"
                     aria-label="Share post"
                   >
                     <span><FeedIcon type="share" /></span>
                     <span className="text-[9px] font-medium leading-3 text-slate-200">{formatActionCount(video.shares || video.shareCount)}</span>
                   </button>
+                  {getStoredSession().user?.id === video.creatorId ? (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDeletePost(video);
+                      }}
+                      className="flex h-9 min-w-9 items-center justify-center rounded-full px-1.5 text-slate-300 transition hover:bg-[var(--ochi-accent-15)] hover:text-white active:scale-90"
+                      aria-label="Delete post"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                        <path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  ) : null}
                 </div>
                 </div>
 
-                <div className="min-w-0 space-y-1 px-3 py-3 text-left sm:px-5">
-                  <p className="truncate text-[15pt] font-bold leading-[1.5] text-white">
+                <div className="flex min-w-0 items-start justify-between gap-4 px-3 py-3 sm:px-5">
+                  <div className="min-w-0 flex-1 text-left">
+                    {(video.description || video.title) ? (
+                      <p className="line-clamp-3 break-words text-[13pt] font-bold leading-[1.5] text-slate-100">
+                        {video.description || video.title}
+                      </p>
+                    ) : null}
+                    {formatPostDate(video.createdAt) ? (
+                      <time dateTime={video.createdAt} className="mt-1 block text-[12pt] font-bold leading-[1.5] text-slate-500">
+                        {formatPostDate(video.createdAt)}
+                      </time>
+                    ) : null}
+                  </div>
+                  <p className="max-w-[38%] shrink-0 truncate text-right text-[13pt] font-bold leading-[1.5] text-white">
                     {video.creatorUsername ? `@${video.creatorUsername}` : video.creatorName || 'Ochi creator'}
                   </p>
-                  {formatPostDate(video.createdAt) ? (
-                    <time dateTime={video.createdAt} className="block text-[14pt] font-bold leading-[1.5] text-slate-500">
-                      {formatPostDate(video.createdAt)}
-                    </time>
-                  ) : null}
-                  {(video.description || video.title) ? (
-                    <p className="line-clamp-3 break-words text-[15pt] font-bold leading-[1.5] text-slate-100">
-                      {video.description || video.title}
-                    </p>
-                  ) : null}
                 </div>
               </article>
             ))
@@ -872,7 +916,7 @@ function HomePage() {
 
       {!videoId ? <aside className="hidden min-w-0 min-[1440px]:block">
         <LiveSection compact />
-        <div className="mt-6 overflow-hidden rounded-[28px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(77,35,36,0.18),transparent_52%),linear-gradient(145deg,#17191f,#101115)] p-5">
+        <div className="mt-6 overflow-hidden rounded-[28px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(197,232,76,0.18),transparent_52%),linear-gradient(145deg,#17191f,#101115)] p-5">
           <p className="ochi-kicker">Your next move</p>
           <h3 className="mt-3 text-xl font-semibold tracking-tight text-white">Make a moment of your own.</h3>
           <p className="mt-2 text-sm leading-6 text-slate-400">Drop a clip for the community or start a live set when you’re ready.</p>

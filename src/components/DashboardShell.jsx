@@ -232,9 +232,9 @@ export default function DashboardShell({
       <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/[0.08] bg-[#0b0c0f]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl lg:bottom-0 lg:left-0 lg:right-auto lg:top-0 lg:w-64 lg:border-r lg:border-t-0 lg:bg-[#0b0c0f]/90 lg:pb-0">
         <div className="mx-auto grid max-w-6xl grid-cols-5 items-stretch px-1 py-1.5 sm:flex sm:items-center sm:justify-center sm:gap-6 sm:px-6 sm:py-1.5 lg:flex lg:h-full lg:flex-col lg:items-stretch lg:justify-start lg:gap-1 lg:px-5 lg:py-7">
           <Link to="/home" className="mb-7 hidden items-center gap-3 rounded-2xl px-3 py-2 lg:flex" aria-label="Ochi Live home">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--ochi-accent)] text-lg font-black tracking-tighter text-white shadow-[0_8px_25px_rgba(77,35,36,0.22)]">O.</span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--ochi-accent)] text-lg font-black tracking-tighter text-[#15170f] shadow-[0_8px_25px_rgba(197,232,76,0.22)]">O.</span>
           </Link>
-          <Link to="/upload" className="mb-7 hidden h-12 items-center justify-center gap-2 rounded-xl bg-[var(--ochi-accent-strong)] px-4 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(77,35,36,0.18)] transition hover:bg-[var(--ochi-accent)] lg:flex">
+          <Link to="/upload" className="mb-7 hidden h-12 items-center justify-center gap-2 rounded-xl bg-[var(--ochi-accent-strong)] px-4 text-sm font-semibold text-[#15170f] shadow-[0_10px_30px_rgba(197,232,76,0.18)] transition hover:bg-[var(--ochi-accent)] lg:flex">
             <Icon name="plus" className="h-5 w-5" />
             Create something
           </Link>
