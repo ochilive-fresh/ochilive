@@ -97,6 +97,11 @@ function HomePage() {
   const [pendingLikes, setPendingLikes] = useState(() => new Set());
   const [signupPromptAction, setSignupPromptAction] = useState('');
   const commentComposerRef = useRef(null);
+  const commentDialogRef = useRef(null);
+  const commentCloseButtonRef = useRef(null);
+  const commentOpenerRef = useRef(null);
+  const resumeVideoAfterCommentsRef = useRef(false);
+  const commentVideoToResumeRef = useRef(null);
   const videoRefs = useRef({});
   const viewedIds = useRef(new Set());
   const viewTimers = useRef(new Map());
@@ -396,8 +401,16 @@ function HomePage() {
     }
   };
 
-  const handleOpenComments = (video) => {
+  const handleOpenComments = (video, event) => {
+    commentOpenerRef.current = event.currentTarget;
     setCommentSheetVideoId(video.id);
+    setCommentDraft('');
+    setReplyTarget(null);
+    setCommentError('');
+  };
+
+  const handleCloseComments = () => {
+    setCommentSheetVideoId(null);
     setCommentDraft('');
     setReplyTarget(null);
     setCommentError('');
@@ -437,30 +450,70 @@ function HomePage() {
   const activeCommentThread = buildCommentTree(activeCommentVideo?.commentThread);
 
   useEffect(() => {
+    if (!activeCommentVideoId) {
+      if (resumeVideoAfterCommentsRef.current && commentVideoToResumeRef.current) {
+        const activeVideo = videoRefs.current[commentVideoToResumeRef.current];
+        activeVideo?.play().catch(() => undefined);
+      }
+      resumeVideoAfterCommentsRef.current = false;
+      commentVideoToResumeRef.current = null;
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    const opener = commentOpenerRef.current;
+    const activeVideo = videoRefs.current[activeCommentVideoId];
+    resumeVideoAfterCommentsRef.current = Boolean(activeVideo && !activeVideo.paused);
+    commentVideoToResumeRef.current = activeCommentVideoId;
+    activeVideo?.pause();
+    document.body.style.overflow = 'hidden';
+    commentCloseButtonRef.current?.focus();
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        handleCloseComments();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const focusableElements = Array.from(commentDialogRef.current?.querySelectorAll(
+        'button:not([disabled]), textarea:not([disabled]), video[controls], [href], [tabindex]:not([tabindex="-1"])',
+      ) || []).filter((element) => element.getClientRects().length);
+      if (!focusableElements?.length) {
+        event.preventDefault();
+        commentDialogRef.current?.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+      if (opener instanceof HTMLElement) opener.focus();
+    };
+  }, [activeCommentVideoId]);
+
+  useEffect(() => {
     if (!videoId || new URLSearchParams(location.search).get('comments') !== '1') return;
     const targetVideo = videos.find((video) => String(video.id) === String(videoId));
     if (targetVideo) {
+      commentOpenerRef.current = null;
       setCommentSheetVideoId(targetVideo.id);
       setCommentDraft('');
       setReplyTarget(null);
       setCommentError('');
     }
   }, [location.search, videoId, videos]);
-
-  useEffect(() => {
-    if (!activeCommentVideoId) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setCommentSheetVideoId(null);
-    };
-    document.body.style.overflow = 'hidden';
-    document.addEventListener('keydown', handleKeyDown);
-    commentComposerRef.current?.focus();
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [activeCommentVideoId]);
 
   const handleShare = async (video) => {
     const shareText = `${video.title} by ${video.creatorName}`;
@@ -700,7 +753,7 @@ function HomePage() {
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
-                      handleOpenComments(video);
+                      handleOpenComments(video, event);
                     }}
                     className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-xl transition hover:bg-white/10 active:scale-90"
                     aria-label="Comment on post"
@@ -790,37 +843,63 @@ function HomePage() {
 
       {activeCommentVideo ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-0 backdrop-blur-sm sm:items-center sm:p-5"
-          onMouseDown={(event) => { if (event.target === event.currentTarget) setCommentSheetVideoId(null); }}
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-0 lg:items-center lg:p-5"
+          onMouseDown={(event) => { if (event.target === event.currentTarget) handleCloseComments(); }}
         >
           <div
+            ref={commentDialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="feed-comments-title"
-            className="flex h-[min(62dvh,560px)] w-full max-w-xl flex-col overflow-hidden rounded-t-[24px] border border-white/[0.09] bg-[var(--ochi-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.55)] sm:h-[min(68vh,600px)] sm:rounded-[24px]"
+            tabIndex={-1}
+            className="flex h-[min(58dvh,500px)] w-full flex-col overflow-hidden rounded-t-[24px] border border-white/[0.09] bg-[var(--ochi-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.55)] lg:h-[min(82vh,720px)] lg:w-[min(94vw,980px)] lg:flex-row lg:rounded-2xl"
           >
-            <div className="shrink-0 border-b border-white/[0.07] bg-[var(--ochi-surface)] px-4 pb-3 pt-2.5 sm:px-5 sm:pt-4">
-              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20 sm:hidden" aria-hidden="true" />
+            <aside className="relative hidden min-h-0 w-[44%] shrink-0 flex-col justify-end overflow-hidden bg-black lg:flex">
+              {isVideoType(activeCommentVideo) && activeCommentVideo.mediaUrl ? (
+                <video
+                  src={activeCommentVideo.mediaUrl}
+                  poster={activeCommentVideo.thumbnailUrl || undefined}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="absolute inset-0 h-full w-full object-contain"
+                  aria-label={`${activeCommentVideo.title || 'Post'} video`}
+                />
+              ) : (
+                <img
+                  src={getPreviewImage(activeCommentVideo)}
+                  alt={activeCommentVideo.title || 'Post'}
+                  className="absolute inset-0 h-full w-full object-contain"
+                />
+              )}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-6 pb-6 pt-16">
+                <p className="text-sm font-semibold text-white">{activeCommentVideo.creatorName || 'Ochi creator'}</p>
+                {activeCommentVideo.title ? <p className="mt-1 line-clamp-2 text-sm leading-5 text-white/75">{activeCommentVideo.title}</p> : null}
+                {activeCommentVideo.description ? <p className="mt-2 line-clamp-3 text-xs leading-5 text-white/55">{activeCommentVideo.description}</p> : null}
+              </div>
+            </aside>
+
+            <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <div className="shrink-0 border-b border-white/[0.07] bg-[var(--ochi-surface)] px-4 pb-3 pt-2.5 lg:px-5 lg:pt-4">
+              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20 lg:hidden" aria-hidden="true" />
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 id="feed-comments-title" className="text-lg font-semibold tracking-tight text-white sm:text-xl">Comments</h3>
-                    <span className="inline-flex min-w-7 items-center justify-center rounded-full border border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] px-2 py-0.5 text-xs font-semibold tabular-nums text-[var(--ochi-accent-light)]">
+                    <h3 id="feed-comments-title" className="text-base font-semibold tracking-tight text-white md:text-lg">Comments</h3>
+                    <span className="inline-flex min-w-7 items-center justify-center rounded-full bg-white/[0.06] px-2 py-0.5 text-xs font-medium tabular-nums text-slate-300">
                       {Number(activeCommentVideo.comments || activeCommentThread.length || 0).toLocaleString()}
                     </span>
                   </div>
-                  <p className="mt-1 truncate text-sm text-slate-400">
-                    Join the conversation on <span className="font-medium text-slate-200">{activeCommentVideo.creatorName || 'this post'}’s post</span>
+                  <p className="mt-1 truncate text-xs text-slate-500">
+                    Conversation on <span className="font-medium text-slate-300">{activeCommentVideo.creatorName || 'this post'}’s post</span>
                   </p>
+                  {activeCommentVideo.title ? <p className="mt-1 truncate text-xs text-slate-400 lg:hidden">{activeCommentVideo.title}</p> : null}
                 </div>
                 <button
+                  ref={commentCloseButtonRef}
                   type="button"
-                  onClick={() => {
-                    setCommentSheetVideoId(null);
-                    setCommentDraft('');
-                    setReplyTarget(null);
-                  }}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
+                  onClick={handleCloseComments}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-40)]"
                   aria-label="Close comments"
                 >
                   <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
@@ -828,12 +907,11 @@ function HomePage() {
                   </svg>
                 </button>
               </div>
-              {activeCommentVideo.title ? <p className="mt-2 truncate text-xs text-slate-500">{activeCommentVideo.title}</p> : null}
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3.5 sm:px-5 sm:py-4">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 lg:px-5 lg:py-4">
               {activeCommentThread.length ? (
-                <div className="mx-auto max-w-xl space-y-5">
+                <div className="mx-auto max-w-xl space-y-4">
                   {activeCommentThread.map((comment, index) => {
                     const author = comment.userName || 'Creator';
                     const initial = author.charAt(0).toUpperCase() || 'C';
@@ -841,7 +919,7 @@ function HomePage() {
 
                     return (
                       <article key={comment.commentId || `${comment.userId || author}-${index}`} className="flex gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08] bg-[var(--ochi-surface-raised)] text-sm font-semibold text-[var(--ochi-accent-light)]">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-sm font-semibold text-slate-300">
                           {initial}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -849,7 +927,7 @@ function HomePage() {
                             <p className="truncate text-sm font-semibold text-white">{author}</p>
                             <span className="text-xs text-slate-500">· {formatCommentTime(comment.createdAt)}</span>
                           </div>
-                          <p className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-6 text-slate-300">{commentText}</p>
+                          <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-5 text-slate-300">{commentText}</p>
                           <button
                             type="button"
                             onClick={() => {
@@ -866,7 +944,7 @@ function HomePage() {
                             Reply
                           </button>
                           {comment.replies?.length ? (
-                            <div className="mt-3 space-y-4 border-l border-white/[0.1] pl-3 sm:pl-4">
+                            <div className="mt-3 space-y-3 border-l border-white/[0.1] pl-3 lg:pl-4">
                               {comment.replies.map((reply, replyIndex) => {
                                 const replyAuthor = reply.userName || 'Creator';
                                 return (
@@ -951,12 +1029,12 @@ function HomePage() {
                   <p className="text-xs text-slate-500">Comments are disabled for this post.</p>
                 ) : commentError ? (
                   <p role="alert" className="text-xs text-rose-300">{commentError}</p>
-                ) : (
-                  <p className="text-[10px] text-slate-600">Keep it kind. Your words are public.</p>
-                )}
-                <span className="shrink-0 text-[10px] tabular-nums text-slate-600">{commentDraft.length}/500</span>
+                ) : commentDraft.length ? (
+                  <span className="ml-auto text-[10px] tabular-nums text-slate-600">{commentDraft.length}/500</span>
+                ) : null}
               </div>
             </div>
+            </section>
           </div>
         </div>
       ) : null}
