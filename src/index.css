@@ -161,7 +161,7 @@ textarea {
   font: inherit;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   body {
     font-size: 15px;
   }
