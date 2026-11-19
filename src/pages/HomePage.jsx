@@ -29,15 +29,18 @@ const FeedIcon = ({ type, active = false }) => {
     return <svg viewBox="0 0 24 24" className={common} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.8 8.8c0 5.2-8.8 10.2-8.8 10.2S3.2 14 3.2 8.8A4.6 4.6 0 0 1 12 6.4a4.6 4.6 0 0 1 8.8 2.4Z" /></svg>;
   }
   if (type === 'comment') {
-    return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 5.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H10l-5 3v-3.4a2 2 0 0 1-2-2v-7.6a2 2 0 0 1 2-2Z" /><path d="M8 10h8M8 13h5" /></svg>;
+    return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.5 11.5a8.3 8.3 0 0 1-8.5 8 8.7 8.7 0 0 1-3.8-.9L3 20l1.4-4.5a7.6 7.6 0 0 1-1.4-4c0-4.4 3.8-8 9-8s8.5 3.6 8.5 8Z" /></svg>;
   }
   if (type === 'save') {
-    return <svg viewBox="0 0 24 24" className={common} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 4.5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2V21l-6-3.7L6 21V4.5Z" /></svg>;
+    return <svg viewBox="0 0 24 24" className={common} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V21L12 17.4 6.5 21V4.5Z" /></svg>;
+  }
+  if (type === 'share') {
+    return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m21 3-7.2 18-3.9-7.9L2 9.2 21 3Z" /><path d="M21 3 9.9 13.1" /></svg>;
   }
   if (type === 'sound') {
     return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z" /><path d={active ? 'M15 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12' : 'm16 9 5 6m0-6-5 6'} /></svg>;
   }
-  return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V4" /><path d="m7 9 5-5 5 5" /><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" /></svg>;
+  return null;
 };
 
 function HomePage() {
@@ -503,7 +506,7 @@ function HomePage() {
             videos.map((video) => (
               <article
                 key={video.id}
-                className="relative h-full min-h-0 w-full snap-start overflow-hidden bg-black sm:h-[72svh] sm:min-h-[460px] sm:max-h-[780px] sm:rounded-[30px] sm:border sm:border-white/[0.09] sm:shadow-[0_30px_90px_rgba(0,0,0,0.45)]"
+                className="relative flex h-full min-h-0 w-full snap-start flex-col overflow-hidden bg-[#101114] sm:h-[72svh] sm:min-h-[460px] sm:max-h-[780px] sm:rounded-[30px] sm:border sm:border-white/[0.09] sm:shadow-[0_30px_90px_rgba(0,0,0,0.45)]"
                 onClick={() => {
                   if (video.type === 'live') {
                     navigate(`/live/${video.id}`);
@@ -520,6 +523,7 @@ function HomePage() {
                   handleSwipe();
                 }}
               >
+                <div className="relative min-h-0 flex-1 overflow-hidden bg-black sm:rounded-t-[29px]">
                 {isVideoType(video) ? (
                   <video
                     ref={(node) => {
@@ -621,59 +625,6 @@ function HomePage() {
                   ) : <span className="rounded-full bg-slate-950/40 px-2.5 py-0.5 text-[9px] font-medium text-slate-200 backdrop-blur-sm sm:px-2.5 sm:py-1 sm:text-[10px]">{Number(video.views || 0).toLocaleString()} views</span>}
                 </div>
 
-                <div className="absolute bottom-[5.5rem] right-3 z-10 flex flex-col items-center gap-2.5 sm:bottom-16 sm:right-4 sm:gap-3">
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleToggleLike(video.id);
-                    }}
-                    className="flex w-12 flex-col items-center gap-1 text-white transition active:scale-90"
-                    aria-label={video.liked ? 'Liked video' : 'Like video'}
-                    aria-pressed={Boolean(video.liked)}
-                  >
-                    <span className={`flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/40 shadow-lg backdrop-blur-xl ${video.liked ? 'text-rose-400' : 'text-white'}`}><FeedIcon type="like" active={video.liked} /></span>
-                    <span className="text-[11px] font-semibold text-white drop-shadow">{Number(video.likes || 0).toLocaleString()}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleOpenComments(video);
-                    }}
-                    className="flex w-12 flex-col items-center gap-1 text-white transition active:scale-90"
-                    aria-label="Comment on video"
-                  >
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/40 shadow-lg backdrop-blur-xl"><FeedIcon type="comment" /></span>
-                    <span className="text-[11px] font-semibold text-white drop-shadow">{Number(video.comments || 0).toLocaleString()}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleToggleSave(video.id);
-                    }}
-                    className="flex w-12 flex-col items-center gap-1 text-white transition active:scale-90"
-                    aria-label={video.saved ? 'Remove from saved' : 'Save video'}
-                    aria-pressed={Boolean(video.saved)}
-                  >
-                    <span className={`flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/40 shadow-lg backdrop-blur-xl ${video.saved ? 'text-emerald-300' : 'text-white'}`}><FeedIcon type="save" active={video.saved} /></span>
-                    <span className="text-[11px] font-semibold text-white drop-shadow">{Number(video.saves || video.savedCount || 0).toLocaleString()}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleShare(video);
-                    }}
-                    className="flex w-12 flex-col items-center gap-1 text-white transition active:scale-90"
-                    aria-label="Share video"
-                  >
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/40 shadow-lg backdrop-blur-xl"><FeedIcon type="share" /></span>
-                    <span className="text-[11px] font-semibold text-white drop-shadow">{Number(video.shares || video.shareCount || 0).toLocaleString()}</span>
-                  </button>
-                </div>
-
                 {isVideoType(video) ? (
                   <div className="absolute inset-x-0 bottom-0 z-10 h-1 bg-white/15">
                     <div
@@ -682,19 +633,68 @@ function HomePage() {
                     />
                   </div>
                 ) : null}
+                </div>
 
-                <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5">
-                  <div className="max-w-[78%]">
-                    <p className="text-sm text-slate-200">@{video.creatorName}</p>
-                    <h2 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{video.title}</h2>
-                    <p className="mt-2 line-clamp-2 text-sm text-slate-200/90">
+                <div className="shrink-0 border-t border-white/[0.06] px-3 pb-3 pt-1.5 sm:px-5 sm:pb-4">
+                  <div className="grid grid-cols-4 gap-1">
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleToggleLike(video.id);
+                    }}
+                    className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl text-white transition hover:bg-white/[0.05] active:scale-95"
+                    aria-label={video.liked ? 'Unlike post' : 'Like post'}
+                    aria-pressed={Boolean(video.liked)}
+                  >
+                    <span className={video.liked ? 'text-rose-400' : 'text-white'}><FeedIcon type="like" active={video.liked} /></span>
+                    <span className="text-[10px] font-medium text-slate-400">{Number(video.likes || 0).toLocaleString()} likes</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleOpenComments(video);
+                    }}
+                    className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl text-white transition hover:bg-white/[0.05] active:scale-95"
+                    aria-label="Comment on post"
+                  >
+                    <span><FeedIcon type="comment" /></span>
+                    <span className="text-[10px] font-medium text-slate-400">{Number(video.comments || 0).toLocaleString()} comments</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleToggleSave(video.id);
+                    }}
+                    className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl text-white transition hover:bg-white/[0.05] active:scale-95"
+                    aria-label={video.saved ? 'Remove from saved' : 'Save post'}
+                    aria-pressed={Boolean(video.saved)}
+                  >
+                    <span className={video.saved ? 'text-emerald-300' : 'text-white'}><FeedIcon type="save" active={video.saved} /></span>
+                    <span className="text-[10px] font-medium text-slate-400">{Number(video.saves || video.savedCount || 0).toLocaleString()} saves</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleShare(video);
+                    }}
+                    className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl text-white transition hover:bg-white/[0.05] active:scale-95"
+                    aria-label="Share post"
+                  >
+                    <span><FeedIcon type="share" /></span>
+                    <span className="text-[10px] font-medium text-slate-400">{Number(video.shares || video.shareCount || 0).toLocaleString()} shares</span>
+                  </button>
+                  </div>
+
+                  <div className="mt-1 px-1">
+                    <p className="text-xs font-medium text-slate-300">@{video.creatorName}</p>
+                    <h2 className="mt-0.5 line-clamp-1 text-base font-semibold leading-5 text-white sm:text-lg">{video.title}</h2>
+                    <p className="mt-1 line-clamp-1 text-xs text-slate-400 sm:line-clamp-2">
                       {video.description || 'Fresh creator content for your feed.'}
                     </p>
-                    <div className="mt-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-300">
-                      <span>{video.type === 'live' ? 'Live now' : 'Fresh drop'}</span>
-                      <span>•</span>
-                      <span>{video.createdAt ? new Date(video.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Today'}</span>
-                    </div>
                   </div>
                 </div>
               </article>
