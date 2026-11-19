@@ -142,6 +142,11 @@ export const getProfileReshares = async (username) => {
   return data;
 };
 
+export const getProfileRelationships = async (username, type, page = 1) => {
+  const { data } = await api.get(`/profiles/${encodeURIComponent(username)}/relationships/${encodeURIComponent(type)}`, { params: { page } });
+  return data;
+};
+
 export const followProfile = async (username) => {
   const { data } = await api.post(`/profiles/${encodeURIComponent(username)}/follow`);
   return data;
@@ -191,6 +196,11 @@ export const getLiveRoomHostToken = async (roomId) => {
 
 export const getLiveRoomViewerToken = async (roomId) => {
   const { data } = await videoApi.post(`/videos/live/rooms/${roomId}/viewer-token`);
+  return data;
+};
+
+export const removeLiveRoomParticipant = async (roomId, identity) => {
+  const { data } = await videoApi.post(`/videos/live/rooms/${roomId}/participants/remove`, { identity });
   return data;
 };
 

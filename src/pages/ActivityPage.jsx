@@ -1,8 +1,20 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
 import { getActivityFeed } from '../api/dashboardApi';
 
+const getDateGroup = (value) => {
+  const date = new Date(value || 0);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return 'Earlier';
+};
+
 function ActivityPage() {
+  const navigate = useNavigate();
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
@@ -20,6 +32,12 @@ function ActivityPage() {
     if (activeFilter === 'social') return activity.filter((item) => item.notification);
     return activity;
   }, [activity, activeFilter]);
+  const groupedActivity = useMemo(() => filteredActivity.reduce((groups, item) => {
+    const group = getDateGroup(item.occurredAt);
+    if (!groups[group]) groups[group] = [];
+    groups[group].push(item);
+    return groups;
+  }, {}), [filteredActivity]);
 
   useEffect(() => {
     setLoading(true);
@@ -93,8 +111,12 @@ function ActivityPage() {
                   </div>
                 </div>
               ) : (
-                <div className="relative space-y-3 before:absolute before:bottom-5 before:left-[19px] before:top-5 before:w-px before:bg-slate-800 sm:before:left-[23px]">
-                  {filteredActivity.map((item) => (
+                <div className="space-y-6">
+                  {['Today', 'Yesterday', 'Earlier'].filter((group) => groupedActivity[group]?.length).map((group) => (
+                    <section key={group} aria-labelledby={`activity-${group.toLowerCase()}`}>
+                      <h2 id={`activity-${group.toLowerCase()}`} className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">{group}</h2>
+                      <div className="relative space-y-3 before:absolute before:bottom-5 before:left-[19px] before:top-5 before:w-px before:bg-slate-800 sm:before:left-[23px]">
+                  {groupedActivity[group].map((item) => (
                     <article key={item.id} className="group relative flex gap-3 rounded-xl border border-transparent px-1 py-3 transition hover:border-slate-800 hover:bg-slate-900/45 sm:gap-4 sm:px-2">
                       <div className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-semibold sm:h-11 sm:w-11 ${item.wallet ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-300' : 'border-slate-700 bg-slate-900 text-slate-300'}`}>
                         {item.wallet ? '$' : '•'}
@@ -114,8 +136,17 @@ function ActivityPage() {
                             {item.wallet.reference ? <span className="max-w-full truncate">Ref: {item.wallet.reference}</span> : null}
                           </div>
                         ) : null}
+                        {item.notification?.videoId || item.notification?.actorUsername ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {item.notification.videoId ? <button type="button" onClick={() => navigate(`/video/${encodeURIComponent(item.notification.videoId)}`)} className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-white/5">View post</button> : null}
+                            {item.notification.actorUsername ? <button type="button" onClick={() => navigate(`/profile/${encodeURIComponent(item.notification.actorUsername.replace(/^@/, ''))}`)} className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-white/5">View profile</button> : null}
+                          </div>
+                        ) : null}
                       </div>
                     </article>
+                  ))}
+                      </div>
+                    </section>
                   ))}
                 </div>
               )}

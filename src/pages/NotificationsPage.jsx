@@ -29,6 +29,10 @@ const filters = [
   { key: 'like', label: 'Likes' },
   { key: 'comment', label: 'Comments' },
   { key: 'follow', label: 'Follows' },
+  { key: 'follow-back', label: 'Mutual' },
+  { key: 'mention', label: 'Mentions' },
+  { key: 'save', label: 'Saves' },
+  { key: 'reshare', label: 'Reshares' },
 ];
 
 const timeAgo = (value) => {
@@ -149,6 +153,18 @@ function NotificationsPage() {
       <div className="overflow-hidden bg-slate-950/40">
         <button
           type="button"
+          onClick={() => navigate('/activity')}
+          className="flex w-full items-center gap-3 border-b border-slate-800 bg-white/[0.025] px-4 py-4 text-left transition hover:bg-white/[0.06] sm:px-6"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-slate-200" aria-hidden="true">↗</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-white">Activity history</span>
+            <span className="mt-0.5 block text-xs text-slate-400">Review social interactions and wallet updates</span>
+          </span>
+          <span className="text-sm font-medium text-[var(--ochi-accent-light)]">Open <span aria-hidden="true">→</span></span>
+        </button>
+        <button
+          type="button"
           onClick={() => navigate('/messages')}
           className="flex w-full items-center gap-3 border-b border-slate-800 bg-white/[0.025] px-4 py-4 text-left transition hover:bg-white/[0.06] sm:px-6"
           aria-label="Open messages inbox"
@@ -186,7 +202,7 @@ function NotificationsPage() {
 
         <nav className="sticky top-0 z-10 flex gap-6 overflow-x-auto border-b border-slate-800 bg-slate-950/95 px-3 no-scrollbar backdrop-blur-xl sm:px-6" aria-label="Notification filters">
           {filters.map((item) => (
-            <button key={item.key} type="button" onClick={() => setFilter(item.key)} className={`relative shrink-0 border-b-2 py-3 text-sm font-semibold transition ${filter === item.key ? 'border-rose-300 text-white' : 'border-transparent text-slate-500 hover:text-slate-200'}`}>
+            <button key={item.key} type="button" aria-pressed={filter === item.key} onClick={() => setFilter(item.key)} className={`relative shrink-0 border-b-2 py-3 text-sm font-semibold transition ${filter === item.key ? 'border-rose-300 text-white' : 'border-transparent text-slate-500 hover:text-slate-200'}`}>
               {item.label}
             </button>
           ))}

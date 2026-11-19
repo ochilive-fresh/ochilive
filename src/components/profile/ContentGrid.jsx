@@ -413,7 +413,7 @@ function ContentCard({ item, tab, isAuthenticated, onRequireAuth }) {
           <span>{item.creatorName || 'Ochi creator'}</span>
           <div className="flex items-center gap-3 normal-case tracking-normal">
             <button type="button" onClick={handleLike} className={liked ? 'text-rose-300' : 'text-slate-400'} aria-label={liked ? 'Unlike' : 'Like'} aria-pressed={liked}>{liked ? '♥' : '♡'} {likes}</button>
-            <button type="button" onClick={() => setCommentOpen((open) => !open)} className="text-slate-400" aria-label={`${commentOpen ? 'Hide' : 'Open'} comments, ${comments} total`} aria-expanded={commentOpen}>Comment {comments}</button>
+            <button type="button" onClick={() => navigate(`/video/${encodeURIComponent(item.id)}?comments=1`)} className="text-slate-400" aria-label={`Open ${comments} comments`}>Comment {comments}</button>
             <button type="button" onClick={handleSave} className={saved ? 'text-amber-300' : 'text-slate-400'} aria-label={saved ? 'Saved' : 'Save'}>{saved ? 'Saved' : 'Save'}</button>
             <button type="button" onClick={handleShare} className="text-slate-400" aria-label="Share">Share</button>
           </div>

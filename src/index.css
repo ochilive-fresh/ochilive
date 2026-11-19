@@ -20,6 +20,8 @@
   --ochi-text: #f4f3ef;
   --ochi-line: rgba(255, 255, 255, 0.075);
   --ochi-lime: #d7f56a;
+  --ochi-radius-card: 1.25rem;
+  --ochi-shadow-card: 0 18px 48px rgba(0, 0, 0, 0.24);
 }
 
 /* Keep legacy rose/pink utilities aligned with the stage-inspired palette. */
@@ -159,6 +161,22 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--ochi-accent-light);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @media (max-width: 768px) {

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Room, RoomEvent } from 'livekit-client';
 import DashboardShell from '../components/DashboardShell';
 import { getLiveRoomViewerToken } from '../api/dashboardApi';
+import LiveRoomChat from '../components/LiveRoomChat';
 
 function RemoteVideoCard({ participant }) {
   const viewerRef = useRef(null);
@@ -52,9 +53,11 @@ export default function LiveViewerPage() {
   const [roomMeta, setRoomMeta] = useState(null);
   const [connectionAttempt, setConnectionAttempt] = useState(0);
   const [shareStatus, setShareStatus] = useState('');
+  const [connectionQuality, setConnectionQuality] = useState('unknown');
 
   useEffect(() => {
     let isUnmounted = false;
+    setConnectionQuality('unknown');
 
     const syncParticipants = (room) => {
       const nextParticipants = Array.from(room.remoteParticipants.values()).map((participant) => {
@@ -95,10 +98,16 @@ export default function LiveViewerPage() {
         room.on(RoomEvent.ParticipantDisconnected, () => syncParticipants(room));
         room.on(RoomEvent.TrackSubscribed, () => syncParticipants(room));
         room.on(RoomEvent.TrackUnsubscribed, () => syncParticipants(room));
+        room.on(RoomEvent.ConnectionQualityChanged, (quality, participant) => {
+          if (!isUnmounted && participant === room.localParticipant) setConnectionQuality(quality);
+        });
+        room.on(RoomEvent.Reconnecting, () => { if (!isUnmounted) setConnectionQuality('reconnecting'); });
+        room.on(RoomEvent.Reconnected, () => { if (!isUnmounted) setConnectionQuality(room.localParticipant.connectionQuality); });
         room.on(RoomEvent.Disconnected, () => {
           if (!isUnmounted) {
             setStatus('The stream has ended.');
             setParticipants([]);
+            setConnectionQuality('lost');
           }
         });
 
@@ -106,6 +115,7 @@ export default function LiveViewerPage() {
         if (isUnmounted) return;
 
         syncParticipants(room);
+        setConnectionQuality(room.localParticipant.connectionQuality);
         setStatus(room.remoteParticipants.size ? 'Live stream connected.' : 'Waiting for the host to start streaming...');
       } catch (error) {
         if (!isUnmounted) {
@@ -211,6 +221,7 @@ export default function LiveViewerPage() {
             <div className="text-sm text-slate-300">
               <span className="font-semibold text-white">{participants.length.toLocaleString()}</span> {participants.length === 1 ? 'viewer connected' : 'viewers connected'}
             </div>
+            <p className="text-xs text-slate-400" role="status">Connection quality: <span className="font-semibold capitalize text-slate-200">{connectionQuality === 'unknown' ? 'checking' : connectionQuality}</span></p>
             <button
               type="button"
               onClick={() => navigate('/discover')}
@@ -222,6 +233,7 @@ export default function LiveViewerPage() {
           {shareStatus ? <p role="status" className="mt-3 text-xs text-slate-400">{shareStatus}</p> : null}
         </div>
         <aside className="space-y-4">
+          <LiveRoomChat room={roomRef.current} />
           <div className="rounded-[26px] border border-white/[0.08] bg-[var(--ochi-surface)] p-5">
             <p className="ochi-kicker">Inside the room</p>
             <h3 className="mt-2 text-lg font-semibold text-white">Watch together.</h3>

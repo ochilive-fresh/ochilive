@@ -145,6 +145,12 @@ function HomePage() {
   }, [activeTab, refreshKey, videoId]);
 
   useEffect(() => {
+    if (!videoId || !videos.some((video) => String(video.id) === String(videoId)) || !new URLSearchParams(location.search).has('comments')) return;
+    setCommentSheetVideoId(videoId);
+    navigate(location.pathname, { replace: true });
+  }, [location.pathname, location.search, navigate, videoId, videos]);
+
+  useEffect(() => {
     if (!videos.length || typeof IntersectionObserver === 'undefined') return undefined;
 
     const activeViewTimers = viewTimers.current;

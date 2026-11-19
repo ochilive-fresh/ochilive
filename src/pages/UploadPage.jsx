@@ -2,7 +2,9 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Room, RoomEvent, createLocalAudioTrack, createLocalVideoTrack } from 'livekit-client';
 import DashboardShell from '../components/DashboardShell';
-import { createLiveRoom, endLiveRoom, getLiveRoomHostToken, getProfileSummary, startLiveRoom, uploadVideoPost, uploadVideoFile } from '../api/dashboardApi';
+import { createLiveRoom, endLiveRoom, getLiveRoomHostToken, getProfileSummary, removeLiveRoomParticipant, startLiveRoom, uploadVideoPost, uploadVideoFile } from '../api/dashboardApi';
+import { clearUploadDraft, getUploadDraft, saveUploadDraft } from '../utils/uploadDraft';
+import LiveRoomChat from '../components/LiveRoomChat';
 
 /* ---------------------------------------------------------------
    Iconography — thin, consistent 24px line system
@@ -191,6 +193,7 @@ function UploadPage() {
   const canvasRef = useRef(null);
   const recorderRef = useRef(null);
   const cameraRequestRef = useRef(0);
+  const draftHydratedRef = useRef(false);
 
   const [activeTab, setActiveTab] = useState('video');
   const [screen, setScreen] = useState('camera');
@@ -205,10 +208,11 @@ function UploadPage() {
   const [status, setStatus] = useState('Ready to capture.');
   const [uploading, setUploading] = useState(false);
 
-  /* display-only UI state (no functional change) */
   const [elapsed, setElapsed] = useState(0);
   const [privacy, setPrivacy] = useState('public');
   const [allowComments, setAllowComments] = useState(true);
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftMessage, setDraftMessage] = useState('');
   const [dragging, setDragging] = useState(false);
   const [progress, setProgress] = useState(0);
   const [comedian, setComedian] = useState(false);
@@ -224,8 +228,70 @@ function UploadPage() {
   const [liveDetailsOpen, setLiveDetailsOpen] = useState(false);
   const [livekitRoom, setLivekitRoom] = useState(null);
   const [liveViewerCount, setLiveViewerCount] = useState(0);
+  const [liveConnectionQuality, setLiveConnectionQuality] = useState('unknown');
+  const [liveMicEnabled, setLiveMicEnabled] = useState(true);
+  const [liveCameraEnabled, setLiveCameraEnabled] = useState(true);
+  const [liveNetworkStats, setLiveNetworkStats] = useState(null);
+  const [liveStatsError, setLiveStatsError] = useState(false);
+  const liveStatsPreviousRef = useRef(null);
   const [networkOnline, setNetworkOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine);
   const livekitUrl = import.meta.env.VITE_LIVEKIT_URL || 'ws://localhost:7880';
+  const isLiveMode = searchParams.get('mode') === 'live';
+  const draftUserId = (() => {
+    try {
+      const user = JSON.parse(sessionStorage.getItem('ochi_user') || 'null');
+      return String(user?.id || user?.username || 'guest');
+    } catch {
+      return 'guest';
+    }
+  })();
+
+  useEffect(() => {
+    if (isLiveMode) return undefined;
+    let active = true;
+    getUploadDraft(draftUserId)
+      .then((draft) => {
+        if (!active || draftHydratedRef.current || !draft) return;
+        if (draft.mediaBlob) {
+          setPreviewUrl(URL.createObjectURL(draft.mediaBlob));
+          setPreviewType(draft.previewType === 'photo' ? 'photo' : 'video');
+          setScreen('preview');
+        }
+        setCaption(String(draft.caption || ''));
+        setPrivacy(['public', 'followers', 'private'].includes(draft.privacy) ? draft.privacy : 'public');
+        setAllowComments(draft.allowComments !== false);
+        if (draft.caption || draft.mediaBlob) setStatus('Draft restored. Continue editing or publish when ready.');
+      })
+      .catch((error) => {
+        if (active) setStatus(error?.message || 'Unable to restore the saved draft.');
+      })
+      .finally(() => {
+        if (active) {
+          draftHydratedRef.current = true;
+          setDraftReady(true);
+        }
+      });
+    return () => { active = false; };
+  }, [draftUserId, isLiveMode]);
+
+  useEffect(() => {
+    if (!draftReady || !draftHydratedRef.current || uploading || isLiveMode) return undefined;
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        if (!previewUrl && !caption.trim()) {
+          await clearUploadDraft(draftUserId);
+          setDraftMessage('');
+          return;
+        }
+        const mediaBlob = previewUrl ? await fetch(previewUrl).then((response) => response.blob()) : null;
+        await saveUploadDraft(draftUserId, { mediaBlob, previewType, caption, privacy, allowComments });
+        setDraftMessage('Draft saved on this device. It will not be published until you post it.');
+      } catch (error) {
+        setDraftMessage(error?.message || 'Could not save your draft on this device.');
+      }
+    }, 500);
+    return () => window.clearTimeout(timeoutId);
+  }, [allowComments, caption, draftReady, draftUserId, isLiveMode, previewType, previewUrl, privacy, uploading]);
 
   useEffect(() => {
     const handleOnline = () => setNetworkOnline(true);
@@ -282,11 +348,55 @@ function UploadPage() {
   useEffect(() => {
     if (!liveStarted) {
       setLiveElapsed(0);
+      setLiveNetworkStats(null);
+      setLiveStatsError(false);
+      liveStatsPreviousRef.current = null;
       return undefined;
     }
     const id = window.setInterval(() => setLiveElapsed((value) => value + 1), 1000);
     return () => window.clearInterval(id);
   }, [liveStarted]);
+
+  useEffect(() => {
+    if (!liveStarted || !livekitRoom) return undefined;
+    const sampleStats = async () => {
+      const publications = [
+        ...livekitRoom.localParticipant.audioTrackPublications.values(),
+        ...livekitRoom.localParticipant.videoTrackPublications.values(),
+      ];
+      const reports = await Promise.all(publications.map(async (publication) => {
+        const stats = await publication.track?.getSenderStats?.();
+        return Array.isArray(stats) ? stats : stats ? [stats] : [];
+      }));
+      const entries = reports.flat();
+      if (!entries.length) return;
+      const current = {
+        timestamp: Math.max(...entries.map((entry) => Number(entry.timestamp || 0))),
+        bytesSent: entries.reduce((sum, entry) => sum + Number(entry.bytesSent || 0), 0),
+        packetsSent: entries.reduce((sum, entry) => sum + Number(entry.packetsSent || 0), 0),
+        packetsLost: entries.reduce((sum, entry) => sum + Number(entry.packetsLost || 0), 0),
+      };
+      const previous = liveStatsPreviousRef.current;
+      liveStatsPreviousRef.current = current;
+      if (!previous || current.timestamp <= previous.timestamp) return;
+      const intervalMs = current.timestamp - previous.timestamp;
+      const bitrateKbps = Math.max(0, (current.bytesSent - previous.bytesSent) * 8 / intervalMs);
+      const packetTotal = current.packetsSent + current.packetsLost;
+      const packetLoss = packetTotal ? (current.packetsLost / packetTotal) * 100 : 0;
+      setLiveNetworkStats({ bitrateKbps, packetLoss });
+    };
+    sampleStats().catch(() => {
+      setLiveNetworkStats(null);
+      setLiveStatsError(true);
+    });
+    const intervalId = window.setInterval(() => {
+      sampleStats().catch(() => {
+        setLiveNetworkStats(null);
+        setLiveStatsError(true);
+      });
+    }, 2000);
+    return () => window.clearInterval(intervalId);
+  }, [liveStarted, livekitRoom]);
 
   useEffect(() => {
     const maxSeconds = Number(comedianProfile?.maxStreamMinutes || 5) * 60;
@@ -439,28 +549,45 @@ function UploadPage() {
       videoCaptureDefaults: { resolution: { width: 1280, height: 720 } },
       audioCaptureDefaults: { autoGainControl: true, echoCancellation: true, noiseSuppression: true },
     });
+    let audioTrack;
+    let videoTrack;
+    try {
+      await room.connect(roomResponse.livekitUrl || livekitUrl, roomResponse.token);
 
-    await room.connect(roomResponse.livekitUrl || livekitUrl, roomResponse.token);
+      const syncViewerCount = () => setLiveViewerCount(room.remoteParticipants.size);
+      room.on(RoomEvent.ParticipantConnected, syncViewerCount);
+      room.on(RoomEvent.ParticipantDisconnected, syncViewerCount);
+      room.on(RoomEvent.ConnectionQualityChanged, (quality, participant) => {
+        if (participant === room.localParticipant) setLiveConnectionQuality(quality);
+      });
+      room.on(RoomEvent.Reconnecting, () => setLiveConnectionQuality('reconnecting'));
+      room.on(RoomEvent.Reconnected, () => setLiveConnectionQuality(room.localParticipant.connectionQuality));
+      room.on(RoomEvent.Disconnected, () => setLiveConnectionQuality('lost'));
 
-    const syncViewerCount = () => setLiveViewerCount(room.remoteParticipants.size);
-    room.on(RoomEvent.ParticipantConnected, syncViewerCount);
-    room.on(RoomEvent.ParticipantDisconnected, syncViewerCount);
+      audioTrack = await createLocalAudioTrack({
+        autoGainControl: true,
+        echoCancellation: true,
+        noiseSuppression: true,
+      });
+      videoTrack = await createLocalVideoTrack({
+        facingMode: cameraFacing === 'user' ? 'user' : 'environment',
+        resolution: { width: 1280, height: 720 },
+      });
 
-    const audioTrack = await createLocalAudioTrack({
-      autoGainControl: true,
-      echoCancellation: true,
-      noiseSuppression: true,
-    });
-    const videoTrack = await createLocalVideoTrack({
-      facingMode: cameraFacing === 'user' ? 'user' : 'environment',
-      resolution: { width: 1280, height: 720 },
-    });
-
-    await room.localParticipant.publishTrack(audioTrack);
-    await room.localParticipant.publishTrack(videoTrack);
-    syncViewerCount();
-    setLivekitRoom(room);
-    return room;
+      await room.localParticipant.publishTrack(audioTrack);
+      await room.localParticipant.publishTrack(videoTrack);
+      setLiveMicEnabled(true);
+      setLiveCameraEnabled(true);
+      setLiveConnectionQuality(room.localParticipant.connectionQuality);
+      syncViewerCount();
+      setLivekitRoom(room);
+      return room;
+    } catch (error) {
+      audioTrack?.stop();
+      videoTrack?.stop();
+      await room.disconnect();
+      throw error;
+    }
   };
 
   const startPreparedLive = async () => {
@@ -487,6 +614,7 @@ function UploadPage() {
         setLivekitRoom(null);
       }
       setLiveViewerCount(0);
+      setLiveConnectionQuality('unknown');
       const result = await endLiveRoom(liveRoomId);
       setLiveStarted(false);
       stopCamera();
@@ -642,6 +770,9 @@ function UploadPage() {
       setStatus('Posted successfully. Your post is on your stage.');
       setPreviewUrl('');
       setCaption('');
+      clearUploadDraft(draftUserId).catch((error) => {
+        setStatus(`Posted successfully, but this device could not clear the saved draft: ${error?.message || 'storage error'}`);
+      });
       setScreen('camera');
       setActiveTab('video');
       const publishedPostId = publishResponse.upload?.id || publishResponse.upload?._id;
@@ -1039,6 +1170,8 @@ function UploadPage() {
                         {caption.length}/200
                       </span>
                     </div>
+                    <p className="mt-2 text-xs text-slate-500">Drafts are saved to this device automatically.</p>
+                    {draftMessage ? <p className={`mt-1 text-xs ${draftMessage.startsWith('Draft saved') ? 'text-emerald-300' : 'text-amber-200'}`} role={draftMessage.startsWith('Draft saved') ? 'status' : 'alert'}>{draftMessage}</p> : null}
 
                     <div className="mt-4 flex flex-wrap gap-2">
                       {suggestedTags.map((tag) => (
@@ -1183,7 +1316,7 @@ function UploadPage() {
                     {[
                       { label: 'Camera', ready: Boolean(stream), pending: cameraLoading },
                       { label: 'Microphone', ready: Boolean(stream?.getAudioTracks?.().length), pending: cameraLoading },
-                      { label: 'Internet connection', ready: networkOnline, pending: false },
+                      { label: 'Browser network', ready: networkOnline, pending: false },
                     ].map((item, i) => (
                       <li
                         key={item.label}
@@ -1192,39 +1325,65 @@ function UploadPage() {
                         {item.label}
                         <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${item.pending ? 'text-amber-300' : item.ready ? 'text-emerald-300' : 'text-rose-300'}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${item.pending ? 'animate-pulse bg-amber-400' : item.ready ? 'bg-emerald-400' : 'bg-rose-400'}`} />
-                          {item.pending ? 'Checking' : item.label === 'Internet connection' ? (item.ready ? 'Online' : 'Offline') : item.ready ? 'Ready' : 'Required'}
+                          {item.pending ? 'Checking' : item.label === 'Browser network' ? (item.ready ? 'Online' : 'Offline') : item.ready ? 'Ready' : 'Required'}
                         </span>
                       </li>
                     ))}
+                    <li className="flex items-center justify-between rounded-xl border border-white/10 bg-slate-950/60 px-3.5 py-2.5 text-sm text-slate-300">
+                          Live streaming can connect once the room starts.
+                          <span className="text-[11px] font-medium text-slate-500">Not measured yet</span>
+                    </li>
                   </ul> : null}
-                  {liveStarted ? (
-                    <button type="button" disabled={liveStarting} onClick={endPreparedLive} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-200 px-5 py-3.5 text-sm font-semibold text-slate-950 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60">
-                      <span className="h-2 w-2 animate-pulse rounded-full bg-rose-500" />
-                      {liveStarting ? 'Ending live room...' : 'End live room'}
-                    </button>
-                  ) : (
+                  {!liveStarted ? (
                     <button type="button" disabled={liveStarting || !stream || !networkOnline || !liveTitle.trim()} onClick={startPreparedLive} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 disabled:cursor-not-allowed disabled:opacity-50">
                       <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
                       {liveStarting ? (liveRoomId ? 'Starting room...' : 'Preparing room...') : liveRoomId ? 'Start live room' : 'Prepare live room'}
                     </button>
-                  )}
+                  ) : null}
                     </>
                   ) : null}
                 </div>
                 {liveStarted ? (
-                  <div className="pointer-events-auto mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-2xl border border-white/15 bg-slate-950/80 p-2.5 shadow-[0_18px_50px_rgba(2,6,23,0.5)] backdrop-blur-xl lg:mx-0 lg:max-w-none">
-                    <div className="flex min-w-0 items-center gap-2.5 px-2">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-200">
-                        <UsersIcon className="h-4 w-4" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-white">{liveViewerCount} watching now</p>
-                        <p className="truncate text-[10px] text-slate-400">{liveTitle || 'Your live room'}</p>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-slate-950/60 p-3 text-xs">
+                      <div><p className="text-slate-500">Stream connection</p><p className={`mt-1 font-semibold capitalize ${['excellent', 'good'].includes(liveConnectionQuality) ? 'text-emerald-300' : liveConnectionQuality === 'poor' || liveConnectionQuality === 'lost' ? 'text-amber-300' : 'text-slate-300'}`}>{liveConnectionQuality}</p></div>
+                      <div><p className="text-slate-500">Browser network</p><p className={`mt-1 font-semibold ${networkOnline ? 'text-emerald-300' : 'text-rose-300'}`}>{networkOnline ? 'Online' : 'Offline'}</p></div>
+                      <div><p className="text-slate-500">Outbound bitrate</p><p className="mt-1 font-semibold text-slate-200">{liveNetworkStats ? `${Math.round(liveNetworkStats.bitrateKbps)} kbps` : liveStatsError ? 'Unavailable' : 'Measuring…'}</p></div>
+                      <div><p className="text-slate-500">Reported packet loss</p><p className="mt-1 font-semibold text-slate-200">{liveNetworkStats ? `${liveNetworkStats.packetLoss.toFixed(1)}%` : liveStatsError ? 'Unavailable' : 'Measuring…'}</p></div>
+                    </div>
+                    <div className="pointer-events-auto mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-2xl border border-white/15 bg-slate-950/80 p-2.5 shadow-[0_18px_50px_rgba(2,6,23,0.5)] backdrop-blur-xl lg:mx-0 lg:max-w-none">
+                      <div className="flex min-w-0 items-center gap-2.5 px-2">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-200">
+                          <UsersIcon className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-white">{liveViewerCount} watching now</p>
+                          <p className="truncate text-[10px] text-slate-400">{liveTitle || 'Your live room'}</p>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-wrap gap-2">
+                        <button type="button" onClick={async () => {
+                          try {
+                            await livekitRoom?.localParticipant.setMicrophoneEnabled(!liveMicEnabled);
+                            setLiveMicEnabled((enabled) => !enabled);
+                          } catch (error) {
+                            setStatus(error?.message || 'Unable to change microphone state.');
+                          }
+                        }} className="whitespace-nowrap rounded-xl border border-white/10 px-3 py-2 text-[10px] font-semibold text-white hover:bg-white/10 sm:text-xs">{liveMicEnabled ? 'Mute mic' : 'Unmute mic'}</button>
+                        <button type="button" onClick={async () => {
+                          try {
+                            await livekitRoom?.localParticipant.setCameraEnabled(!liveCameraEnabled);
+                            setLiveCameraEnabled((enabled) => !enabled);
+                          } catch (error) {
+                            setStatus(error?.message || 'Unable to change camera state.');
+                          }
+                        }} className="whitespace-nowrap rounded-xl border border-white/10 px-3 py-2 text-[10px] font-semibold text-white hover:bg-white/10 sm:text-xs">{liveCameraEnabled ? 'Turn camera off' : 'Turn camera on'}</button>
+                        <button type="button" disabled={liveStarting} onClick={endPreparedLive} className="whitespace-nowrap rounded-xl bg-white px-3.5 py-2.5 text-[10px] font-bold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60 sm:text-xs">
+                          {liveStarting ? 'Ending...' : 'End live'}
+                        </button>
                       </div>
                     </div>
-                    <button type="button" disabled={liveStarting} onClick={endPreparedLive} className="shrink-0 rounded-xl bg-white px-3.5 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60">
-                      {liveStarting ? 'Ending...' : 'End live'}
-                    </button>
+                    <LiveRoomChat room={livekitRoom} onRemoveParticipant={(identity) => removeLiveRoomParticipant(liveRoomId, identity)} />
                   </div>
                 ) : null}
                 </>

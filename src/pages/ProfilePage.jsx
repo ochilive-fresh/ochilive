@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
-import { getProfileSummary, getProfilePosts, getProfileReshares, rateProfile } from '../api/dashboardApi';
+import { getProfileSummary, getProfilePosts, getProfileReshares, getProfileRelationships, rateProfile } from '../api/dashboardApi';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import StatsBar from '../components/profile/StatsBar';
 import TabsSection from '../components/profile/TabsSection';
@@ -66,6 +66,13 @@ function ProfilePage() {
   const [showPerformanceProfile, setShowPerformanceProfile] = useState(false);
   const [ratingMessage, setRatingMessage] = useState('');
   const [signupPromptAction, setSignupPromptAction] = useState('');
+  const [relationshipDialog, setRelationshipDialog] = useState('');
+  const [relationshipUsers, setRelationshipUsers] = useState([]);
+  const [relationshipPage, setRelationshipPage] = useState(1);
+  const [relationshipHasMore, setRelationshipHasMore] = useState(false);
+  const [relationshipLoading, setRelationshipLoading] = useState(false);
+  const [relationshipError, setRelationshipError] = useState('');
+  const [relationshipRefresh, setRelationshipRefresh] = useState(0);
 
   const canMessage = !profile.relationship?.isOwnProfile && Boolean(profile.user?.id);
   const messageLabel = !isAuthenticated ? 'Sign up to message' : profile.relationship?.isFollowing || profile.relationship?.isFollowedBy ? 'Message' : 'Request to message';
@@ -129,7 +136,7 @@ function ProfilePage() {
 
   useEffect(() => {
     const username = profile.user?.username;
-    if (!username) return;
+    if (!username || !['posts', 'reshared'].includes(activeTab)) return;
     setContentLoading(true);
     setContentError('');
     const request = activeTab === 'posts' ? getProfilePosts(username) : getProfileReshares(username);
@@ -138,6 +145,37 @@ function ProfilePage() {
       if (activeTab === 'posts') setProfile((current) => ({ ...current, stats: { ...current.stats, posts: items.length } }));
     }).catch(() => { setContentError('We could not load this content.'); setContent((current) => ({ ...current, [activeTab]: [] })); }).finally(() => setContentLoading(false));
   }, [activeTab, profile.user?.username, contentRequestKey]);
+
+  useEffect(() => {
+    if (!relationshipDialog || !profile.user?.username) return undefined;
+    let active = true;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setRelationshipDialog('');
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
+    setRelationshipLoading(true);
+    setRelationshipError('');
+    getProfileRelationships(profile.user.username, relationshipDialog, relationshipPage)
+      .then((result) => {
+        if (!active) return;
+        setRelationshipUsers((current) => relationshipPage === 1 ? result.users : [...current, ...result.users]);
+        setRelationshipHasMore(Boolean(result.hasMore));
+      })
+      .catch((error) => {
+        if (!active) return;
+        setRelationshipError(error?.response?.data?.message || 'We could not load this list. Please try again.');
+      })
+      .finally(() => {
+        if (active) setRelationshipLoading(false);
+      });
+    return () => {
+      active = false;
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [relationshipDialog, relationshipPage, relationshipRefresh, profile.user?.username]);
 
   const handleFollowChange = (result) => {
     setProfile((current) => ({
@@ -193,7 +231,9 @@ function ProfilePage() {
     }
 
     if (stat === 'followers' || stat === 'following') {
-      setActiveTab('about');
+      setRelationshipUsers([]);
+      setRelationshipPage(1);
+      setRelationshipDialog(stat);
       return;
     }
 
@@ -248,7 +288,7 @@ function ProfilePage() {
               </>
             ) : null}
             <StatsBar stats={profile.stats} onSelect={handleStatSelect} />
-            <TabsSection activeTab={activeTab} onChange={setActiveTab} />
+            <TabsSection activeTab={activeTab} onChange={setActiveTab} isOwnProfile={profile.relationship?.isOwnProfile} />
             {activeTab === 'about' ? (
               <div className="mt-6 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
                 <div className="rounded-2xl border border-white/[0.08] bg-[var(--ochi-surface)] p-5 sm:p-6">
@@ -278,10 +318,50 @@ function ProfilePage() {
                   </div>
                 </div>
               </div>
-            ) : contentLoading ? <div className="rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] py-12 text-center text-sm text-slate-500">Loading {activeTab}...</div> : contentError ? <div className="rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] py-12 text-center"><p className="text-sm text-[var(--ochi-accent-light)]">{contentError}</p><button type="button" onClick={() => { setContentError(''); setContentRequestKey((key) => key + 1); }} className="mt-4 rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/[0.05] hover:text-white">Retry</button></div> : <ContentGrid items={content[activeTab]} tab={activeTab} isOwnProfile={profile.relationship?.isOwnProfile} isAuthenticated={isAuthenticated} onRequireAuth={requireAccount} />}
+            ) : activeTab === 'insights' && profile.relationship?.isOwnProfile ? (
+              <section className="mt-6 rounded-2xl border border-white/[0.08] bg-[var(--ochi-surface)] p-5 sm:p-6" aria-labelledby="creator-insights-title">
+                <p className="ochi-kicker">Your published content</p>
+                <h2 id="creator-insights-title" className="mt-2 text-xl font-semibold text-white">Creator insights</h2>
+                <p className="mt-1 text-sm text-slate-400">Lifetime totals across posts visible on your profile.</p>
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  {[{ label: 'Views', value: profile.stats.views }, { label: 'Likes', value: profile.stats.likes }].map((metric) => (
+                    <div key={metric.label} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+                      <p className="text-2xl font-semibold text-white">{Number(metric.value || 0).toLocaleString()}</p>
+                      <p className="mt-1 text-xs text-slate-500">{metric.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : !['about', 'insights'].includes(activeTab) && contentLoading ? <div className="rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] py-12 text-center text-sm text-slate-500">Loading {activeTab}...</div> : contentError ? <div className="rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] py-12 text-center"><p className="text-sm text-[var(--ochi-accent-light)]">{contentError}</p><button type="button" onClick={() => { setContentError(''); setContentRequestKey((key) => key + 1); }} className="mt-4 rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/[0.05] hover:text-white">Retry</button></div> : ['posts', 'reshared'].includes(activeTab) ? <ContentGrid items={content[activeTab]} tab={activeTab} isOwnProfile={profile.relationship?.isOwnProfile} isAuthenticated={isAuthenticated} onRequireAuth={requireAccount} /> : null}
           </div>
         </div>
       )}
+      {relationshipDialog ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) setRelationshipDialog(''); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="relationship-dialog-title" className="max-h-[85dvh] w-full max-w-lg overflow-hidden rounded-t-3xl border border-white/10 bg-slate-950 shadow-2xl sm:rounded-3xl">
+            <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+              <div>
+                <p className="ochi-kicker">{profile.user.name}</p>
+                <h2 id="relationship-dialog-title" className="mt-1 text-lg font-semibold capitalize text-white">{relationshipDialog}</h2>
+              </div>
+              <button type="button" onClick={() => setRelationshipDialog('')} className="rounded-full border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/5">Close</button>
+            </header>
+            <div className="max-h-[65dvh] space-y-2 overflow-y-auto p-4">
+              {relationshipUsers.map((person) => (
+                <button key={person.id} type="button" onClick={() => { setRelationshipDialog(''); navigate(`/profile/${encodeURIComponent(person.username)}`); }} className="flex w-full items-center gap-3 rounded-xl p-3 text-left transition hover:bg-white/[0.05]">
+                  {person.profilePictureUrl ? <img src={person.profilePictureUrl} alt="" className="h-10 w-10 rounded-full object-cover" /> : <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white">{(person.name || person.username || '?').slice(0, 1).toUpperCase()}</span>}
+                  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-white">{person.name}</span><span className="block truncate text-xs text-slate-500">@{person.username}</span></span>
+                  <span className="text-xs text-slate-500">{person.isFollowing ? 'Following' : ''}</span>
+                </button>
+              ))}
+              {relationshipError ? <div role="alert" className="py-5 text-center text-sm text-rose-200">{relationshipError}<button type="button" onClick={() => setRelationshipRefresh((key) => key + 1)} className="ml-2 underline">Retry</button></div> : null}
+              {!relationshipUsers.length && relationshipLoading ? <p className="py-8 text-center text-sm text-slate-500">Loading {relationshipDialog}...</p> : null}
+              {!relationshipUsers.length && !relationshipLoading && !relationshipError ? <p className="py-8 text-center text-sm text-slate-500">No {relationshipDialog} yet.</p> : null}
+              {relationshipHasMore ? <button type="button" disabled={relationshipLoading} onClick={() => setRelationshipPage((page) => page + 1)} className="w-full rounded-xl border border-white/10 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-white/5 disabled:opacity-50">{relationshipLoading ? 'Loading…' : 'Load more'}</button> : null}
+            </div>
+          </section>
+        </div>
+      ) : null}
       {showComedyOnboarding ? <ComedyOnboarding onComplete={handleComedyComplete} onClose={() => setShowComedyOnboarding(false)} /> : null}
       {signupPromptAction ? <SignUpPrompt action={signupPromptAction} onClose={closeSignupPrompt} onSignUp={openSignup} onSignIn={openLogin} /> : null}
     </DashboardShell>
