@@ -140,7 +140,8 @@ const ChevronIcon = (p) => <Icon {...p} path={<path d="M9 6l6 6-6 6" />} />;
 const options = [
   { key: 'video', label: 'Video', hint: 'Record', Glyph: VideoIcon },
   { key: 'photo', label: 'Photo', hint: 'Capture', Glyph: PhotoIcon },
-  { key: 'gallery', label: 'Gallery', hint: 'Upload', Glyph: GalleryIcon },
+  { key: 'gallery', label: 'Upload', hint: 'From device', Glyph: GalleryIcon },
+  { key: 'live', label: 'Go live', hint: 'Stream', Glyph: LiveIcon },
 ];
 
 const privacyOptions = [
@@ -810,17 +811,11 @@ function UploadPage() {
         @keyframes up-fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
         @keyframes up-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
         @keyframes up-ring { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(1.55); opacity: 0; } }
-        @keyframes up-sheen { 0% { transform: translateX(-120%); } 100% { transform: translateX(220%); } }
         @keyframes up-bar { 0% { background-position: 0 0; } 100% { background-position: 32px 0; } }
         .up-stage-in { animation: up-fade-in .55s cubic-bezier(.22,.85,.24,1) both; }
         .up-rise { animation: up-rise .5s cubic-bezier(.22,.85,.24,1) both; }
         .up-d1 { animation-delay: .06s; } .up-d2 { animation-delay: .12s; } .up-d3 { animation-delay: .18s; }
         .up-ring { animation: up-ring 1.6s ease-out infinite; }
-        .up-sheen::after {
-          content: ''; position: absolute; inset: 0;
-          background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.22) 50%, transparent 80%);
-          animation: up-sheen 2.6s ease-in-out infinite;
-        }
         .up-bar-stripes {
           background-image: linear-gradient(115deg, rgba(255,255,255,.28) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.28) 50%, rgba(255,255,255,.28) 75%, transparent 75%);
           background-size: 32px 32px;
@@ -860,7 +855,7 @@ function UploadPage() {
           }
         }
         @media (prefers-reduced-motion: reduce) {
-          .up-stage-in, .up-rise, .up-ring, .up-sheen::after, .up-bar-stripes { animation: none !important; }
+          .up-stage-in, .up-rise, .up-ring, .up-bar-stripes { animation: none !important; }
         }
       `}</style>
 
@@ -872,7 +867,7 @@ function UploadPage() {
         </div>
 
         {/* ---------------- Header ---------------- */}
-        <header className="relative z-10 flex shrink-0 items-center gap-3 border-b border-white/[0.07] bg-[var(--ochi-bg)]/90 px-3 py-3 backdrop-blur-xl sm:gap-4 sm:px-6 sm:py-4">
+        <header className="relative z-10 flex shrink-0 items-center gap-3 border-b border-white/[0.07] bg-[var(--ochi-bg)]/95 px-3 py-3 backdrop-blur-xl sm:gap-4 sm:px-6 sm:py-3.5">
           <button
             type="button"
             onClick={() => {
@@ -886,8 +881,8 @@ function UploadPage() {
           </button>
 
           <div className="min-w-0 flex-1">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[var(--ochi-accent-light)]">{comedian ? `Creator studio · Level ${comedianProfile?.level || 1} ${comedianProfile?.levelName || 'Rookie'}` : 'Creator studio'}</p>
-            <h1 className="truncate text-base font-semibold tracking-tight text-white sm:text-lg">{screen === 'live' ? 'Go live' : screen === 'preview' ? 'Review your post' : 'Create something new'}</h1>
+            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ochi-accent-light)]">{comedian ? `Creator studio · Level ${comedianProfile?.level || 1} ${comedianProfile?.levelName || 'Rookie'}` : 'Creator studio'}</p>
+            <h1 className="truncate text-base font-semibold tracking-tight text-white sm:text-lg">{screen === 'live' ? 'Go live' : screen === 'preview' ? 'Review & share' : 'Create a post'}</h1>
           </div>
 
           {/* step indicator — Capture → Details → Publish */}
@@ -927,19 +922,26 @@ function UploadPage() {
             {stageLabel}
           </span>
 
-          <button
-            type="button"
-            onClick={handlePublish}
-            disabled={!canPost}
-            className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-[var(--ochi-accent)] px-4 py-2 text-[13px] font-semibold text-[#190d0a] transition hover:bg-[var(--ochi-accent-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-slate-500"
-          >
-            {uploading ? (
-              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-            ) : (
-              <CheckIcon className="h-4 w-4" />
-            )}
-            {uploading ? 'Posting…' : 'Post'}
-          </button>
+          {screen === 'preview' ? (
+            <button
+              type="button"
+              onClick={handlePublish}
+              disabled={!canPost}
+              className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-[var(--ochi-accent)] px-4 py-2 text-[13px] font-semibold text-[#190d0a] transition hover:bg-[var(--ochi-accent-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-slate-500"
+            >
+              {uploading ? (
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              ) : (
+                <CheckIcon className="h-4 w-4" />
+              )}
+              {uploading ? 'Posting…' : 'Publish'}
+            </button>
+          ) : draftReady ? (
+            <span className="hidden items-center gap-1.5 text-xs text-slate-500 sm:inline-flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              Drafts on
+            </span>
+          ) : null}
         </header>
 
         {/* upload progress rail */}
@@ -951,9 +953,8 @@ function UploadPage() {
         </div>
 
         {/* ---------------- Body ---------------- */}
-        <main className="relative z-10 flex min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-[1320px] lg:flex-row lg:items-center lg:gap-7 lg:p-6 xl:gap-9 xl:p-8">
-          {/* left rail — desktop mode switcher (TikTok/Twitch style) */}
-          <aside className="hidden shrink-0 flex-col gap-2 lg:flex" aria-label="Upload mode">
+        <main className="relative z-10 flex min-h-0 flex-1 flex-col lg:mx-auto lg:grid lg:w-full lg:max-w-[1320px] lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-[auto_minmax(0,1fr)] lg:items-center lg:gap-x-8 lg:gap-y-5 lg:p-6 xl:gap-x-10 xl:p-8">
+          <aside className="hidden lg:col-span-2 lg:flex lg:items-center lg:gap-2 lg:border-b lg:border-white/[0.07] lg:pb-4" aria-label="Create mode">
             {options.filter((option) => comedian || option.key !== 'live').map((option) => {
               const active = activeTab === option.key;
               const { Glyph } = option;
@@ -963,22 +964,19 @@ function UploadPage() {
                   type="button"
                   aria-pressed={active}
                   onClick={() => handleOption(option.key)}
-                  className={`group relative flex w-[84px] flex-col items-center gap-1.5 rounded-2xl border px-2 py-4 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 ${
+                  className={`group relative flex min-h-12 min-w-[132px] items-center gap-3 rounded-xl border px-4 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 ${
                     active
-                      ? 'border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] text-white shadow-lg shadow-black/30'
+                      ? 'border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] text-white'
                       : 'border-transparent text-slate-400 hover:border-white/10 hover:bg-white/5 hover:text-slate-200'
                   }`}
                 >
-                  <span
-                    className={`absolute left-0 top-1/2 h-7 -translate-y-1/2 rounded-r-full bg-rose-500 transition-all duration-300 ${
-                      active ? 'w-1 opacity-100' : 'w-0 opacity-0'
-                    }`}
-                  />
                   <Glyph
-                    className={`h-[22px] w-[22px] transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-105'}`}
+                    className={`h-5 w-5 shrink-0 ${active ? 'text-[var(--ochi-accent-light)]' : ''}`}
                   />
-                  <span className="text-[11px] font-semibold tracking-tight">{option.label}</span>
-                  <span className="text-[9px] uppercase tracking-[0.18em] text-slate-500">{option.hint}</span>
+                  <span className="min-w-0">
+                    <span className="block text-xs font-semibold">{option.label}</span>
+                    <span className="mt-0.5 block text-[10px] text-slate-500">{option.hint} a moment</span>
+                  </span>
                 </button>
               );
             })}
@@ -992,7 +990,7 @@ function UploadPage() {
             }}
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
-            className={`up-mobile-stage ${screen !== 'preview' ? 'up-capture-stage' : ''} relative min-h-0 flex-1 overflow-hidden bg-[#050506] transition-all duration-300 lg:h-auto lg:min-h-0 lg:flex-1 lg:shrink lg:rounded-[30px] lg:border lg:shadow-[0_32px_100px_rgba(0,0,0,0.5)] lg:max-h-[calc(100dvh-8rem)] lg:aspect-[9/16] lg:max-w-[440px] ${
+            className={`up-mobile-stage ${screen !== 'preview' ? 'up-capture-stage' : ''} relative min-h-0 flex-1 overflow-hidden bg-[#050506] transition-colors lg:col-start-1 lg:row-start-2 lg:h-auto lg:aspect-[9/16] lg:max-h-[calc(100dvh-10rem)] lg:w-full lg:max-w-[480px] lg:shrink-0 lg:justify-self-center lg:rounded-[24px] lg:border lg:shadow-[0_24px_70px_rgba(0,0,0,0.35)] ${
               dragging ? 'lg:border-rose-400/60 lg:ring-2 lg:ring-rose-400/30' : 'lg:border-white/10'
             }`}
           >
@@ -1110,7 +1108,7 @@ function UploadPage() {
           </section>
 
           {/* Controls / details */}
-          <section className={`up-scroll ${screen !== 'preview' ? 'up-capture-controls' : ''} pointer-events-auto absolute inset-x-0 bottom-0 z-20 min-h-0 touch-manipulation overflow-y-auto overscroll-contain px-3 pb-[calc(.65rem+env(safe-area-inset-bottom))] pt-2 sm:px-6 lg:relative lg:inset-auto lg:max-h-[calc(100dvh-8rem)] lg:w-[400px] lg:flex-none lg:rounded-[28px] lg:border lg:border-white/[0.07] lg:bg-[var(--ochi-surface)] lg:px-5 lg:py-5 lg:shadow-[var(--ochi-shadow-card)] ${liveStarted && screen === 'live' ? 'max-h-none bg-transparent' : `rounded-t-2xl border-t border-white/15 bg-[var(--ochi-bg)]/95 ${screen === 'live' ? 'max-h-[34dvh] sm:max-h-[42dvh]' : 'max-h-[44dvh]'}`} ${screen !== 'live' ? 'lg:bg-[var(--ochi-surface)]' : ''}`}>
+          <section className={`up-scroll ${screen !== 'preview' ? 'up-capture-controls' : ''} pointer-events-auto absolute inset-x-0 bottom-0 z-20 min-h-0 touch-manipulation overflow-y-auto overscroll-contain px-3 pb-[calc(.65rem+env(safe-area-inset-bottom))] pt-2 sm:px-6 lg:relative lg:inset-auto lg:col-start-2 lg:row-start-2 lg:max-h-[calc(100dvh-10rem)] lg:w-full lg:self-stretch lg:rounded-2xl lg:border lg:border-white/[0.07] lg:bg-[var(--ochi-surface)] lg:px-5 lg:py-5 lg:shadow-[var(--ochi-shadow-card)] ${liveStarted && screen === 'live' ? 'max-h-none bg-transparent' : `rounded-t-2xl border-t border-white/15 bg-[var(--ochi-bg)]/95 ${screen === 'live' ? 'max-h-[34dvh] sm:max-h-[42dvh]' : 'max-h-[44dvh]'}`} ${screen !== 'live' ? 'lg:bg-[var(--ochi-surface)]' : ''}`}>
             {/* mobile mode switcher */}
             <div
               role="tablist"
@@ -1144,36 +1142,36 @@ function UploadPage() {
               {screen === 'preview' ? (
                 <div key="p-preview" className="space-y-3">
                   {/* caption */}
-                  <div className="up-rise rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4">
+                  <div className="up-rise rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4 sm:p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-base font-semibold text-white">Tell the story</p>
-                        <p className="mt-1.5 max-w-sm text-xs leading-5 text-slate-400">
-                          Add a caption that gives people a reason to watch and respond.
+                        <p className="text-sm font-semibold text-white">Caption</p>
+                        <p className="mt-1 max-w-sm text-xs leading-5 text-slate-500">
+                          Add context or start a conversation.
                         </p>
                       </div>
-                      <span className="rounded-full border border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ochi-accent-light)]">
-                        {previewType}
+                      <span className="rounded-lg border border-white/[0.08] bg-black/20 px-2.5 py-1 text-[10px] font-medium capitalize text-slate-400">
+                        {previewType} post
                       </span>
                     </div>
 
-                    <div className="relative mt-4">
+                    <div className="relative mt-3">
                       <textarea
                         value={caption}
                         onChange={(e) => setCaption(e.target.value)}
-                        rows={3}
+                        rows={4}
                         maxLength={200}
-                        placeholder="What’s happening in this moment?"
-                        className="w-full min-h-24 resize-none rounded-xl border border-white/[0.08] bg-black/20 px-3.5 py-3 text-sm leading-6 text-white outline-none transition duration-200 placeholder:text-slate-500 focus:border-[var(--ochi-accent-40)] focus:ring-2 focus:ring-rose-400/15"
+                        placeholder="Write a caption..."
+                        className="w-full min-h-28 resize-none rounded-xl border border-white/[0.08] bg-black/20 px-3.5 py-3 pb-8 text-sm leading-6 text-white outline-none transition duration-200 placeholder:text-slate-500 focus:border-[var(--ochi-accent-40)] focus:ring-2 focus:ring-rose-400/15"
                       />
-                      <span className="pointer-events-none absolute bottom-3 right-3 text-xs font-medium tabular-nums text-slate-500">
+                      <span className="pointer-events-none absolute bottom-3 right-3 text-[10px] font-medium tabular-nums text-slate-500">
                         {caption.length}/200
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500">Drafts are saved to this device automatically.</p>
+                    <p className="mt-2 text-[11px] text-slate-500">Your caption and settings save as a draft on this device.</p>
                     {draftMessage ? <p className={`mt-1 text-xs ${draftMessage.startsWith('Draft saved') ? 'text-emerald-300' : 'text-amber-200'}`} role={draftMessage.startsWith('Draft saved') ? 'status' : 'alert'}>{draftMessage}</p> : null}
 
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap gap-1.5">
                       {suggestedTags.map((tag) => (
                         <button
                           key={tag}
@@ -1183,7 +1181,7 @@ function UploadPage() {
                               (c.includes(tag) ? c : `${c}${c && !c.endsWith(' ') ? ' ' : ''}${tag} `).slice(0, 200),
                             )
                           }
-                          className="rounded-full border border-white/10 bg-slate-900/80 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-rose-400/40 hover:bg-rose-500/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40"
+                          className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[11px] font-medium text-slate-400 transition hover:border-rose-400/40 hover:bg-rose-500/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40"
                         >
                           {tag}
                         </button>
@@ -1192,10 +1190,14 @@ function UploadPage() {
                   </div>
 
                   {/* audience */}
-                  <div className="up-rise up-d1 rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4">
-                    <p className="text-sm font-semibold text-white">Audience & interaction</p>
-                    <p className="mt-1 text-xs text-slate-500">Choose who can see this post.</p>
-                    <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-xl border border-white/10 bg-white/5 p-1.5">
+                  <div className="up-rise up-d1 rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface-raised)] p-4 sm:p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-white">Post settings</p>
+                        <p className="mt-1 text-xs text-slate-500">Choose your audience and interactions.</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-1 rounded-xl border border-white/[0.08] bg-black/20 p-1">
                       {privacyOptions.map((opt) => {
                         const active = privacy === opt.key;
                         const { Glyph } = opt;
@@ -1205,8 +1207,8 @@ function UploadPage() {
                             type="button"
                             aria-pressed={active}
                             onClick={() => setPrivacy(opt.key)}
-                            className={`flex flex-col items-center gap-1.5 rounded-lg px-2 py-2.5 text-[11px] font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40 ${
-                              active ? 'bg-white/10 text-white shadow-lg shadow-black/30' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                            className={`flex min-h-[68px] flex-col items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40 ${
+                              active ? 'bg-white/[0.09] text-white' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                             }`}
                           >
                             <Glyph className="h-4 w-4" />
@@ -1216,8 +1218,11 @@ function UploadPage() {
                       })}
                     </div>
 
-                    <label className="mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-950/60 px-3.5 py-3">
-                      <span className="text-sm text-slate-300">Allow comments</span>
+                    <label className="mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-white/[0.08] bg-black/20 px-3.5 py-3">
+                      <span>
+                        <span className="block text-xs font-medium text-slate-200">Allow comments</span>
+                        <span className="mt-0.5 block text-[10px] text-slate-500">Let viewers respond to this post.</span>
+                      </span>
                       <span className="relative inline-flex">
                         <input
                           type="checkbox"
@@ -1232,36 +1237,15 @@ function UploadPage() {
                   </div>
 
                   {/* actions */}
-                  <div className="up-rise up-d2 flex gap-2.5">
-                    <button
-                      type="button"
-                      onClick={handlePublish}
-                      disabled={uploading}
-                      className={`relative flex-1 overflow-hidden rounded-xl bg-rose-500 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 disabled:cursor-not-allowed disabled:bg-rose-500/50 ${
-                        uploading ? '' : 'up-sheen'
-                      }`}
-                    >
-                      <span className="relative inline-flex items-center justify-center gap-2">
-                        {uploading ? (
-                          <>
-                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                            {progress >= 100 ? 'Publishing…' : `Uploading… ${Math.round(progress)}%`}
-                          </>
-                        ) : (
-                          <>
-                            <CheckIcon className="h-4 w-4" />
-                            Post
-                          </>
-                        )}
-                      </span>
-                    </button>
+                  <div className="up-rise up-d2 flex items-center justify-between gap-3 border-t border-white/[0.07] pt-3">
+                    <p className="text-[11px] leading-5 text-slate-500">Ready to share when you are.</p>
                     <button
                       type="button"
                       onClick={resetToCamera}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
                     >
                       <RetakeIcon className="h-4 w-4" />
-                      Retake
+                      Replace media
                     </button>
                   </div>
                 </div>
