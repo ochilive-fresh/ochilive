@@ -24,7 +24,7 @@ const tabs = [
 ];
 
 const FeedIcon = ({ type, active = false }) => {
-  const common = 'h-5 w-5';
+  const common = 'h-6 w-6';
   if (type === 'like') {
     return <svg viewBox="0 0 24 24" className={common} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.8 8.8c0 5.2-8.8 10.2-8.8 10.2S3.2 14 3.2 8.8A4.6 4.6 0 0 1 12 6.4a4.6 4.6 0 0 1 8.8 2.4Z" /></svg>;
   }
@@ -34,7 +34,10 @@ const FeedIcon = ({ type, active = false }) => {
   if (type === 'save') {
     return <svg viewBox="0 0 24 24" className={common} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 4.5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2V21l-6-3.7L6 21V4.5Z" /></svg>;
   }
-  return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m8 8 4-4 4 4" /><path d="M12 4v9" /><path d="M5 11v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" /></svg>;
+  if (type === 'sound') {
+    return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z" /><path d={active ? 'M15 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12' : 'm16 9 5 6m0-6-5 6'} /></svg>;
+  }
+  return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V4" /><path d="m7 9 5-5 5 5" /><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" /></svg>;
 };
 
 function HomePage() {
@@ -59,6 +62,7 @@ function HomePage() {
   const tapTimers = useRef(new Map());
   const playbackPositions = useRef(new Map());
   const [mutedVideos, setMutedVideos] = useState({});
+  const audioEnabledRef = useRef(true);
   const [heartBurstVideoId, setHeartBurstVideoId] = useState(null);
   const [videoProgress, setVideoProgress] = useState({});
   const [videoLoadState, setVideoLoadState] = useState({});
@@ -86,6 +90,14 @@ function HomePage() {
       // Persistent UI state is best-effort when storage is unavailable.
     }
   };
+
+  useEffect(() => {
+    try {
+      audioEnabledRef.current = localStorage.getItem('ochi-feed-audio') !== 'off';
+    } catch {
+      audioEnabledRef.current = true;
+    }
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -147,7 +159,14 @@ function HomePage() {
           if (savedPosition && Number.isFinite(savedPosition) && video.duration && savedPosition < video.duration - 0.5) {
             video.currentTime = savedPosition;
           }
-          video.play().catch(() => undefined);
+          video.muted = mutedVideos[id] ?? !audioEnabledRef.current;
+          video.play().catch(() => {
+            if (!video.muted) {
+              video.muted = true;
+              setMutedVideos((current) => ({ ...current, [id]: true }));
+              video.play().catch(() => undefined);
+            }
+          });
         } else {
           if (Number.isFinite(video.currentTime) && video.currentTime > 0) {
             playbackPositions.current.set(id, video.currentTime);
@@ -172,7 +191,7 @@ function HomePage() {
       const element = videoRefs.current[video.id];
       if (element?.tagName === 'VIDEO') {
         element.dataset.videoId = video.id;
-        element.muted = mutedVideos[video.id] !== false;
+        element.muted = mutedVideos[video.id] ?? !audioEnabledRef.current;
         element.playsInline = true;
         observer.observe(element);
       }
@@ -284,6 +303,18 @@ function HomePage() {
     tapTimers.current.set(video.id, pendingTap);
   };
 
+  const handlePhotoTap = (event, video) => {
+    event.stopPropagation();
+    const now = Date.now();
+    const previousTap = lastVideoTap.current.get(video.id) || 0;
+    lastVideoTap.current.set(video.id, now);
+    if (now - previousTap < 320) {
+      handleToggleLike(video.id);
+      setHeartBurstVideoId(video.id);
+      window.setTimeout(() => setHeartBurstVideoId((current) => (current === video.id ? null : current)), 850);
+    }
+  };
+
   const handleToggleSound = (event, id) => {
     event.stopPropagation();
     const element = videoRefs.current[id];
@@ -291,6 +322,12 @@ function HomePage() {
     const nextMuted = !element.muted;
     element.muted = nextMuted;
     setMutedVideos((current) => ({ ...current, [id]: nextMuted }));
+    audioEnabledRef.current = !nextMuted;
+    try {
+      localStorage.setItem('ochi-feed-audio', nextMuted ? 'off' : 'on');
+    } catch {
+      // Remembering audio preference is optional.
+    }
     if (!nextMuted) element.play().catch(() => undefined);
   };
 
@@ -404,11 +441,6 @@ function HomePage() {
       `}</style>
       <div className="mx-auto grid w-full max-w-[1180px] gap-8 min-[1440px]:grid-cols-[minmax(0,600px)_minmax(260px,320px)] min-[1440px]:items-start">
       <section className="min-w-0">
-      <div className="mb-5">
-        <p className="ochi-kicker">Your daily dose of live</p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white sm:text-3xl">The room is yours.</h2>
-        <p className="mt-1 text-sm text-slate-400">Fresh voices, live moments, and the people behind them.</p>
-      </div>
       {message ? (
         <div role="status" className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${/^(Unable|No media|Share is not)/.test(message) ? 'border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] text-[var(--ochi-accent-light)]' : 'border-emerald-300/15 bg-emerald-400/[0.08] text-emerald-100'}`}>
           {message}
@@ -427,7 +459,7 @@ function HomePage() {
           handleSwipe();
         }}
       >
-        <div className="flex gap-1 overflow-x-auto rounded-2xl border border-white/[0.07] bg-white/[0.025] p-1 no-scrollbar">
+        <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/[0.07] bg-white/[0.025] p-1 no-scrollbar sm:rounded-2xl">
           {tabs.map((tab) => {
             const active = tab.key === activeTab;
             return (
@@ -435,7 +467,7 @@ function HomePage() {
                 key={tab.key}
                 type="button"
                 onClick={() => handleSelectTab(tab.key)}
-                className={`relative shrink-0 rounded-xl px-3 py-2 text-xs font-semibold tracking-normal transition-all duration-200 sm:px-4 sm:py-2.5 sm:text-sm ${
+                className={`relative shrink-0 rounded-lg px-3 py-2 text-xs font-semibold tracking-normal transition-all duration-200 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm ${
                   active
                     ? 'bg-[var(--ochi-surface-raised)] text-white shadow-sm ring-1 ring-white/[0.06]'
                     : 'text-slate-500 hover:bg-white/[0.04] hover:text-slate-200'
@@ -466,12 +498,12 @@ function HomePage() {
           </div>
         </div>
       ) : (
-        <div className="mt-4 max-h-[calc(100dvh-15rem)] space-y-4 overflow-y-auto overscroll-contain pr-1 snap-y snap-mandatory sm:max-h-[calc(100dvh-14rem)]">
+        <div className="-mx-4 mt-2 h-[calc(100dvh-244px)] min-h-[360px] overflow-y-auto overscroll-contain snap-y snap-mandatory sm:mx-0 sm:mt-4 sm:h-auto sm:max-h-[calc(100dvh-14rem)] sm:min-h-0 sm:space-y-4 sm:pr-1">
           {videos.length ? (
             videos.map((video) => (
               <article
                 key={video.id}
-                className="relative h-[72svh] min-h-[460px] max-h-[780px] snap-start overflow-hidden rounded-[26px] border border-white/[0.09] bg-black shadow-[0_30px_90px_rgba(0,0,0,0.45)] sm:rounded-[30px]"
+                className="relative h-full min-h-0 w-full snap-start overflow-hidden bg-black sm:h-[72svh] sm:min-h-[460px] sm:max-h-[780px] sm:rounded-[30px] sm:border sm:border-white/[0.09] sm:shadow-[0_30px_90px_rgba(0,0,0,0.45)]"
                 onClick={() => {
                   if (video.type === 'live') {
                     navigate(`/live/${video.id}`);
@@ -495,7 +527,7 @@ function HomePage() {
                     }}
                     data-media-src={video.mediaUrl || video.thumbnailUrl}
                     poster={video.thumbnailUrl || video.mediaUrl}
-                    muted={mutedVideos[video.id] !== false}
+                    muted={mutedVideos[video.id] ?? !audioEnabledRef.current}
                     autoPlay
                     loop
                     playsInline
@@ -523,16 +555,13 @@ function HomePage() {
                     alt={video.title}
                     className="feed-photo-motion h-full w-full object-cover"
                     onClick={(event) => {
-                      event.stopPropagation();
-                      if (video.type === 'live') {
-                        navigate(`/live/${video.id}`);
-                        return;
-                      }
+                      if (video.type === 'live') navigate(`/live/${video.id}`);
+                      else handlePhotoTap(event, video);
                     }}
                   />
                 )}
 
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
 
                 {isVideoType(video) && videoLoadState[video.id] === 'loading' ? (
                   <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
@@ -568,7 +597,7 @@ function HomePage() {
                   </div>
                 ) : null}
 
-                <div className="absolute inset-x-0 top-3 flex items-center justify-between px-3 sm:top-4 sm:px-4">
+                <div className="absolute inset-x-0 top-3 z-10 flex items-center justify-between px-3 sm:top-4 sm:px-4">
                   <div className="flex items-center gap-2">
                     <span className="rounded-full border border-white/10 bg-slate-950/40 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-100 backdrop-blur-sm sm:px-2.5 sm:py-1 sm:text-[10px]">
                       {video.type === 'live' ? 'LIVE' : video.category || 'Creator'}
@@ -583,28 +612,28 @@ function HomePage() {
                     <button
                       type="button"
                       onClick={(event) => handleToggleSound(event, video.id)}
-                      className="rounded-full bg-slate-950/65 px-2.5 py-1 text-[10px] font-semibold text-white/90 backdrop-blur-sm"
-                      aria-label={mutedVideos[video.id] === false ? 'Mute video' : 'Unmute video'}
+                      className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-black/45 px-3 text-white shadow-lg backdrop-blur-xl transition hover:bg-black/65"
+                      aria-label={(mutedVideos[video.id] ?? !audioEnabledRef.current) ? 'Unmute video' : 'Mute video'}
                     >
-                      {mutedVideos[video.id] === false ? '🔊 Sound on' : '🔇 Tap for sound'}
+                      <FeedIcon type="sound" active={!(mutedVideos[video.id] ?? !audioEnabledRef.current)} />
+                      <span className="text-[11px] font-semibold">{(mutedVideos[video.id] ?? !audioEnabledRef.current) ? 'Sound off' : 'Sound on'}</span>
                     </button>
                   ) : <span className="rounded-full bg-slate-950/40 px-2.5 py-0.5 text-[9px] font-medium text-slate-200 backdrop-blur-sm sm:px-2.5 sm:py-1 sm:text-[10px]">{Number(video.views || 0).toLocaleString()} views</span>}
                 </div>
 
-                <div className="absolute bottom-14 right-3 z-10 flex flex-col items-center gap-2 sm:bottom-16 sm:right-4 sm:gap-3">
+                <div className="absolute bottom-[5.5rem] right-3 z-10 flex flex-col items-center gap-2.5 sm:bottom-16 sm:right-4 sm:gap-3">
                   <button
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleToggleLike(video.id);
                     }}
-                    className={`flex min-w-14 flex-col items-center gap-1 rounded-2xl border px-2 py-2 text-white shadow-lg backdrop-blur-xl transition hover:scale-105 ${video.liked ? 'border-rose-300/60 bg-rose-500/25 text-rose-100 ring-1 ring-rose-300/30' : 'border-white/15 bg-slate-950/55'}`}
+                    className="flex w-12 flex-col items-center gap-1 text-white transition active:scale-90"
                     aria-label={video.liked ? 'Liked video' : 'Like video'}
                     aria-pressed={Boolean(video.liked)}
                   >
-                    <span className={`transition-transform ${video.liked ? 'scale-110 text-rose-300' : 'text-white'}`}><FeedIcon type="like" active={video.liked} /></span>
-                    {video.liked ? <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-rose-200">Liked</span> : null}
-                    <span className="text-[10px] font-medium text-slate-200">{Number(video.likes || 0).toLocaleString()}</span>
+                    <span className={`flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/40 shadow-lg backdrop-blur-xl ${video.liked ? 'text-rose-400' : 'text-white'}`}><FeedIcon type="like" active={video.liked} /></span>
+                    <span className="text-[11px] font-semibold text-white drop-shadow">{Number(video.likes || 0).toLocaleString()}</span>
                   </button>
                   <button
                     type="button"
@@ -612,11 +641,11 @@ function HomePage() {
                       event.stopPropagation();
                       handleOpenComments(video);
                     }}
-                    className="flex min-w-12 flex-col items-center gap-1 rounded-2xl border border-white/15 bg-slate-950/55 px-2 py-2 text-white shadow-lg backdrop-blur-xl transition hover:scale-105"
+                    className="flex w-12 flex-col items-center gap-1 text-white transition active:scale-90"
                     aria-label="Comment on video"
                   >
-                    <FeedIcon type="comment" />
-                    <span className="text-[10px] font-medium text-slate-200">{Number(video.comments || 0).toLocaleString()}</span>
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/40 shadow-lg backdrop-blur-xl"><FeedIcon type="comment" /></span>
+                    <span className="text-[11px] font-semibold text-white drop-shadow">{Number(video.comments || 0).toLocaleString()}</span>
                   </button>
                   <button
                     type="button"
@@ -624,11 +653,12 @@ function HomePage() {
                       event.stopPropagation();
                       handleToggleSave(video.id);
                     }}
-                    className={`flex min-w-12 flex-col items-center gap-1 rounded-2xl border px-2 py-2 text-white shadow-lg backdrop-blur-xl transition hover:scale-105 ${video.saved ? 'border-emerald-300/40 bg-emerald-500/20' : 'border-white/15 bg-slate-950/55'}`}
-                    aria-label="Save video"
+                    className="flex w-12 flex-col items-center gap-1 text-white transition active:scale-90"
+                    aria-label={video.saved ? 'Remove from saved' : 'Save video'}
+                    aria-pressed={Boolean(video.saved)}
                   >
-                    <span className={video.saved ? 'text-emerald-300' : 'text-white'}><FeedIcon type="save" active={video.saved} /></span>
-                    <span className="text-[10px] font-medium text-slate-200">{Number(video.saves || video.savedCount || 0).toLocaleString()}</span>
+                    <span className={`flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/40 shadow-lg backdrop-blur-xl ${video.saved ? 'text-emerald-300' : 'text-white'}`}><FeedIcon type="save" active={video.saved} /></span>
+                    <span className="text-[11px] font-semibold text-white drop-shadow">{Number(video.saves || video.savedCount || 0).toLocaleString()}</span>
                   </button>
                   <button
                     type="button"
@@ -636,11 +666,11 @@ function HomePage() {
                       event.stopPropagation();
                       handleShare(video);
                     }}
-                    className="flex min-w-12 flex-col items-center gap-1 rounded-2xl border border-white/15 bg-slate-950/55 px-2 py-2 text-white shadow-lg backdrop-blur-xl transition hover:scale-105"
+                    className="flex w-12 flex-col items-center gap-1 text-white transition active:scale-90"
                     aria-label="Share video"
                   >
-                    <FeedIcon type="share" />
-                    <span className="text-[10px] font-medium text-slate-200">{Number(video.shares || video.shareCount || 0).toLocaleString()}</span>
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/40 shadow-lg backdrop-blur-xl"><FeedIcon type="share" /></span>
+                    <span className="text-[11px] font-semibold text-white drop-shadow">{Number(video.shares || video.shareCount || 0).toLocaleString()}</span>
                   </button>
                 </div>
 

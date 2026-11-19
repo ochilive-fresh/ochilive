@@ -128,6 +128,24 @@ function NotificationsPage() {
       backFallback="/home"
     >
       <div className="overflow-hidden bg-slate-950/40">
+        <button
+          type="button"
+          onClick={() => navigate('/messages')}
+          className="flex w-full items-center gap-3 border-b border-slate-800 bg-white/[0.025] px-4 py-4 text-left transition hover:bg-white/[0.06] sm:px-6"
+          aria-label="Open messages inbox"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--ochi-accent-10)] text-[var(--ochi-accent-light)]">
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+              <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-white">Messages</span>
+            <span className="mt-0.5 block text-xs text-slate-400">Open your conversations and inbox</span>
+          </span>
+          <span className="text-sm font-medium text-[var(--ochi-accent-light)]">Open <span aria-hidden="true">→</span></span>
+        </button>
+
         <div className="flex flex-col gap-3 px-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
             <div className="flex items-center gap-2 sm:gap-3">
@@ -185,4 +203,3 @@ function NotificationsPage() {
 }
 
 export default NotificationsPage;
-

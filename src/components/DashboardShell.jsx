@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import messageApi from '../api/messageApi';
+import { getNotifications } from '../api/dashboardApi';
 import { isAuthenticated } from '../utils/session';
 
 const navItems = [
@@ -8,7 +9,7 @@ const navItems = [
   { label: 'Discover', path: '/discover', icon: 'search' },
   { label: 'Create', path: '/upload', icon: 'plus' },
   { label: 'Activity', path: '/activity', icon: 'activity' },
-  { label: 'Messages', path: '/messages', icon: 'message' },
+  { label: 'Notifications', path: '/notifications', icon: 'bell' },
   { label: 'Profile', path: '/profile', icon: 'user' },
 ];
 
@@ -103,7 +104,7 @@ export default function DashboardShell({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [messageUnreadCount, setMessageUnreadCount] = useState(0);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const isHome = location.pathname === '/' || location.pathname === '/home';
   const isProfileRoute = location.pathname === '/profile' || location.pathname.startsWith('/profile/');
   const isSettingsRoute = location.pathname === '/settings';
@@ -111,19 +112,22 @@ export default function DashboardShell({
 
   useEffect(() => {
     if (!isAuthenticated()) {
-      setMessageUnreadCount(0);
+      setInboxUnreadCount(0);
       return undefined;
     }
 
     let ignore = false;
 
     const refreshMessageCount = async () => {
-      try {
-        const data = await messageApi.getUnreadCount();
-        if (!ignore) setMessageUnreadCount(Number(data?.unreadCount || 0));
-      } catch {
-        if (!ignore) setMessageUnreadCount(0);
-      }
+      const [messages, notifications] = await Promise.allSettled([
+        messageApi.getUnreadCount(),
+        getNotifications('all'),
+      ]);
+      if (ignore) return;
+
+      const messageCount = messages.status === 'fulfilled' ? Number(messages.value?.unreadCount || 0) : 0;
+      const notificationCount = notifications.status === 'fulfilled' ? Number(notifications.value?.unreadCount || 0) : 0;
+      setInboxUnreadCount(messageCount + notificationCount);
     };
 
     refreshMessageCount();
@@ -151,24 +155,10 @@ export default function DashboardShell({
     <div className="min-h-screen bg-[var(--ochi-bg)] text-[var(--ochi-text)]">
       <div className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.07] bg-[var(--ochi-bg)]/90 backdrop-blur-2xl lg:left-64">
         {isHome ? (
-          <div className="mx-auto flex h-[68px] max-w-[1360px] items-center justify-between gap-3 px-4 sm:px-8 lg:px-10">
+          <div className="mx-auto flex h-12 max-w-[1360px] items-center justify-between gap-3 px-4 sm:h-[68px] sm:px-8 lg:px-10">
             <div className="flex min-w-0 items-center gap-4">
-              <span className="hidden text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500 sm:block">The creator stage</span>
-              <span className="hidden h-4 w-px bg-white/10 sm:block" />
-              <p className="truncate text-sm font-medium text-slate-300 sm:text-base">Good things happen live.</p>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <Link to="/notifications" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035] text-slate-300 transition hover:border-white/15 hover:bg-white/[0.08] hover:text-white" aria-label="Notifications">
-                <Icon name="bell" className="h-[18px] w-[18px]" />
-              </Link>
-              <Link
-                to="/discover?focus=search"
-                className="group inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035] text-slate-300 transition hover:border-white/15 hover:bg-white/[0.08] hover:text-white focus:outline-none focus:ring-2 focus:ring-[var(--ochi-accent)]/40"
-                aria-label="Search creators and content"
-                title="Search"
-              >
-                <Icon name="search" className="h-[18px] w-[18px] transition-transform group-hover:scale-110" />
-              </Link>
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--ochi-accent)] text-sm font-black tracking-tighter text-[#17100e] sm:h-9 sm:w-9">O.</span>
+              <span className="text-sm font-bold tracking-tight text-white">ochi<span className="text-[var(--ochi-accent)]">.</span>live</span>
             </div>
           </div>
         ) : (
@@ -191,17 +181,7 @@ export default function DashboardShell({
                 {subtitle ? <p className="hidden truncate text-xs text-slate-400 sm:block">{subtitle}</p> : null}
               </div>
               {isProfileToolbarRoute ? (
-                <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
-                  <Link
-                    to="/upload"
-                    className="group inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[var(--ochi-accent-strong)] px-4 text-white shadow-[0_8px_22px_-8px_rgba(255,118,94,0.65)] transition hover:-translate-y-0.5 hover:bg-[var(--ochi-accent)] focus:outline-none focus:ring-2 focus:ring-rose-300/50"
-                    aria-label="Upload content"
-                    title="Upload content"
-                  >
-                    <Icon name="plus" className="h-6 w-6 transition-transform group-hover:scale-110" />
-                    <span className="text-sm font-semibold">Upload</span>
-                  </Link>
-
+                <div className="flex shrink-0 items-center justify-end">
                   <Link
                     to="/settings"
                     className="group inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035] text-slate-300 transition hover:bg-white/[0.08] hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-300/30"
@@ -233,12 +213,12 @@ export default function DashboardShell({
         )}
       </div>
 
-      <main className="mx-auto max-w-6xl px-3 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-[5.5rem] sm:px-6 sm:pb-28 sm:pt-24 lg:mx-0 lg:ml-64 lg:max-w-none lg:px-0 lg:pt-24">
+      <main className={`mx-auto max-w-6xl px-3 pb-[calc(5rem+env(safe-area-inset-bottom))] ${isHome ? 'pt-14 sm:pt-20' : 'pt-[5.5rem] sm:pt-24'} sm:px-6 sm:pb-28 lg:mx-0 lg:ml-64 lg:max-w-none lg:px-0 lg:pt-24`}>
         <div className="mx-auto w-full max-w-[1360px] space-y-5 px-1 sm:space-y-7 sm:px-2 lg:px-10">{children}</div>
       </main>
 
       <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/[0.08] bg-[#0b0c0f]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl lg:bottom-0 lg:left-0 lg:right-auto lg:top-0 lg:w-64 lg:border-r lg:border-t-0 lg:bg-[#0b0c0f]/90 lg:pb-0">
-        <div className="mx-auto grid max-w-6xl grid-cols-6 items-stretch px-1 py-1.5 sm:flex sm:items-center sm:justify-center sm:gap-6 sm:px-6 sm:py-1.5 lg:flex lg:h-full lg:flex-col lg:items-stretch lg:justify-start lg:gap-1 lg:px-5 lg:py-7">
+        <div className="mx-auto grid max-w-6xl grid-cols-6 items-stretch px-0.5 py-1.5 sm:flex sm:items-center sm:justify-center sm:gap-6 sm:px-6 sm:py-1.5 lg:flex lg:h-full lg:flex-col lg:items-stretch lg:justify-start lg:gap-1 lg:px-5 lg:py-7">
           <Link to="/home" className="mb-7 hidden items-center gap-3 rounded-2xl px-3 py-2 lg:flex" aria-label="Ochi Live home">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--ochi-accent)] text-lg font-black tracking-tighter text-[#17100e] shadow-[0_8px_25px_rgba(255,118,94,0.22)]">O.</span>
             <span>
@@ -257,7 +237,7 @@ export default function DashboardShell({
               search: 'text-slate-400',
               upload: 'text-slate-400',
               plus: 'text-slate-400',
-              message: 'text-slate-400',
+              bell: 'text-slate-400',
               user: 'text-slate-400',
               activity: 'text-slate-400',
             };
@@ -278,9 +258,9 @@ export default function DashboardShell({
                       <Icon name={item.icon} className="h-5 w-5 transition-transform group-active:scale-90" />
                     </span>
                     <span className="truncate leading-4 lg:text-sm">{item.label}</span>
-                    {item.path === '/messages' && messageUnreadCount > 0 && (
+                    {item.path === '/notifications' && inboxUnreadCount > 0 && (
                       <span className="absolute -right-1 top-1 inline-flex min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-bold text-white ring-2 ring-slate-950">
-                        {messageUnreadCount > 9 ? '9+' : messageUnreadCount}
+                        {inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}
                       </span>
                     )}
                     <span className={`absolute bottom-0 h-0.5 rounded-full bg-[var(--ochi-accent)] transition-all duration-200 sm:hidden ${isActive ? 'w-5 opacity-100' : 'w-0 opacity-0'}`} />
