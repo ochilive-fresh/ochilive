@@ -232,11 +232,7 @@ export default function DashboardShell({
       <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/[0.08] bg-[#0b0c0f]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl lg:bottom-0 lg:left-0 lg:right-auto lg:top-0 lg:w-64 lg:border-r lg:border-t-0 lg:bg-[#0b0c0f]/90 lg:pb-0">
         <div className="mx-auto grid max-w-6xl grid-cols-5 items-stretch px-1 py-1.5 sm:flex sm:items-center sm:justify-center sm:gap-6 sm:px-6 sm:py-1.5 lg:flex lg:h-full lg:flex-col lg:items-stretch lg:justify-start lg:gap-1 lg:px-5 lg:py-7">
           <Link to="/home" className="mb-7 hidden items-center gap-3 rounded-2xl px-3 py-2 lg:flex" aria-label="Ochi Live home">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--ochi-accent)] text-lg font-black tracking-tighter text-[#15170f] shadow-[0_8px_25px_rgba(197,232,76,0.22)]">O.</span>
-          </Link>
-          <Link to="/upload" className="mb-7 hidden h-12 items-center justify-center gap-2 rounded-xl bg-[var(--ochi-accent-strong)] px-4 text-sm font-semibold text-[#15170f] shadow-[0_10px_30px_rgba(197,232,76,0.18)] transition hover:bg-[var(--ochi-accent)] lg:flex">
-            <Icon name="plus" className="h-5 w-5" />
-            Create something
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--ochi-accent)] text-lg font-black tracking-tighter text-white">O.</span>
           </Link>
           <p className="mb-2 hidden px-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-600 lg:block">Your space</p>
           {navItems.map((item) => {
@@ -256,14 +252,14 @@ export default function DashboardShell({
                 to={item.path}
                 aria-label={item.path === '/notifications' ? 'Inbox and notifications' : item.label}
                 className={({ isActive }) =>
-                  `group relative ${item.path === '/activity' ? 'hidden lg:flex' : 'flex'} min-h-[56px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1.5 text-[10px] font-medium transition-colors sm:min-h-[48px] sm:border sm:border-white/[0.07] sm:bg-white/[0.025] sm:flex-row sm:gap-1 sm:px-3 sm:py-2 sm:text-sm lg:min-h-11 lg:justify-start lg:gap-3 lg:px-3 lg:text-sm ${item.path === '/upload' ? 'lg:hidden' : ''} ${
-                    isActive ? 'bg-white/[0.07] font-semibold text-white shadow-inner shadow-white/[0.02]' : 'text-slate-400 hover:bg-white/[0.035] hover:text-slate-100'
+                  `group relative ${item.path === '/activity' ? 'hidden lg:flex' : 'flex'} min-h-[64px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl border border-white/[0.07] bg-white/[0.025] px-0.5 py-1.5 text-[9px] font-medium transition-colors sm:min-h-[56px] sm:gap-1 sm:px-3 sm:py-2 sm:text-sm lg:min-h-11 lg:flex-row lg:justify-start lg:gap-3 lg:border-transparent lg:bg-transparent lg:px-3 lg:text-sm ${
+                    isActive ? 'border-white/[0.16] bg-white/[0.08] font-semibold text-white shadow-inner shadow-white/[0.02]' : 'text-slate-400 hover:bg-white/[0.06] hover:text-slate-100'
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center ${item.path === '/upload' ? 'rounded-xl bg-[var(--ochi-accent)] text-white' : isActive ? 'text-[var(--ochi-accent-light)]' : colorMap[item.icon]}`}>
+                    <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] ${isActive ? 'bg-white/[0.08] text-[var(--ochi-accent-light)]' : colorMap[item.icon]}`}>
                       <Icon name={item.icon} className="h-5 w-5 transition-transform group-active:scale-90" />
                     </span>
                     <span className="truncate leading-4 lg:text-sm">{item.label}</span>

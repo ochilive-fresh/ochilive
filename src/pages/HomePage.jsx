@@ -9,6 +9,7 @@ import {
   deleteVideoPost,
   updateVideoPost,
   likeVideo,
+  reshareVideo,
   commentOnVideo,
   toggleSaveVideo,
   followProfile,
@@ -75,12 +76,12 @@ const FeedVideoAd = ({ ad }) => {
       context.beginPath();
       context.arc(1050, 180, 95 + Math.sin(progress * Math.PI * 2) * 12, 0, Math.PI * 2);
       context.stroke();
-      context.fillStyle = 'rgba(197,232,76,0.16)';
+      context.fillStyle = 'rgba(255,255,255,0.08)';
       context.beginPath();
       context.arc(1050, 180, 65, 0, Math.PI * 2);
       context.fill();
       context.textAlign = 'left';
-      context.fillStyle = '#c5e84c';
+      context.fillStyle = '#1c1c1e';
       context.font = '700 23px Arial, sans-serif';
       context.fillText('OCHI LIVE', 76, 110);
       context.fillStyle = '#ffffff';
@@ -91,7 +92,7 @@ const FeedVideoAd = ({ ad }) => {
       context.font = '400 27px Arial, sans-serif';
       const details = ['Share a moment with the Ochi community.', 'Join this week’s Dark Humor and Jokes challenges.', 'Discover creators, conversations, and live comedy.'];
       context.fillText(details[scene], 76, 390);
-      context.fillStyle = '#c5e84c';
+      context.fillStyle = '#1c1c1e';
       context.font = '700 21px Arial, sans-serif';
       context.fillText('COMEDY · ROOMS · COMMUNITY', 76, 625);
       animationFrame = window.requestAnimationFrame(draw);
@@ -110,7 +111,7 @@ const FeedVideoAd = ({ ad }) => {
 
   return (
     <article aria-label={`Sponsored: ${ad?.name || 'Ochi Community'}`} className="overflow-hidden rounded-[24px] border border-white/[0.09] bg-[#101114]">
-      <div className="relative aspect-video max-h-[45vh] overflow-hidden bg-[radial-gradient(ellipse_at_75%_15%,rgba(197,232,76,0.28),transparent_38%),linear-gradient(135deg,#17191f,#08090b)]">
+      <div className="relative aspect-video max-h-[45vh] overflow-hidden bg-[radial-gradient(ellipse_at_75%_15%,rgba(255,255,255,0.08),transparent_38%),linear-gradient(135deg,#17191f,#08090b)]">
         {!ad?.mediaUrl ? <canvas ref={canvasRef} width="1280" height="720" className="absolute inset-0 h-full w-full" aria-hidden="true" /> : null}
         {!videoReady && !ad?.mediaUrl ? (
           <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
@@ -182,18 +183,21 @@ const formatCommentTime = (value) => {
 };
 
 const FeedIcon = ({ type, active = false }) => {
-  const common = 'h-5 w-5';
+  const common = 'h-6 w-6 sm:h-7 sm:w-7';
   if (type === 'like') {
-    return <svg viewBox="0 0 24 24" className={common} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z" /></svg>;
+    return <svg viewBox="0 0 24 24" className={common} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z" /></svg>;
   }
   if (type === 'comment') {
-    return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.25 11.5a8.25 8.25 0 0 1-8.25 8.25 8.2 8.2 0 0 1-3.82-.94L3 20.25l1.44-4.32A8.2 8.2 0 0 1 3.75 12a8.25 8.25 0 1 1 16.5-.5Z" /><path d="M8 12h.01M12 12h.01M16 12h.01" /></svg>;
+    return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.25 11.5a8.25 8.25 0 0 1-8.25 8.25 8.2 8.2 0 0 1-3.82-.94L3 20.25l1.44-4.32A8.2 8.2 0 0 1 3.75 12a8.25 8.25 0 1 1 16.5-.5Z" /><path d="M8 12h.01M12 12h.01M16 12h.01" /></svg>;
+  }
+  if (type === 'reshare') {
+    return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4" /><path d="M3 11V9a3 3 0 0 1 3-3h15" /><path d="m7 22-4-4 4-4" /><path d="M21 13v2a3 3 0 0 1-3 3H3" /></svg>;
   }
   if (type === 'save') {
-    return <svg viewBox="0 0 24 24" className={common} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6.75 4.5A2.25 2.25 0 0 1 9 2.25h6a2.25 2.25 0 0 1 2.25 2.25v16.75L12 17.5l-5.25 3.75V4.5Z" /></svg>;
+    return <svg viewBox="0 0 24 24" className={common} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6.75 4.5A2.25 2.25 0 0 1 9 2.25h6a2.25 2.25 0 0 1 2.25 2.25v16.75L12 17.5l-5.25 3.75V4.5Z" /></svg>;
   }
   if (type === 'share') {
-    return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 2 15 22l-4-9-9-4 20-7Z" /><path d="M22 2 11 13" /></svg>;
+    return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 2 15 22l-4-9-9-4 20-7Z" /><path d="M22 2 11 13" /></svg>;
   }
   return null;
 };
@@ -214,6 +218,7 @@ function HomePage() {
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [commentError, setCommentError] = useState('');
   const [pendingLikes, setPendingLikes] = useState(() => new Set());
+  const [pendingReshares, setPendingReshares] = useState(() => new Set());
   const [signupPromptAction, setSignupPromptAction] = useState('');
   const commentComposerRef = useRef(null);
   const commentDialogRef = useRef(null);
@@ -591,6 +596,28 @@ function HomePage() {
       showMessage(response.saved ? 'Saved to your library.' : 'Removed from saved posts.');
     } catch {
       showMessage('Unable to save this post.');
+    }
+  };
+
+  const handleReshare = async (id) => {
+    if (!getStoredSession().token) {
+      requireAccount('reshare posts');
+      return;
+    }
+    if (pendingReshares.has(id)) return;
+    setPendingReshares((current) => new Set(current).add(id));
+    try {
+      await reshareVideo(id);
+      setVideoState(id, (video) => ({ ...video, reshared: true }));
+      showMessage('Post reshared to your profile.');
+    } catch (error) {
+      showMessage(error?.response?.data?.message || 'Unable to reshare this post. Please try again.');
+    } finally {
+      setPendingReshares((current) => {
+        const next = new Set(current);
+        next.delete(id);
+        return next;
+      });
     }
   };
 
@@ -1063,7 +1090,9 @@ function HomePage() {
                     />
                   </div>
                 ) : null}
-                <div className="absolute bottom-3 right-3 z-10 flex flex-row-reverse items-center gap-0.5 rounded-full border border-white/15 bg-black/45 px-1 py-1 text-white shadow-[0_8px_28px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:bottom-4 sm:right-4">
+                </div>
+
+                <div className="flex w-full items-center gap-3 border-b border-white/[0.08] px-3 py-2.5 text-white sm:gap-5 sm:px-5">
                   <button
                     type="button"
                     disabled={pendingLikes.has(video.id)}
@@ -1071,12 +1100,12 @@ function HomePage() {
                       event.stopPropagation();
                       handleToggleLike(video.id);
                     }}
-                    className="flex h-9 min-w-9 items-center justify-center gap-1 rounded-full px-1.5 transition hover:bg-white/10 active:scale-90 disabled:opacity-60"
+                    className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-1 transition hover:bg-white/[0.06] active:scale-95 disabled:opacity-60"
                     aria-label={video.liked ? 'Unlike post' : 'Like post'}
                     aria-pressed={Boolean(video.liked)}
                   >
                     <span className={video.liked ? 'text-rose-400' : 'text-white'}><FeedIcon type="like" active={video.liked} /></span>
-                    <span className="text-[9px] font-medium leading-3 text-slate-200">{formatActionCount(video.likes)}</span>
+                    <span className="text-sm font-semibold tabular-nums text-slate-200">{formatActionCount(video.likes)}</span>
                   </button>
                   <button
                     type="button"
@@ -1084,24 +1113,25 @@ function HomePage() {
                       event.stopPropagation();
                       handleOpenComments(video, event);
                     }}
-                    className="flex h-9 min-w-9 items-center justify-center gap-1 rounded-full px-1.5 transition hover:bg-white/10 active:scale-90"
+                    className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-1 transition hover:bg-white/[0.06] active:scale-95"
                     aria-label="Comment on post"
                   >
-                    <span><FeedIcon type="comment" /></span>
-                    <span className="text-[9px] font-medium leading-3 text-slate-200">{formatActionCount(video.comments)}</span>
+                    <FeedIcon type="comment" />
+                    <span className="text-sm font-semibold tabular-nums text-slate-200">{formatActionCount(video.comments)}</span>
                   </button>
                   <button
                     type="button"
+                    disabled={pendingReshares.has(video.id) || video.reshared}
                     onClick={(event) => {
                       event.stopPropagation();
-                      handleToggleSave(video.id);
+                      handleReshare(video.id);
                     }}
-                    className="flex h-9 min-w-9 items-center justify-center gap-1 rounded-full px-1.5 transition hover:bg-white/10 active:scale-90"
-                    aria-label={video.saved ? 'Remove from saved' : 'Save post'}
-                    aria-pressed={Boolean(video.saved)}
+                    className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-1 transition hover:bg-white/[0.06] active:scale-95"
+                    aria-label={video.reshared ? 'Post reshared' : 'Reshare post'}
+                    aria-pressed={Boolean(video.reshared)}
                   >
-                    <span className={video.saved ? 'text-emerald-300' : 'text-white'}><FeedIcon type="save" active={video.saved} /></span>
-                    <span className="text-[9px] font-medium leading-3 text-slate-200">{formatActionCount(video.saves || video.savedCount)}</span>
+                    <FeedIcon type="reshare" active={video.reshared} />
+                    <span className="text-sm font-semibold tabular-nums text-slate-200">{formatActionCount(video.reshareCount || video.reshare_count || video.reshares)}</span>
                   </button>
                   <button
                     type="button"
@@ -1109,29 +1139,40 @@ function HomePage() {
                       event.stopPropagation();
                       handleShare(video);
                     }}
-                    className="flex h-9 min-w-9 items-center justify-center gap-1 rounded-full px-1.5 transition hover:bg-white/10 active:scale-90"
-                    aria-label="Share post"
+                    className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-1 transition hover:bg-white/[0.06] active:scale-95"
+                    aria-label="Send or share post"
                   >
-                    <span><FeedIcon type="share" /></span>
-                    <span className="text-[9px] font-medium leading-3 text-slate-200">{formatActionCount(video.shares || video.shareCount)}</span>
+                    <FeedIcon type="share" />
+                    <span className="text-sm font-semibold tabular-nums text-slate-200">{formatActionCount(video.shares || video.shareCount)}</span>
                   </button>
-                </div>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleToggleSave(video.id);
+                    }}
+                    className="ml-auto inline-flex min-h-10 shrink-0 items-center rounded-lg px-1 transition hover:bg-white/[0.06] active:scale-95"
+                    aria-label={video.saved ? 'Remove from saved' : 'Save post'}
+                    aria-pressed={Boolean(video.saved)}
+                  >
+                    <FeedIcon type="save" active={video.saved} />
+                  </button>
                 </div>
 
                 <div className="flex min-w-0 items-start justify-between gap-4 px-3 py-3 sm:px-5">
                   <div className="min-w-0 flex-1 text-left">
                     {(video.description || video.title) ? (
-                      <p className="line-clamp-3 break-words text-[13pt] font-bold leading-[1.5] text-slate-100">
+                      <p className="line-clamp-3 break-words text-[11pt] font-semibold leading-[1.5] text-slate-100">
                         {video.description || video.title}
                       </p>
                     ) : null}
                     {formatPostDate(video.createdAt) ? (
-                      <time dateTime={video.createdAt} className="mt-1 block text-[12pt] font-bold leading-[1.5] text-slate-500">
+                      <time dateTime={video.createdAt} className="mt-1 block text-[10pt] font-medium leading-[1.5] text-slate-500">
                         {formatPostDate(video.createdAt)}
                       </time>
                     ) : null}
                   </div>
-                  <p className="max-w-[38%] shrink-0 truncate text-right text-[13pt] font-bold leading-[1.5] text-white">
+                  <p className="max-w-[38%] shrink-0 truncate text-right text-[11pt] font-semibold leading-[1.5] text-white">
                     {video.creatorUsername ? `@${video.creatorUsername}` : video.creatorName || 'Ochi creator'}
                   </p>
                 </div>
@@ -1156,7 +1197,7 @@ function HomePage() {
 
       {!videoId ? <aside className="hidden min-w-0 min-[1440px]:block">
         <LiveSection compact />
-        <div className="mt-6 overflow-hidden rounded-[28px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(197,232,76,0.18),transparent_52%),linear-gradient(145deg,#17191f,#101115)] p-5">
+        <div className="mt-6 overflow-hidden rounded-[28px] border border-white/[0.08] bg-[radial-gradient(ellipse_at_100%_0%,rgba(255,255,255,0.07),transparent_52%),linear-gradient(145deg,#17191f,#101115)] p-5">
           <p className="ochi-kicker">Your next move</p>
           <h3 className="mt-3 text-xl font-semibold tracking-tight text-white">Make a moment of your own.</h3>
           <p className="mt-2 text-sm leading-6 text-slate-400">Drop a clip for the community or start a live set when you’re ready.</p>
@@ -1182,7 +1223,7 @@ function HomePage() {
             <textarea value={editingCaption} onChange={(event) => setEditingCaption(event.target.value)} maxLength={500} rows={5} className="mt-4 w-full resize-none rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm font-semibold leading-6 text-white outline-none focus:border-[var(--ochi-accent)]" />
             <div className="mt-4 flex justify-end gap-2">
               <button type="button" onClick={() => setEditingVideoId(null)} className="rounded-full border border-white/10 px-4 py-2 text-xs font-bold text-slate-300">Cancel</button>
-              <button type="button" onClick={saveCaption} className="rounded-full bg-[var(--ochi-accent)] px-4 py-2 text-xs font-black text-[#11130b]">Save caption</button>
+              <button type="button" onClick={saveCaption} className="rounded-full bg-[var(--ochi-accent)] px-4 py-2 text-xs font-black text-white">Save caption</button>
             </div>
           </section>
         </div>

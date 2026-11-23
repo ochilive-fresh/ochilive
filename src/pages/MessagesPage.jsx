@@ -466,7 +466,7 @@ function MessagesPage() {
       <div className="-mx-3 h-[calc(100dvh-118px)] px-0 pb-1 sm:mx-0 sm:h-[calc(100vh-158px)] lg:h-[calc(100vh-175px)]">
         <div className="grid h-full gap-3 lg:grid-cols-[320px_minmax(0,1fr)]">
           <aside className={`${showMobileChat ? 'hidden' : 'flex'} h-full min-h-0 flex-col overflow-hidden rounded-[24px] border border-white/[0.08] bg-[var(--ochi-surface)] shadow-[var(--ochi-shadow-card)] lg:flex`}>
-            <div className="border-b border-white/[0.07] bg-[radial-gradient(ellipse_at_top_right,rgba(197,232,76,0.08),transparent_60%)] px-4 py-4 sm:px-5">
+            <div className="border-b border-white/[0.07] bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.05),transparent_60%)] px-4 py-4 sm:px-5">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[var(--ochi-accent-light)]">Your conversations</p>
@@ -609,7 +609,7 @@ function MessagesPage() {
           <main className={`${showMobileChat ? 'flex' : 'hidden'} h-full min-h-0 flex-col overflow-hidden border-y border-white/[0.08] bg-[var(--ochi-surface)] lg:flex lg:rounded-[24px] lg:border lg:shadow-[var(--ochi-shadow-card)]`}>
             {selectedConversation || directMessageTarget ? (
               <>
-                <header className="flex items-center justify-between border-b border-white/[0.07] bg-[radial-gradient(ellipse_at_top_right,rgba(197,232,76,0.07),transparent_60%)] px-3 py-3 pt-[max(0.7rem,env(safe-area-inset-top))] sm:px-5 sm:py-4">
+                <header className="flex items-center justify-between border-b border-white/[0.07] bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.04),transparent_60%)] px-3 py-3 pt-[max(0.7rem,env(safe-area-inset-top))] sm:px-5 sm:py-4">
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
@@ -666,7 +666,7 @@ function MessagesPage() {
                     <div className="mx-auto max-w-3xl space-y-4">
                       {messages.map((msg) => (
                         <div key={msg._id} className={`flex ${msg.senderId === sessionUser.id ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[88%] rounded-[20px] px-4 py-3 sm:max-w-[76%] ${msg.senderId === sessionUser.id ? 'rounded-br-md bg-[var(--ochi-accent-strong)] text-[#15170f] shadow-[0_8px_24px_rgba(197,232,76,0.14)]' : 'rounded-bl-md border border-white/[0.07] bg-[var(--ochi-surface-raised)] text-slate-100'}`}>
+                        <div className={`max-w-[88%] rounded-[20px] px-4 py-3 sm:max-w-[76%] ${msg.senderId === sessionUser.id ? 'rounded-br-md bg-[var(--ochi-accent-strong)] text-white' : 'rounded-bl-md border border-white/[0.07] bg-[var(--ochi-surface-raised)] text-slate-100'}`}>
                             {msg.text && <p className="text-sm leading-6 break-words">{msg.text}</p>}
                           <div className={`mt-1.5 flex items-center justify-between gap-2 text-[10px] ${msg.senderId === sessionUser.id ? 'text-white/65' : 'text-slate-500'}`}>
                               <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -734,7 +734,7 @@ function MessagesPage() {
                 </form>
               </>
             ) : (
-              <div className="flex h-full items-center justify-center bg-[radial-gradient(ellipse_at_center,rgba(197,232,76,0.06),transparent_55%)] px-5 text-center">
+              <div className="flex h-full items-center justify-center bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.04),transparent_55%)] px-5 text-center">
               <div className="max-w-sm">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[22px] border border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] text-2xl text-[var(--ochi-accent-light)]">✦</div>
                 <p className="text-lg font-semibold tracking-tight text-white">Good conversations start here</p>

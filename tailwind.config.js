@@ -13,7 +13,7 @@ export default {
           accent: '#1c1c1e',
           muted: '#a4a5ad',
           text: '#f4f1eb',
-          accentSoft: '#d8f57e',
+          accentSoft: '#f4f3ef',
         },
       },
     },

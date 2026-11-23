@@ -963,7 +963,7 @@ function UploadPage() {
                   onClick={() => handleOption(option.key)}
                   className={`group relative flex min-h-10 min-w-[118px] items-center justify-center gap-2 rounded-full px-3.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)] ${
                     active
-                      ? 'bg-[var(--ochi-accent)] text-[#15170f] shadow-[0_8px_24px_rgba(197,232,76,0.22)]'
+                      ? 'bg-[var(--ochi-accent)] text-white'
                       : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                   }`}
                 >

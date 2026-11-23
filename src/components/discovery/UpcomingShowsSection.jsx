@@ -40,7 +40,7 @@ export default function UpcomingShowsSection() {
         <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar sm:mx-0 sm:px-0">
           {items.map((item) => (
             <button key={item.id || item.title} type="button" onClick={() => navigate('/discover/more-upcoming-shows')} className="group relative aspect-[1.4] w-[75%] shrink-0 overflow-hidden rounded-2xl border border-white/[0.08] bg-[var(--ochi-surface)] text-left sm:w-[calc(33.333%-0.5rem)]">
-              {item.poster || item.thumbnail ? <img src={item.poster || item.thumbnail} alt="" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="h-full w-full bg-[radial-gradient(ellipse_at_80%_10%,rgba(197,232,76,0.28),transparent_38%),linear-gradient(135deg,#24232a,#111318)]" />}
+              {item.poster || item.thumbnail ? <img src={item.poster || item.thumbnail} alt="" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="h-full w-full bg-[radial-gradient(ellipse_at_80%_10%,rgba(255,255,255,0.08),transparent_38%),linear-gradient(135deg,#24232a,#111318)]" />}
               <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
               <span className="absolute inset-x-0 bottom-0 p-4">
                 <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--ochi-accent-light)]">{item.category || 'Live show'} · {item.tag || 'Coming up'}</span>

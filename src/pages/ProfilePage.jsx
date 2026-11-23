@@ -3,7 +3,6 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
 import { getProfileSummary, getProfilePosts, getProfileReshares, getProfileRelationships, rateProfile } from '../api/dashboardApi';
 import ProfileHeader from '../components/profile/ProfileHeader';
-import StatsBar from '../components/profile/StatsBar';
 import TabsSection from '../components/profile/TabsSection';
 import ContentGrid from '../components/profile/ContentGrid';
 import ComedyOnboarding from '../components/profile/ComedyOnboarding';
@@ -246,7 +245,7 @@ function ProfilePage() {
       subtitle="Your presence on Ochi Live"
     >
       {loading ? (
-        <div className="mx-auto w-full max-w-[1180px] space-y-4">
+        <div className="mx-auto w-full space-y-4">
           <div className="h-52 animate-pulse rounded-[28px] border border-white/[0.07] bg-[var(--ochi-surface)]" />
           <div className="grid grid-cols-3 gap-3">
             {[0, 1, 2].map((key) => <div key={key} className="h-20 animate-pulse rounded-2xl bg-[var(--ochi-surface)]" />)}
@@ -254,7 +253,7 @@ function ProfilePage() {
           <div className="h-64 animate-pulse rounded-2xl bg-[var(--ochi-surface)]" />
         </div>
       ) : (
-        <div className="mx-auto w-full max-w-[1180px]">
+        <div className="mx-auto w-full">
           <div className="space-y-3 pb-4 pt-1 sm:space-y-4">
             {profileError ? (
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-3 text-xs leading-5 text-slate-400">
@@ -263,8 +262,18 @@ function ProfilePage() {
             ) : null}
             <ProfileHeader
               user={profile.user}
+              stats={profile.stats}
               relationship={profile.relationship}
               onFollowChange={handleFollowChange}
+              onStatSelect={handleStatSelect}
+              onProfileSaved={(updatedProfile) => {
+                if (!updatedProfile?.user) return;
+                setProfile((current) => ({
+                  ...current,
+                  user: { ...current.user, ...updatedProfile.user },
+                  stats: { ...current.stats, ...updatedProfile.stats },
+                }));
+              }}
               onShare={handleShare}
               onTryComedy={() => setShowComedyOnboarding(true)}
               onGoLive={() => navigate('/upload?mode=live')}
@@ -287,7 +296,6 @@ function ProfilePage() {
                 {ratingMessage ? <p className="mt-2 text-right text-xs text-slate-500" role="status">{ratingMessage}</p> : null}
               </>
             ) : null}
-            <StatsBar stats={profile.stats} onSelect={handleStatSelect} />
             <TabsSection activeTab={activeTab} onChange={setActiveTab} isOwnProfile={profile.relationship?.isOwnProfile} />
             {activeTab === 'about' ? (
               <div className="mt-6 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">

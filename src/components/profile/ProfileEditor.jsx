@@ -45,7 +45,7 @@ export default function ProfileEditor({ profile, onSaved }) {
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-900">
+      <button type="button" onClick={() => setOpen(true)} className="min-h-10 w-full rounded-xl border border-white/[0.16] bg-[var(--ochi-surface)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--ochi-surface-raised)] sm:w-auto">
         Edit profile
       </button>
     );

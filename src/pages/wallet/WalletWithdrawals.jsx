@@ -1,6 +1,7 @@
 import DashboardShell from '../../components/DashboardShell';
 import WithdrawalHistory from '../../components/wallet/WithdrawalHistory';
 import WithdrawalsSection from '../../components/wallet/WithdrawalsSection';
+import RoomPrizePayoutSettings from '../../components/wallet/RoomPrizePayoutSettings';
 import useWalletSummary from '../../hooks/useWalletSummary';
 
 export default function WalletWithdrawals() {
@@ -28,6 +29,7 @@ export default function WalletWithdrawals() {
             </div>
           </div>
         </div>
+        <RoomPrizePayoutSettings />
         <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
           <WithdrawalsSection
             balance={balanceValue}

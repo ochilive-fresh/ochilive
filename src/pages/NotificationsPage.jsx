@@ -150,49 +150,49 @@ function NotificationsPage() {
       showBack
       backFallback="/home"
     >
-      <div className="overflow-hidden bg-slate-950/40">
+      <div className="space-y-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <button
+            type="button"
+            onClick={() => navigate('/messages')}
+            aria-label="Open messages inbox"
+            className="flex min-h-32 flex-col items-start justify-between rounded-2xl border border-white/[0.1] bg-[var(--ochi-surface)] p-4 text-left transition hover:border-white/[0.2] hover:bg-[var(--ochi-surface-raised)] sm:min-h-40 sm:p-5"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.08] text-white">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span>
+              <span className="block text-base font-semibold text-white sm:text-lg">Messages</span>
+              <span className="mt-1 block text-xs text-slate-400">Your conversations</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter('all')}
+            className="flex min-h-32 flex-col items-start justify-between rounded-2xl border border-white/[0.1] bg-[var(--ochi-surface)] p-4 text-left transition hover:border-white/[0.2] hover:bg-[var(--ochi-surface-raised)] sm:min-h-40 sm:p-5"
+          >
+            <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.08] text-white">
+              <span aria-hidden="true">!</span>
+              {unreadCount > 0 ? <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-white ring-2 ring-[var(--ochi-surface)]" /> : null}
+            </span>
+            <span>
+              <span className="block text-base font-semibold text-white sm:text-lg">Alerts</span>
+              <span className="mt-1 block text-xs text-slate-400">{unreadCount ? `${unreadCount} unread updates` : 'Important Ochi updates'}</span>
+            </span>
+          </button>
+        </div>
         <button
           type="button"
           onClick={() => navigate('/activity')}
-          className="flex w-full items-center gap-3 border-b border-slate-800 bg-white/[0.025] px-4 py-4 text-left transition hover:bg-white/[0.06] sm:px-6"
+          className="inline-flex items-center gap-2 text-xs font-medium text-slate-400 transition hover:text-white"
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-slate-200" aria-hidden="true">↗</span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-white">Activity history</span>
-            <span className="mt-0.5 block text-xs text-slate-400">Review social interactions and wallet updates</span>
-          </span>
-          <span className="text-sm font-medium text-[var(--ochi-accent-light)]">Open <span aria-hidden="true">→</span></span>
+          <span aria-hidden="true">↗</span>
+          Activity history
+          <span aria-hidden="true">→</span>
         </button>
-        <button
-          type="button"
-          onClick={() => navigate('/messages')}
-          className="flex w-full items-center gap-3 border-b border-slate-800 bg-white/[0.025] px-4 py-4 text-left transition hover:bg-white/[0.06] sm:px-6"
-          aria-label="Open messages inbox"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--ochi-accent-10)] text-[var(--ochi-accent-light)]">
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-              <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-white">Messages</span>
-            <span className="mt-0.5 block text-xs text-slate-400">Open your conversations and inbox</span>
-          </span>
-          <span className="text-sm font-medium text-[var(--ochi-accent-light)]">Open <span aria-hidden="true">→</span></span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilter('all')}
-          className="flex w-full items-center gap-3 border-b border-slate-800 bg-white/[0.025] px-4 py-4 text-left transition hover:bg-white/[0.06] sm:px-6"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-slate-200" aria-hidden="true">!</span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-white">Alerts</span>
-            <span className="mt-0.5 block text-xs text-slate-400">Important Ochi updates and account alerts</span>
-          </span>
-          <span className="text-sm font-medium text-[var(--ochi-accent-light)]">View <span aria-hidden="true">→</span></span>
-        </button>
-
+        <section className="overflow-hidden border-y border-white/[0.08]">
         <div className="flex flex-col gap-3 px-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
             <div className="flex items-center gap-2 sm:gap-3">
@@ -253,6 +253,7 @@ function NotificationsPage() {
             ))}
           </div>
         )}
+        </section>
       </div>
     </DashboardShell>
   );

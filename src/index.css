@@ -9,17 +9,17 @@
   --ochi-surface-raised: #252527;
   --ochi-accent: #1c1c1e;
   --ochi-accent-strong: #1c1c1e;
-  --ochi-accent-light: #d8f57e;
-  --ochi-accent-10: rgba(197, 232, 76, 0.1);
-  --ochi-accent-15: rgba(197, 232, 76, 0.15);
-  --ochi-accent-20: rgba(197, 232, 76, 0.2);
-  --ochi-accent-30: rgba(197, 232, 76, 0.3);
-  --ochi-accent-40: rgba(197, 232, 76, 0.4);
-  --ochi-accent-80: rgba(197, 232, 76, 0.8);
+  --ochi-accent-light: #f4f3ef;
+  --ochi-accent-10: rgba(255, 255, 255, 0.06);
+  --ochi-accent-15: rgba(255, 255, 255, 0.09);
+  --ochi-accent-20: rgba(255, 255, 255, 0.12);
+  --ochi-accent-30: rgba(255, 255, 255, 0.18);
+  --ochi-accent-40: rgba(255, 255, 255, 0.24);
+  --ochi-accent-80: rgba(255, 255, 255, 0.8);
   --ochi-muted: #9699a4;
   --ochi-text: #f4f3ef;
   --ochi-line: rgba(255, 255, 255, 0.075);
-  --ochi-lime: #d7f56a;
+  --ochi-lime: #1c1c1e;
   --ochi-radius-card: 1.25rem;
   --ochi-shadow-card: 0 18px 48px rgba(0, 0, 0, 0.24);
 }
@@ -93,14 +93,14 @@
 }
 .from-rose-500 {
   --tw-gradient-from: var(--ochi-accent-strong);
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(197, 232, 76, 0));
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, transparent);
 }
 .to-rose-500 {
   --tw-gradient-to: var(--ochi-accent-strong);
 }
 .from-pink-500 {
   --tw-gradient-from: var(--ochi-accent-strong);
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(197, 232, 76, 0));
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, transparent);
 }
 .to-pink-500 {
   --tw-gradient-to: var(--ochi-accent-strong);
@@ -122,9 +122,7 @@ html, body, #root {
   overflow-x: clip;
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background:
-    radial-gradient(ellipse at 78% -18%, rgba(197, 232, 76, 0.09), transparent 34%),
-    radial-gradient(ellipse at 7% 26%, rgba(215, 245, 106, 0.025), transparent 28%),
-    #090a0d;
+    #000000;
   color: var(--ochi-text);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -197,7 +195,7 @@ textarea {
 }
 
 ::selection {
-  background: rgba(197, 232, 76, 0.7);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
 }
 
