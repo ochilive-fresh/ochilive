@@ -182,6 +182,16 @@ export const updateProfile = async (payload) => {
   return data;
 };
 
+export const getWelcomeStatus = async () => {
+  const { data } = await api.get('/profile/me/welcome');
+  return data;
+};
+
+export const markWelcomeSeen = async () => {
+  const { data } = await api.post('/profile/me/welcome-seen');
+  return data;
+};
+
 export const updateProfilePicture = async (file) => {
   const form = new FormData();
   form.append('picture', file);
@@ -246,6 +256,26 @@ export const getActivityFeed = async () => {
 
 export const getRooms = async () => {
   const { data } = await api.get('/rooms');
+  return data;
+};
+
+export const getFeedVideoAd = async () => {
+  const { data } = await api.get('/rooms/feed-ad');
+  return data.ad;
+};
+
+export const getRoomPayoutBanks = async (currency) => {
+  const { data } = await api.get('/rooms/payout/banks', { params: { currency } });
+  return data.banks;
+};
+
+export const getRoomPayoutSettings = async () => {
+  const { data } = await api.get('/rooms/payout/settings');
+  return data.payout;
+};
+
+export const saveRoomPayoutSettings = async (payload) => {
+  const { data } = await api.put('/rooms/payout/settings', payload);
   return data;
 };
 

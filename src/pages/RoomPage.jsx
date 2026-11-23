@@ -105,6 +105,7 @@ export default function RoomPage() {
   };
 
   const posts = roomData?.posts || [];
+  const ads = roomData?.ads || [];
 
   return (
     <DashboardShell title={roomLabel} subtitle="Weekly room challenge" showSearch={false} showBack backFallback="/discover">
@@ -166,11 +167,21 @@ export default function RoomPage() {
                   <button type="submit" className="rounded-full bg-[var(--ochi-accent)] px-4 text-xs font-black text-[#11130b]">Send</button>
                 </form>
               </article>
-              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-black px-3 py-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--ochi-accent)] text-sm font-black text-[#11130b]">B</span>
-                <div className="min-w-0 flex-1"><p className="text-xs font-bold text-white">Bazaart</p><p className="mt-0.5 truncate text-xs text-slate-400">Create better moments with better tools.</p></div>
-                <span className="text-[10px] font-bold uppercase text-slate-600">Ad</span>
-              </div>
+              {ads.length ? (() => {
+                const ad = ads[posts.indexOf(post) % ads.length];
+                const external = /^https?:\/\//i.test(ad.ctaUrl || '');
+                return (
+                  <article key={`${post.id}-${ad.id}`} aria-label={`Sponsored: ${ad.name}`} className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-black px-3 py-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-black text-[#11130b]" style={{ backgroundColor: ad.accent || '#c5e84c' }}>{ad.logoText || ad.name?.charAt(0) || 'A'}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-white">{ad.name}</p>
+                      <p className="mt-0.5 truncate text-xs text-slate-400">{ad.description || ad.title}</p>
+                    </div>
+                    {ad.ctaUrl ? <a href={ad.ctaUrl} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined} className="shrink-0 rounded-full border border-white/10 px-3 py-2 text-[10px] font-bold text-slate-200">{ad.ctaText || 'Learn more'}</a> : null}
+                    <span className="text-[10px] font-bold uppercase text-slate-600">Ad</span>
+                  </article>
+                );
+              })() : null}
               </div>
             ))}
             {!posts.length ? <div className="rounded-[22px] border border-dashed border-white/[0.09] py-12 text-center"><p className="text-sm font-bold text-slate-300">Be the first to post</p><p className="mt-1 text-xs text-slate-500">Start this week’s conversation.</p></div> : null}

@@ -13,6 +13,9 @@ import {
   toggleSaveVideo,
   followProfile,
   unfollowProfile,
+  getFeedVideoAd,
+  getWelcomeStatus,
+  markWelcomeSeen,
 } from '../api/dashboardApi';
 import { getStoredSession } from '../utils/session';
 import LiveSection from '../components/discovery/LiveSection';
@@ -29,6 +32,114 @@ const homeTabs = [
 const formatActionCount = (value) => {
   const count = Number(value);
   return new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(Number.isFinite(count) ? count : 0);
+};
+
+const readFeedAdState = (key) => {
+  try {
+    const stored = JSON.parse(localStorage.getItem(key) || '{}');
+    return {
+      viewedIds: Array.isArray(stored.viewedIds) ? stored.viewedIds.map(String) : [],
+      adAfterIds: Array.isArray(stored.adAfterIds) ? stored.adAfterIds.map(String) : [],
+    };
+  } catch {
+    return { viewedIds: [], adAfterIds: [] };
+  }
+};
+
+const FeedVideoAd = ({ ad }) => {
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [videoReady, setVideoReady] = useState(false);
+  const external = /^https?:\/\//i.test(ad?.ctaUrl || '');
+
+  useEffect(() => {
+    if (ad?.mediaUrl) return undefined;
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    const context = canvas?.getContext('2d');
+    if (!canvas || !video || !context || typeof canvas.captureStream !== 'function') return undefined;
+
+    let animationFrame = 0;
+    const startedAt = performance.now();
+    const draw = (timestamp) => {
+      const elapsed = (timestamp - startedAt) % 18000;
+      const scene = Math.floor(elapsed / 6000);
+      const progress = (elapsed % 6000) / 6000;
+      const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, '#111317');
+      gradient.addColorStop(1, scene === 1 ? '#282018' : '#1c2520');
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.strokeStyle = 'rgba(255,255,255,0.12)';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.arc(1050, 180, 95 + Math.sin(progress * Math.PI * 2) * 12, 0, Math.PI * 2);
+      context.stroke();
+      context.fillStyle = 'rgba(197,232,76,0.16)';
+      context.beginPath();
+      context.arc(1050, 180, 65, 0, Math.PI * 2);
+      context.fill();
+      context.textAlign = 'left';
+      context.fillStyle = '#c5e84c';
+      context.font = '700 23px Arial, sans-serif';
+      context.fillText('OCHI LIVE', 76, 110);
+      context.fillStyle = '#ffffff';
+      context.font = '700 58px Arial, sans-serif';
+      const headlines = ['Your stage.', 'Find your people.', 'Make them laugh.'];
+      context.fillText(headlines[scene], 76, 330);
+      context.fillStyle = '#d1d5db';
+      context.font = '400 27px Arial, sans-serif';
+      const details = ['Share a moment with the Ochi community.', 'Join this week’s Dark Humor and Jokes challenges.', 'Discover creators, conversations, and live comedy.'];
+      context.fillText(details[scene], 76, 390);
+      context.fillStyle = '#c5e84c';
+      context.font = '700 21px Arial, sans-serif';
+      context.fillText('COMEDY · ROOMS · COMMUNITY', 76, 625);
+      animationFrame = window.requestAnimationFrame(draw);
+    };
+
+    const stream = canvas.captureStream(24);
+    video.srcObject = stream;
+    animationFrame = window.requestAnimationFrame(draw);
+    video.play().then(() => setVideoReady(true)).catch(() => undefined);
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      stream.getTracks().forEach((track) => track.stop());
+      video.srcObject = null;
+    };
+  }, [ad?.mediaUrl]);
+
+  return (
+    <article aria-label={`Sponsored: ${ad?.name || 'Ochi Community'}`} className="overflow-hidden rounded-[24px] border border-white/[0.09] bg-[#101114]">
+      <div className="relative aspect-video max-h-[45vh] overflow-hidden bg-[radial-gradient(ellipse_at_75%_15%,rgba(197,232,76,0.28),transparent_38%),linear-gradient(135deg,#17191f,#08090b)]">
+        {!ad?.mediaUrl ? <canvas ref={canvasRef} width="1280" height="720" className="absolute inset-0 h-full w-full" aria-hidden="true" /> : null}
+        {!videoReady && !ad?.mediaUrl ? (
+          <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+            <p className="text-xl font-black text-white">{ad?.title || 'A new stage is waiting.'}</p>
+          </div>
+        ) : null}
+        <video
+          ref={videoRef}
+          src={ad?.mediaUrl || undefined}
+          autoPlay
+          muted
+          loop={Boolean(ad?.mediaUrl)}
+          playsInline
+          controls={Boolean(ad?.mediaUrl)}
+          preload="metadata"
+          onPlaying={() => setVideoReady(true)}
+          className="absolute inset-0 h-full w-full bg-black object-contain"
+          aria-label={`${ad?.name || 'Ochi Community'} video advertisement`}
+        />
+      </div>
+      <div className="flex items-center justify-between gap-4 px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Sponsored · {ad?.name || 'Ochi Community'}</p>
+          <p className="mt-1 truncate text-sm font-bold text-white">{ad?.description || 'Explore comedy and join the next Ochi Rooms challenge.'}</p>
+        </div>
+        {ad?.ctaUrl ? <a href={ad.ctaUrl} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined} className="shrink-0 rounded-full bg-[var(--ochi-accent)] px-4 py-2 text-xs font-black text-[#11130b]">{ad.ctaText || 'Explore Ochi'}</a> : null}
+      </div>
+    </article>
+  );
 };
 
 const formatPostDate = (value) => {
@@ -111,8 +222,11 @@ function HomePage() {
   const resumeVideoAfterCommentsRef = useRef(false);
   const commentVideoToResumeRef = useRef(null);
   const videoRefs = useRef({});
+  const postRefs = useRef({});
   const viewedIds = useRef(new Set());
   const viewTimers = useRef(new Map());
+  const adViewTimers = useRef(new Map());
+  const adViewedIds = useRef(new Set());
   const lastVideoTap = useRef(new Map());
   const tapTimers = useRef(new Map());
   const playbackPositions = useRef(new Map());
@@ -120,14 +234,43 @@ function HomePage() {
   const [heartBurstVideoId, setHeartBurstVideoId] = useState(null);
   const [videoProgress, setVideoProgress] = useState({});
   const [videoLoadState, setVideoLoadState] = useState({});
-  const [mediaAspectRatios, setMediaAspectRatios] = useState({});
   const [postMenuVideoId, setPostMenuVideoId] = useState(null);
   const [editingVideoId, setEditingVideoId] = useState(null);
   const [editingCaption, setEditingCaption] = useState('');
-  const [showWelcome, setShowWelcome] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return Boolean(getStoredSession().token) && !localStorage.getItem('ochi_welcome_seen');
-  });
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [welcomePending, setWelcomePending] = useState(false);
+  const [feedAd, setFeedAd] = useState(null);
+  const [feedAdsAfterIds, setFeedAdsAfterIds] = useState([]);
+  const feedAdUserId = getStoredSession().user?.id || getStoredSession().user?.username || 'guest';
+  const feedAdStorageKey = `ochi-feed-ad-state:${feedAdUserId}`;
+
+  useEffect(() => {
+    setFeedAdsAfterIds(readFeedAdState(feedAdStorageKey).adAfterIds);
+  }, [feedAdStorageKey]);
+
+  useEffect(() => {
+    if (!getStoredSession().token) {
+      setShowWelcome(false);
+      return undefined;
+    }
+    let active = true;
+    getWelcomeStatus()
+      .then((status) => { if (active) setShowWelcome(!status.seen); })
+      .catch((requestError) => {
+        if (active) showMessage(requestError?.response?.data?.message || 'Unable to check your welcome status.');
+      });
+    return () => { active = false; };
+  }, [feedAdUserId]);
+
+  useEffect(() => {
+    let active = true;
+    getFeedVideoAd()
+      .then((ad) => { if (active) setFeedAd(ad || null); })
+      .catch((requestError) => {
+        if (active) showMessage(requestError?.response?.data?.message || 'Unable to load sponsored content.');
+      });
+    return () => { active = false; };
+  }, []);
 
   const getLikedStorageKey = () => {
     const userId = getStoredSession().user?.id || getStoredSession().user?.username || 'guest';
@@ -154,11 +297,29 @@ function HomePage() {
     }
   };
 
+  const recordFeedPostViewForAds = (id) => {
+    const key = `ochi-feed-ad-state:${getStoredSession().user?.id || getStoredSession().user?.username || 'guest'}`;
+    if (adViewedIds.current.has(String(id))) return;
+    adViewedIds.current.add(String(id));
+    const state = readFeedAdState(key);
+    if (state.viewedIds.includes(String(id))) return;
+    state.viewedIds.push(String(id));
+    if (state.viewedIds.length % 5 === 0) state.adAfterIds.push(String(id));
+    try {
+      localStorage.setItem(key, JSON.stringify(state));
+    } catch {
+      // Ad cadence falls back to this session when persistent storage is unavailable.
+    }
+    setFeedAdsAfterIds(state.adAfterIds);
+  };
+
   useEffect(() => {
     setLoading(true);
+    let active = true;
     const request = videoId ? getVideoById(videoId).then((video) => [video]) : getVideoFeed(activeTab);
     request
       .then((data) => {
+        if (!active) return;
         const likedIds = readLikedVideoIds();
         setVideos(Array.isArray(data) ? data.map((video) => ({
           ...video,
@@ -167,10 +328,11 @@ function HomePage() {
         setError('');
       })
       .catch((requestError) => {
-        setVideos([]);
+        if (!active) return;
         setError(requestError?.response?.data?.message || (videoId ? 'Unable to load this post. Please try again.' : 'Unable to load the feed. Please refresh.'));
       })
-      .finally(() => setLoading(false));
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [activeTab, refreshKey, videoId]);
 
   useEffect(() => {
@@ -265,6 +427,43 @@ function HomePage() {
       observer.disconnect();
     };
   }, [videos, mutedVideos]);
+
+  useEffect(() => {
+    if (videoId || !videos.length || typeof IntersectionObserver === 'undefined') return undefined;
+    const activeAdViewTimers = adViewTimers.current;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const id = entry.target.dataset.feedPostId;
+        if (!id) return;
+        if (entry.isIntersecting) {
+          if (!activeAdViewTimers.has(id)) {
+            const timer = window.setTimeout(() => {
+              recordFeedPostViewForAds(id);
+              activeAdViewTimers.delete(id);
+            }, 1800);
+            activeAdViewTimers.set(id, timer);
+          }
+        } else {
+          const timer = activeAdViewTimers.get(id);
+          if (timer) {
+            window.clearTimeout(timer);
+            activeAdViewTimers.delete(id);
+          }
+        }
+      });
+    }, { threshold: 0.5 });
+
+    videos.forEach((video) => {
+      const post = postRefs.current[String(video.id)];
+      if (post) observer.observe(post);
+    });
+
+    return () => {
+      observer.disconnect();
+      activeAdViewTimers.forEach((timer) => window.clearTimeout(timer));
+      activeAdViewTimers.clear();
+    };
+  }, [videos, videoId]);
 
   const setVideoState = (id, updater) => {
     setVideos((current) => current.map((video) => (video.id === id ? updater(video) : video)));
@@ -689,7 +888,7 @@ function HomePage() {
           .feed-heart-burst { animation: none !important; }
         }
       `}</style>
-      <div className="mx-auto grid w-full max-w-[1180px] gap-8 min-[1440px]:grid-cols-[minmax(0,600px)_minmax(260px,320px)] min-[1440px]:items-start">
+      <div className="mx-auto grid w-full max-w-[1600px] gap-8 min-[1440px]:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] min-[1440px]:items-start">
       <section className="min-w-0">
       {message ? (
         <div role="status" className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${/^(Unable|No media|Share is not)/.test(message) ? 'border-[var(--ochi-accent-20)] bg-[var(--ochi-accent-10)] text-[var(--ochi-accent-light)]' : 'border-emerald-300/15 bg-emerald-400/[0.08] text-emerald-100'}`}>
@@ -697,14 +896,14 @@ function HomePage() {
         </div>
       ) : null}
 
-      {loading ? (
+      {loading && !videos.length ? (
         <div className="mt-4 flex min-h-72 items-center justify-center rounded-[28px] border border-white/[0.07] bg-[var(--ochi-surface)]/70">
           <div className="flex items-center gap-3 text-sm text-slate-400">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/15 border-t-[var(--ochi-accent)]" />
             Finding your next favorite…
           </div>
         </div>
-      ) : error ? (
+      ) : error && !videos.length ? (
         <div role="alert" className="mt-4 rounded-[28px] border border-white/[0.08] bg-[var(--ochi-surface)] p-6 text-slate-100 sm:p-8">
           <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--ochi-accent-10)] text-lg text-[var(--ochi-accent-light)]">!</span>
           <p className="text-lg font-semibold text-white">{videoId ? 'The post didn’t load.' : 'The room didn’t load.'}</p>
@@ -716,11 +915,17 @@ function HomePage() {
         </div>
       ) : (
         <div className="-mx-4 mt-2 space-y-3 sm:mx-0 sm:mt-3 sm:space-y-4 sm:pr-1">
-          {videos.length ? (
+            {error ? <p role="alert" className="rounded-2xl border border-amber-300/15 bg-amber-300/[0.06] px-4 py-3 text-sm text-amber-100">{error} Showing the posts already loaded.</p> : null}
+            {videos.length ? (
             videos.map((video) => (
+              <div key={video.id}>
               <article
-                key={video.id}
                 id={`feed-post-${video.id}`}
+                data-feed-post-id={String(video.id)}
+                ref={(node) => {
+                  if (node) postRefs.current[String(video.id)] = node;
+                  else delete postRefs.current[String(video.id)];
+                }}
                 className="w-full overflow-hidden sm:rounded-[30px] sm:border sm:border-white/[0.09] sm:bg-[#101114] sm:shadow-[0_30px_90px_rgba(0,0,0,0.45)]"
                 onClick={() => {
                   if (video.type === 'live') {
@@ -731,7 +936,7 @@ function HomePage() {
               >
                 <div
                   className="relative w-full max-h-[70vh] overflow-hidden bg-black sm:rounded-t-[29px]"
-                  style={{ aspectRatio: mediaAspectRatios[video.id] || (isVideoType(video) ? '9 / 16' : '4 / 5'), maxHeight: '70vh' }}
+                  style={{ aspectRatio: isVideoType(video) ? '9 / 16' : '4 / 5', maxHeight: '70vh' }}
                 >
                 {isVideoType(video) ? (
                   <video
@@ -749,10 +954,6 @@ function HomePage() {
                     onCanPlay={() => setVideoLoadState((current) => ({ ...current, [video.id]: 'ready' }))}
                     onError={() => setVideoLoadState((current) => ({ ...current, [video.id]: 'error' }))}
                     onLoadedMetadata={(event) => {
-                      const { videoWidth, videoHeight } = event.currentTarget;
-                      if (videoWidth && videoHeight) {
-                        setMediaAspectRatios((current) => ({ ...current, [video.id]: `${videoWidth} / ${videoHeight}` }));
-                      }
                       const savedPosition = playbackPositions.current.get(video.id);
                       if (savedPosition && savedPosition < event.currentTarget.duration - 0.5) {
                         event.currentTarget.currentTime = savedPosition;
@@ -771,12 +972,6 @@ function HomePage() {
                     src={getPreviewImage(video)}
                     alt={video.title}
                     className="h-full w-full object-contain"
-                    onLoad={(event) => {
-                      const { naturalWidth, naturalHeight } = event.currentTarget;
-                      if (naturalWidth && naturalHeight) {
-                        setMediaAspectRatios((current) => ({ ...current, [video.id]: `${naturalWidth} / ${naturalHeight}` }));
-                      }
-                    }}
                     onClick={(event) => {
                       if (video.type === 'live') navigate(`/live/${video.id}`);
                       else handlePhotoTap(event, video);
@@ -941,6 +1136,8 @@ function HomePage() {
                   </p>
                 </div>
               </article>
+              {!videoId && feedAdsAfterIds.includes(String(video.id)) ? <FeedVideoAd ad={feedAd} /> : null}
+              </div>
             ))
           ) : (
             <div className="rounded-[28px] border border-white/[0.08] bg-[var(--ochi-surface)] p-7 text-center sm:p-10">
@@ -998,7 +1195,24 @@ function HomePage() {
             <h2 id="welcome-title" className="mt-3 text-2xl font-black text-white">Welcome to Ochi!</h2>
             <p className="mt-3 text-sm leading-6 text-slate-300">Ochi is your home for live comedy, and exciting live comedy shows are coming soon!</p>
             <p className="mt-3 text-sm leading-6 text-slate-400">In the meantime, enjoy hilarious content, join competitions, and win exciting little prizes in Ochi Rooms.</p>
-            <button type="button" onClick={() => { localStorage.setItem('ochi_welcome_seen', 'true'); setShowWelcome(false); }} className="mt-5 h-12 w-full rounded-full bg-[var(--ochi-accent)] text-sm font-black text-white ring-1 ring-white/10">Explore Ochi</button>
+            <button
+              type="button"
+              disabled={welcomePending}
+              onClick={async () => {
+                setWelcomePending(true);
+                try {
+                  await markWelcomeSeen();
+                  setShowWelcome(false);
+                } catch (requestError) {
+                  showMessage(requestError?.response?.data?.message || 'Unable to save your welcome status. Please try again.');
+                } finally {
+                  setWelcomePending(false);
+                }
+              }}
+              className="mt-5 h-12 w-full rounded-full bg-[var(--ochi-accent)] text-sm font-black text-white ring-1 ring-white/10 disabled:opacity-60"
+            >
+              {welcomePending ? 'Saving…' : 'Explore Ochi'}
+            </button>
           </section>
         </div>
       ) : null}
