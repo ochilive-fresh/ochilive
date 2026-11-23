@@ -180,7 +180,7 @@ function DiscoverPage() {
   return (
       <DashboardShell
         title="Discover"
-        subtitle="Find your next favorite creator"
+        subtitle="Explore creators, clips, and live shows."
         searchValue={searchTerm}
         searchPlaceholder={isSignedIn ? 'Search creators by name or username' : 'Sign in to search creators'}
         searchInputRef={searchInputRef}
@@ -206,7 +206,7 @@ function DiscoverPage() {
                   Find your people.<br /><span className="text-[var(--ochi-accent-light)]">Catch the moment.</span>
                 </h2>
                 <p className="mt-4 max-w-lg text-sm leading-6 text-slate-400 sm:text-base sm:leading-7">
-                  Drop into a live set, discover a fresh voice, or save a clip worth passing around.
+                  Live comedy, fresh clips, and creators worth following.
                 </p>
                 <div className="mt-7 flex flex-wrap gap-2">
                   {[
@@ -224,13 +224,6 @@ function DiscoverPage() {
                     </a>
                   ))}
                 </div>
-              </div>
-              <div className="relative mt-8 flex items-center justify-between gap-3 border-t border-white/[0.08] pt-5 sm:mt-10">
-                <div>
-                  <p className="text-sm font-semibold text-white">Your next favorite is out there.</p>
-                  <p className="mt-1 text-xs text-slate-500">Start with what’s happening right now.</p>
-                </div>
-                <button type="button" onClick={() => navigate(isSignedIn ? '/upload' : '/signup')} className="shrink-0 rounded-full bg-[var(--ochi-accent)] px-4 py-2.5 text-xs font-bold text-white transition hover:brightness-110 sm:text-sm">{isSignedIn ? 'Create a moment' : 'Join the stage'}</button>
               </div>
             </section>
           ) : null}

@@ -184,6 +184,7 @@ function UploadPage() {
   const videoRef = useRef(null);
   const previewVideoRef = useRef(null);
   const fileInputRef = useRef(null);
+  const photoInputRef = useRef(null);
   const canvasRef = useRef(null);
   const recorderRef = useRef(null);
   const cameraRequestRef = useRef(0);
@@ -191,6 +192,7 @@ function UploadPage() {
 
   const [activeTab, setActiveTab] = useState('video');
   const [screen, setScreen] = useState('camera');
+  const [sourcePickerOpen, setSourcePickerOpen] = useState(() => searchParams.get('mode') !== 'live');
   const [stream, setStream] = useState(null);
   const [cameraFacing, setCameraFacing] = useState('user');
   const [cameraLoading, setCameraLoading] = useState(false);
@@ -332,11 +334,11 @@ function UploadPage() {
   }, [stream]);
 
   useEffect(() => {
-    if ((screen === 'camera' || screen === 'live') && activeTab !== 'gallery') {
+    if ((screen === 'camera' || screen === 'live') && activeTab !== 'gallery' && !sourcePickerOpen) {
       openCamera(activeTab === 'live' ? 'video' : activeTab);
     }
     return stopCamera;
-  }, [screen, activeTab]);
+  }, [screen, activeTab, sourcePickerOpen]);
 
   useEffect(() => {
     if (!liveStarted) {
@@ -499,11 +501,13 @@ function UploadPage() {
   const handleOption = (key) => {
     setActiveTab(key);
     if (key === 'gallery') {
+      setSourcePickerOpen(false);
       setScreen('gallery');
       fileInputRef.current?.click();
       return;
     }
     if (key === 'live') {
+      setSourcePickerOpen(false);
       if (!comedian) {
         setStatus('Complete Try Comedy on your profile before going live.');
         navigate('/profile');
@@ -514,7 +518,15 @@ function UploadPage() {
       return;
     }
     setScreen('camera');
+    setSourcePickerOpen(false);
     setStatus('Ready to capture.');
+  };
+
+  const choosePhotoLibrary = () => {
+    setActiveTab('gallery');
+    setScreen('gallery');
+    setSourcePickerOpen(false);
+    photoInputRef.current?.click();
   };
 
   const prepareLiveRoom = async () => {
@@ -698,13 +710,22 @@ function UploadPage() {
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    const preparedFile = file.type.startsWith('image/') ? await compressImageFile(file) : file;
-    const url = URL.createObjectURL(preparedFile);
-    setPreviewUrl(url);
-    setPreviewType(preparedFile.type.startsWith('image/') ? 'photo' : 'video');
-    setScreen('preview');
-    setStatus('Selected from gallery.');
-    event.target.value = '';
+    try {
+      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        setStatus('Choose an image or video file.');
+        return;
+      }
+      const preparedFile = file.type.startsWith('image/') ? await compressImageFile(file) : file;
+      const url = URL.createObjectURL(preparedFile);
+      setPreviewUrl(url);
+      setPreviewType(preparedFile.type.startsWith('image/') ? 'photo' : 'video');
+      setScreen('preview');
+      setStatus('Selected from your device.');
+    } catch (error) {
+      setStatus(error?.message || 'We could not prepare that file. Please choose another one.');
+    } finally {
+      event.target.value = '';
+    }
   };
 
   /* drag & drop reuses the exact same selection logic */
@@ -713,12 +734,20 @@ function UploadPage() {
     setDragging(false);
     const file = event.dataTransfer?.files?.[0];
     if (!file) return;
-    const preparedFile = file.type.startsWith('image/') ? await compressImageFile(file) : file;
-    const url = URL.createObjectURL(preparedFile);
-    setPreviewUrl(url);
-    setPreviewType(preparedFile.type.startsWith('image/') ? 'photo' : 'video');
-    setScreen('preview');
-    setStatus('Selected from gallery.');
+    try {
+      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        setStatus('Choose an image or video file.');
+        return;
+      }
+      const preparedFile = file.type.startsWith('image/') ? await compressImageFile(file) : file;
+      const url = URL.createObjectURL(preparedFile);
+      setPreviewUrl(url);
+      setPreviewType(preparedFile.type.startsWith('image/') ? 'photo' : 'video');
+      setScreen('preview');
+      setStatus('Selected from your device.');
+    } catch (error) {
+      setStatus(error?.message || 'We could not prepare that file. Please choose another one.');
+    }
   };
 
   const handlePublish = async () => {
@@ -770,7 +799,8 @@ function UploadPage() {
       setScreen('camera');
       setActiveTab('video');
       const publishedPostId = publishResponse.upload?.id || publishResponse.upload?._id;
-      navigate(publishedPostId ? `/video/${encodeURIComponent(publishedPostId)}` : '/home');
+      setSourcePickerOpen(false);
+      navigate('/home', { state: publishedPostId ? { publishedPostId: String(publishedPostId) } : undefined });
     } catch (error) {
       setStatus(error?.response?.data?.message || 'Upload failed.');
     } finally {
@@ -783,6 +813,8 @@ function UploadPage() {
     setPreviewUrl('');
     setCaption('');
     if (fileInputRef.current) fileInputRef.current.value = '';
+    if (photoInputRef.current) photoInputRef.current.value = '';
+    setSourcePickerOpen(false);
     setScreen('camera');
     setActiveTab('video');
     setStatus('Ready to capture.');
@@ -1462,6 +1494,36 @@ function UploadPage() {
         </main>
       </div>
 
+      {sourcePickerOpen ? (
+        <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/75 p-3 backdrop-blur-sm sm:items-center sm:p-6">
+          <section role="dialog" aria-modal="true" aria-labelledby="upload-source-title" className="w-full max-w-md rounded-[28px] border border-white/10 bg-[var(--ochi-surface-raised)] p-5 shadow-2xl sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="ochi-kicker">New post</p>
+                <h2 id="upload-source-title" className="mt-2 text-xl font-semibold text-white">Choose how to add media</h2>
+              </div>
+              <button type="button" onClick={() => navigate(-1)} aria-label="Close upload" className="rounded-full border border-white/10 p-2 text-slate-300 transition hover:bg-white/5 hover:text-white">
+                <CloseIcon className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mt-5 grid gap-2">
+              <button type="button" onClick={choosePhotoLibrary} className="flex min-h-14 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-4 text-left text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)]">
+                <GalleryIcon className="h-5 w-5 text-[var(--ochi-accent-light)]" />
+                Photo library
+              </button>
+              <button type="button" onClick={() => handleOption('video')} className="flex min-h-14 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-4 text-left text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)]">
+                <VideoIcon className="h-5 w-5 text-[var(--ochi-accent-light)]" />
+                Take a photo or video
+              </button>
+              <button type="button" onClick={() => handleOption('gallery')} className="flex min-h-14 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-4 text-left text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)]">
+                <UploadCloudIcon className="h-5 w-5 text-[var(--ochi-accent-light)]" />
+                Choose file
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+      <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileChange} />
       <canvas ref={canvasRef} className="hidden" />
     </DashboardShell>

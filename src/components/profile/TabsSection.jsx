@@ -2,6 +2,7 @@ function TabsSection({ activeTab, onChange, isOwnProfile }) {
   const tabs = [
     { id: 'posts', label: 'Posts' },
     { id: 'reshared', label: 'Reshared' },
+    ...(isOwnProfile ? [{ id: 'saved', label: 'Saved' }] : []),
     { id: 'about', label: 'About' },
     ...(isOwnProfile ? [{ id: 'insights', label: 'Insights' }] : []),
   ];

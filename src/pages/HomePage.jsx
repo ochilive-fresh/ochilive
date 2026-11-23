@@ -321,7 +321,22 @@ function HomePage() {
   useEffect(() => {
     setLoading(true);
     let active = true;
-    const request = videoId ? getVideoById(videoId).then((video) => [video]) : getVideoFeed(activeTab);
+    const publishedPostId = location.state?.publishedPostId ? String(location.state.publishedPostId) : '';
+    const request = videoId
+      ? getVideoById(videoId).then((video) => [video])
+      : getVideoFeed(activeTab).then(async (feed) => {
+        const items = Array.isArray(feed) ? feed : [];
+        if (activeTab !== 'for_you' || !publishedPostId) return items;
+        const existingIndex = items.findIndex((video) => String(video.id) === publishedPostId);
+        if (existingIndex >= 0) return [items[existingIndex], ...items.slice(0, existingIndex), ...items.slice(existingIndex + 1)];
+        try {
+          const publishedPost = await getVideoById(publishedPostId);
+          return [publishedPost, ...items];
+        } catch (requestError) {
+          showMessage(requestError?.response?.data?.message || 'Your post was published, but could not be added to For You. You can still find it on your profile.');
+          return items;
+        }
+      });
     request
       .then((data) => {
         if (!active) return;
@@ -338,7 +353,16 @@ function HomePage() {
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [activeTab, refreshKey, videoId]);
+  }, [activeTab, location.state?.publishedPostId, refreshKey, videoId]);
+
+  useEffect(() => {
+    const publishedPostId = location.state?.publishedPostId;
+    if (!publishedPostId || activeTab !== 'for_you' || videoId || !videos.some((video) => String(video.id) === String(publishedPostId))) return undefined;
+    const timeoutId = window.setTimeout(() => {
+      document.getElementById(`feed-post-${publishedPostId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+    return () => window.clearTimeout(timeoutId);
+  }, [activeTab, location.state?.publishedPostId, videoId, videos]);
 
   useEffect(() => {
     if (!videoId || !videos.some((video) => String(video.id) === String(videoId)) || !new URLSearchParams(location.search).has('comments')) return;
@@ -886,7 +910,7 @@ function HomePage() {
       ))}
       <button
         type="button"
-        onClick={() => navigate('/discover')}
+        onClick={() => navigate('/rooms')}
         className="whitespace-nowrap rounded-lg px-1.5 py-2 text-[12pt] font-bold leading-[1.5] text-slate-400 transition hover:bg-white/[0.05] hover:text-white sm:px-3 sm:text-[14pt]"
       >
         Rooms

@@ -117,7 +117,7 @@ export default function RoomPage() {
               <h1 className="text-lg font-black text-white">{roomLabel}</h1>
               <p className="text-xs text-slate-500">{isJokes ? 'Text and photos' : 'Text, photos, and videos'} · $7 weekly challenge</p>
             </div>
-            <button type="button" onClick={() => navigate('/discover')} className="text-xs font-bold text-[var(--ochi-accent-light)]">Rooms</button>
+            <button type="button" onClick={() => navigate('/rooms')} className="text-xs font-bold text-[var(--ochi-accent-light)]">All rooms</button>
           </div>
         </header>
 

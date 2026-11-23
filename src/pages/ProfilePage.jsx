@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
-import { getProfileSummary, getProfilePosts, getProfileReshares, getProfileRelationships, rateProfile } from '../api/dashboardApi';
+import { getProfileSummary, getProfilePosts, getProfileReshares, getProfileRelationships, getSavedVideos, rateProfile } from '../api/dashboardApi';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import TabsSection from '../components/profile/TabsSection';
 import ContentGrid from '../components/profile/ContentGrid';
@@ -135,15 +135,27 @@ function ProfilePage() {
 
   useEffect(() => {
     const username = profile.user?.username;
-    if (!username || !['posts', 'reshared'].includes(activeTab)) return;
+    if (loading || profileError || !username || !['posts', 'reshared', 'saved'].includes(activeTab)) return undefined;
+    if (activeTab === 'saved' && !profile.relationship?.isOwnProfile) return undefined;
+    let active = true;
     setContentLoading(true);
     setContentError('');
-    const request = activeTab === 'posts' ? getProfilePosts(username) : getProfileReshares(username);
+    const request = activeTab === 'posts'
+      ? getProfilePosts(username)
+      : activeTab === 'reshared'
+        ? getProfileReshares(username)
+        : getSavedVideos();
     request.then((items) => {
+      if (!active) return;
       setContent((current) => ({ ...current, [activeTab]: items }));
       if (activeTab === 'posts') setProfile((current) => ({ ...current, stats: { ...current.stats, posts: items.length } }));
-    }).catch(() => { setContentError('We could not load this content.'); setContent((current) => ({ ...current, [activeTab]: [] })); }).finally(() => setContentLoading(false));
-  }, [activeTab, profile.user?.username, contentRequestKey]);
+    }).catch((error) => {
+      if (!active) return;
+      setContentError(error?.response?.data?.message || `We could not load your ${activeTab} content. Please try again.`);
+      setContent((current) => ({ ...current, [activeTab]: [] }));
+    }).finally(() => { if (active) setContentLoading(false); });
+    return () => { active = false; };
+  }, [activeTab, contentRequestKey, loading, profileError, profile.relationship?.isOwnProfile, profile.user?.username]);
 
   useEffect(() => {
     if (!relationshipDialog || !profile.user?.username) return undefined;
@@ -340,7 +352,7 @@ function ProfilePage() {
                   ))}
                 </div>
               </section>
-            ) : !['about', 'insights'].includes(activeTab) && contentLoading ? <div className="rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] py-12 text-center text-sm text-slate-500">Loading {activeTab}...</div> : contentError ? <div className="rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] py-12 text-center"><p className="text-sm text-[var(--ochi-accent-light)]">{contentError}</p><button type="button" onClick={() => { setContentError(''); setContentRequestKey((key) => key + 1); }} className="mt-4 rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/[0.05] hover:text-white">Retry</button></div> : ['posts', 'reshared'].includes(activeTab) ? <ContentGrid items={content[activeTab]} tab={activeTab} isOwnProfile={profile.relationship?.isOwnProfile} isAuthenticated={isAuthenticated} onRequireAuth={requireAccount} /> : null}
+            ) : !['about', 'insights'].includes(activeTab) && contentLoading ? <div className="rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] py-12 text-center text-sm text-slate-500">Loading {activeTab}...</div> : contentError ? <div className="rounded-2xl border border-white/[0.07] bg-[var(--ochi-surface)] py-12 text-center"><p className="text-sm text-[var(--ochi-accent-light)]">{contentError}</p><button type="button" onClick={() => { setContentError(''); setContentRequestKey((key) => key + 1); }} className="mt-4 rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/[0.05] hover:text-white">Retry</button></div> : ['posts', 'reshared', 'saved'].includes(activeTab) ? <ContentGrid items={content[activeTab]} tab={activeTab} isOwnProfile={profile.relationship?.isOwnProfile} isAuthenticated={isAuthenticated} onRequireAuth={requireAccount} onSavedChange={(id, saved) => { if (activeTab === 'saved' && !saved) setContent((current) => ({ ...current, saved: current.saved.filter((item) => String(item.id) !== String(id)) })); }} /> : null}
           </div>
         </div>
       )}

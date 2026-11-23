@@ -40,7 +40,7 @@ const normalizeCommentThread = (comments) => {
   return roots;
 };
 
-function ContentCard({ item, tab, isAuthenticated, onRequireAuth }) {
+function ContentCard({ item, tab, isAuthenticated, onRequireAuth, onSavedChange }) {
   const navigate = useNavigate();
   const currentUserId = (() => {
     try {
@@ -51,8 +51,8 @@ function ContentCard({ item, tab, isAuthenticated, onRequireAuth }) {
   })();
 
   const [liked, setLiked] = useState(Boolean(item.liked || item.likedBy?.includes(currentUserId)));
-  const [saved, setSaved] = useState(Boolean(item.saved));
-  const [reshared, setReshared] = useState(Boolean(item.reshared));
+  const [saved, setSaved] = useState(Boolean(item.saved || tab === 'saved'));
+  const [reshared, setReshared] = useState(Boolean(item.reshared || tab === 'reshared'));
   const [likes, setLikes] = useState(Number(item.likes || 0));
   const [comments, setComments] = useState(Number(item.comments || 0));
   const [commentThread, setCommentThread] = useState(() => normalizeCommentThread(item.commentThread));
@@ -89,6 +89,7 @@ function ContentCard({ item, tab, isAuthenticated, onRequireAuth }) {
     try {
       const response = await toggleSaveVideo(item.id);
       setSaved(Boolean(response.saved));
+      onSavedChange?.(item.id, Boolean(response.saved));
       setMessage(response.saved ? 'Saved to your library.' : 'Removed from saved posts.');
     } catch (error) {
       setMessage(error?.response?.data?.message || 'Unable to save this post right now.');
@@ -216,11 +217,20 @@ function ContentCard({ item, tab, isAuthenticated, onRequireAuth }) {
         {mediaUrl ? (
           isVideo ? (
             <video
-              controls
               preload="metadata"
               playsInline
               muted
-              className="relative z-10 h-full w-full object-cover"
+              role={item.id ? 'link' : undefined}
+              tabIndex={item.id ? 0 : undefined}
+              aria-label={item.id ? `Open video: ${item.title || 'profile post'}` : undefined}
+              onClick={() => item.id && navigate(`/video/${encodeURIComponent(item.id)}`)}
+              onKeyDown={(event) => {
+                if (item.id && (event.key === 'Enter' || event.key === ' ')) {
+                  event.preventDefault();
+                  navigate(`/video/${encodeURIComponent(item.id)}`);
+                }
+              }}
+              className={`relative z-10 h-full w-full object-cover ${item.id ? 'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[var(--ochi-accent)]' : ''}`}
               src={mediaUrl}
               poster={item.thumbnailUrl || mediaUrl}
             />
@@ -253,6 +263,11 @@ function ContentCard({ item, tab, isAuthenticated, onRequireAuth }) {
             {item.duration || item.type || 'media'}
           </span>
         </div>
+        {isVideo ? (
+          <span className="pointer-events-none absolute left-1/2 top-1/2 z-20 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/45 text-white backdrop-blur-sm" aria-hidden="true">
+            <svg viewBox="0 0 24 24" className="ml-0.5 h-4 w-4 fill-current"><path d="M7 4.8v14.4L19 12 7 4.8Z" /></svg>
+          </span>
+        ) : null}
 
         <div className="hidden">
           <button type="button" onClick={handleLike} aria-label="Like this post" className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[8px] font-semibold uppercase tracking-[0.12em] backdrop-blur-sm transition ${liked ? 'border-rose-400/80 bg-rose-500/15 text-rose-200 shadow-[0_0_18px_rgba(251,113,133,0.3)]' : 'border-slate-700/80 bg-slate-950/70 text-white/90 hover:border-slate-500 hover:bg-slate-900'}`}>
@@ -403,9 +418,8 @@ function ContentCard({ item, tab, isAuthenticated, onRequireAuth }) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <button type="button" onClick={() => item.id && navigate(`/video/${encodeURIComponent(item.id)}`)} className="block max-w-full truncate text-left text-sm font-semibold leading-tight text-white hover:text-[var(--ochi-accent-light)] sm:text-base" disabled={!item.id}>{item.title || 'Untitled post'}</button>
-            <p className="mt-1 line-clamp-1 text-xs leading-5 text-slate-400">{item.description || 'Creator post from Ochi Live.'}</p>
           </div>
-          <span className="shrink-0 text-[9px] text-slate-500">{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Today'}</span>
+          <span className="shrink-0 text-[9px] text-slate-500">{item.views ? `${Number(item.views).toLocaleString()} views` : ''}</span>
         </div>
 
         {!commentOpen && recentComments.length ? (
@@ -418,14 +432,12 @@ function ContentCard({ item, tab, isAuthenticated, onRequireAuth }) {
           </div>
         ) : null}
 
-        <div className="flex items-center justify-between gap-3 pt-1 text-[11px] uppercase tracking-[0.14em] text-slate-500">
-          <span>{item.creatorName || 'Ochi creator'}</span>
-          <div className="flex items-center gap-3 normal-case tracking-normal">
-            <button type="button" onClick={handleLike} className={liked ? 'text-rose-300' : 'text-slate-400'} aria-label={liked ? 'Unlike' : 'Like'} aria-pressed={liked}>{liked ? '♥' : '♡'} {likes}</button>
-            <button type="button" onClick={() => navigate(`/video/${encodeURIComponent(item.id)}?comments=1`)} className="text-slate-400" aria-label={`Open ${comments} comments`}>Comment {comments}</button>
-            <button type="button" onClick={handleSave} className={saved ? 'text-amber-300' : 'text-slate-400'} aria-label={saved ? 'Saved' : 'Save'}>{saved ? 'Saved' : 'Save'}</button>
-            <button type="button" onClick={handleShare} className="text-slate-400" aria-label="Share">Share</button>
-          </div>
+        <div className="flex items-center justify-between gap-1 border-t border-white/[0.06] pt-2 text-[10px] normal-case tracking-normal sm:gap-2">
+          <button type="button" onClick={handleLike} className={liked ? 'text-rose-300' : 'text-slate-400'} aria-label={liked ? 'Unlike post' : 'Like post'} aria-pressed={liked} title="Like">{liked ? '♥' : '♡'} <span>{likes}</span></button>
+          <button type="button" onClick={() => navigate(`/video/${encodeURIComponent(item.id)}?comments=1`)} className="text-slate-400" aria-label={`Open ${comments} comments`} title="Comment">◌ <span>{comments}</span></button>
+          <button type="button" onClick={handleReshare} disabled={reshared} className={reshared ? 'cursor-default text-emerald-300' : 'text-slate-400'} aria-label={reshared ? 'Reshared to profile' : 'Reshare to profile'} aria-pressed={reshared} title="Reshare">{reshared ? '↻✓' : '↻'}</button>
+          <button type="button" onClick={handleSave} className={saved ? 'text-amber-300' : 'text-slate-400'} aria-label={saved ? 'Saved to profile' : 'Save to profile'} aria-pressed={saved} title="Save">{saved ? '▣' : '▢'}</button>
+          <button type="button" onClick={handleShare} className="text-slate-400" aria-label="Share post" title="Share">↗</button>
         </div>
 
         {message ? <p className="text-xs text-emerald-200">{message}</p> : null}
@@ -434,12 +446,12 @@ function ContentCard({ item, tab, isAuthenticated, onRequireAuth }) {
   );
 }
 
-function ContentGrid({ items, tab, isOwnProfile, isAuthenticated = true, onRequireAuth }) {
+function ContentGrid({ items, tab, isOwnProfile, isAuthenticated = true, onRequireAuth, onSavedChange }) {
   if (!items.length) {
     return (
       <div className="border-t border-slate-800 py-14 text-center">
-        <p className="text-sm font-medium text-slate-300">{tab === 'reshared' ? 'No reshared posts yet.' : 'No posts yet.'}</p>
-        <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500">{isOwnProfile ? 'Publish your first live moment and start building your profile.' : 'This creator has not published anything here yet.'}</p>
+        <p className="text-sm font-medium text-slate-300">{tab === 'reshared' ? 'No reshared posts yet.' : tab === 'saved' ? 'No saved posts yet.' : 'No posts yet.'}</p>
+        {tab !== 'saved' ? <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500">{isOwnProfile ? 'Publish your first moment and start building your profile.' : 'This creator has not published anything here yet.'}</p> : null}
         {isOwnProfile && tab === 'posts' ? <a href="/upload" className="mt-5 inline-flex border border-ochi-accent bg-ochi-accent px-4 py-2 text-sm font-semibold text-white">Create post</a> : null}
       </div>
     );
@@ -448,7 +460,7 @@ function ContentGrid({ items, tab, isOwnProfile, isAuthenticated = true, onRequi
   return (
     <div className="mt-3 grid grid-cols-3 gap-1 sm:gap-2" role="tabpanel">
       {items.map((item) => (
-        <ContentCard key={item.id} item={item} tab={tab} isAuthenticated={isAuthenticated} onRequireAuth={onRequireAuth} />
+        <ContentCard key={`${tab}-${item.id}`} item={item} tab={tab} isAuthenticated={isAuthenticated} onRequireAuth={onRequireAuth} onSavedChange={onSavedChange} />
       ))}
     </div>
   );
