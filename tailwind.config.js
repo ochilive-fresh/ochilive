@@ -8,9 +8,9 @@ export default {
     extend: {
       colors: {
         ochi: {
-          bg: '#0b0c10',
-          surface: '#15171d',
-          accent: '#c5e84c',
+          bg: '#000000',
+          surface: '#1c1c1e',
+          accent: '#1c1c1e',
           muted: '#a4a5ad',
           text: '#f4f1eb',
           accentSoft: '#d8f57e',

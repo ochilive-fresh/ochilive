@@ -7,6 +7,7 @@ import {
   incrementView,
   markVideoWatched,
   deleteVideoPost,
+  updateVideoPost,
   likeVideo,
   commentOnVideo,
   toggleSaveVideo,
@@ -120,6 +121,13 @@ function HomePage() {
   const [videoProgress, setVideoProgress] = useState({});
   const [videoLoadState, setVideoLoadState] = useState({});
   const [mediaAspectRatios, setMediaAspectRatios] = useState({});
+  const [postMenuVideoId, setPostMenuVideoId] = useState(null);
+  const [editingVideoId, setEditingVideoId] = useState(null);
+  const [editingCaption, setEditingCaption] = useState('');
+  const [showWelcome, setShowWelcome] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return Boolean(getStoredSession().token) && !localStorage.getItem('ochi_welcome_seen');
+  });
 
   const getLikedStorageKey = () => {
     const userId = getStoredSession().user?.id || getStoredSession().user?.username || 'guest';
@@ -399,6 +407,26 @@ function HomePage() {
       showMessage('Post deleted.');
     } catch (error) {
       showMessage(error?.response?.data?.message || 'Unable to delete this post.');
+    }
+  };
+
+  const openCaptionEditor = (video) => {
+    setEditingVideoId(video.id);
+    setEditingCaption(video.description || video.title || '');
+    setPostMenuVideoId(null);
+  };
+
+  const saveCaption = async () => {
+    if (!editingVideoId) return;
+    try {
+      const result = await updateVideoPost(editingVideoId, editingCaption);
+      setVideos((current) => current.map((video) => video.id === editingVideoId
+        ? { ...video, description: result.post?.description || editingCaption, title: result.post?.title || editingCaption }
+        : video));
+      setEditingVideoId(null);
+      showMessage('Caption updated.');
+    } catch (error) {
+      showMessage(error?.response?.data?.message || 'Unable to update the caption.');
     }
   };
 
@@ -792,14 +820,44 @@ function HomePage() {
                   </div>
                 ) : null}
 
-                {video.creatorUsername && getStoredSession().user?.username !== video.creatorUsername ? (
-                  <button
-                    type="button"
-                    onClick={(event) => { event.stopPropagation(); handleToggleFollow(video); }}
-                    className="absolute left-3 top-3 z-10 rounded-full border border-white/20 bg-black/35 px-3.5 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur-xl transition hover:bg-black/55 active:scale-95 sm:left-4 sm:top-4"
-                  >
-                    {video.isFollowing ? 'Following' : 'Follow'}
-                  </button>
+                <div className="absolute left-3 top-3 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-black/45 p-1 pr-2 shadow-lg backdrop-blur-xl sm:left-4 sm:top-4">
+                  {video.creatorProfilePictureUrl ? (
+                    <img src={video.creatorProfilePictureUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
+                  ) : (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--ochi-accent-15)] text-xs font-black text-[var(--ochi-accent-light)]">
+                      {(video.creatorName || video.creatorUsername || 'O').charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  {video.creatorUsername && getStoredSession().user?.username !== video.creatorUsername ? (
+                    <button
+                      type="button"
+                      onClick={(event) => { event.stopPropagation(); handleToggleFollow(video); }}
+                      className="text-xs font-bold text-white"
+                    >
+                      {video.isFollowing ? 'Following' : 'Follow'}
+                    </button>
+                  ) : (
+                    <span className="text-xs font-bold text-white">You</span>
+                  )}
+                </div>
+
+                {getStoredSession().user?.id === video.creatorId ? (
+                  <div className="absolute right-3 top-3 z-30 sm:right-4 sm:top-4">
+                    <button
+                      type="button"
+                      onClick={(event) => { event.stopPropagation(); setPostMenuVideoId((current) => current === video.id ? null : video.id); }}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/45 text-lg font-black text-white backdrop-blur-xl"
+                      aria-label="Post options"
+                    >
+                      •••
+                    </button>
+                    {postMenuVideoId === video.id ? (
+                      <div className="mt-2 min-w-32 overflow-hidden rounded-xl border border-white/10 bg-[#111318] p-1 shadow-2xl">
+                        <button type="button" onClick={(event) => { event.stopPropagation(); openCaptionEditor(video); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-white hover:bg-white/[0.07]">Edit caption</button>
+                        <button type="button" onClick={(event) => { event.stopPropagation(); setPostMenuVideoId(null); handleDeletePost(video); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-[#ff1744] hover:bg-white/[0.07]">Delete</button>
+                      </div>
+                    ) : null}
+                  </div>
                 ) : null}
 
                 {isVideoType(video) ? (
@@ -862,21 +920,6 @@ function HomePage() {
                     <span><FeedIcon type="share" /></span>
                     <span className="text-[9px] font-medium leading-3 text-slate-200">{formatActionCount(video.shares || video.shareCount)}</span>
                   </button>
-                  {getStoredSession().user?.id === video.creatorId ? (
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleDeletePost(video);
-                      }}
-                      className="flex h-9 min-w-9 items-center justify-center rounded-full px-1.5 text-slate-300 transition hover:bg-[var(--ochi-accent-15)] hover:text-white active:scale-90"
-                      aria-label="Delete post"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-                        <path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                  ) : null}
                 </div>
                 </div>
 
@@ -934,6 +977,31 @@ function HomePage() {
         <p className="px-1 pt-5 text-[10px] leading-5 text-slate-600">Ochi is a space for creators and their communities. Find a seat, stay a while.</p>
       </aside> : null}
       </div>
+
+      {editingVideoId ? (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) setEditingVideoId(null); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="edit-caption-title" className="w-full max-w-md rounded-[24px] border border-white/10 bg-[var(--ochi-surface)] p-5 shadow-2xl">
+            <h2 id="edit-caption-title" className="text-lg font-black text-white">Edit caption</h2>
+            <textarea value={editingCaption} onChange={(event) => setEditingCaption(event.target.value)} maxLength={500} rows={5} className="mt-4 w-full resize-none rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm font-semibold leading-6 text-white outline-none focus:border-[var(--ochi-accent)]" />
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={() => setEditingVideoId(null)} className="rounded-full border border-white/10 px-4 py-2 text-xs font-bold text-slate-300">Cancel</button>
+              <button type="button" onClick={saveCaption} className="rounded-full bg-[var(--ochi-accent)] px-4 py-2 text-xs font-black text-[#11130b]">Save caption</button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {showWelcome ? (
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/75 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+          <section role="dialog" aria-modal="true" aria-labelledby="welcome-title" className="w-full max-w-md rounded-t-[28px] border border-white/10 bg-[var(--ochi-surface-raised)] p-6 shadow-2xl sm:rounded-[28px]">
+            <span className="text-3xl" aria-hidden="true">🎭</span>
+            <h2 id="welcome-title" className="mt-3 text-2xl font-black text-white">Welcome to Ochi!</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-300">Ochi is your home for live comedy, and exciting live comedy shows are coming soon!</p>
+            <p className="mt-3 text-sm leading-6 text-slate-400">In the meantime, enjoy hilarious content, join competitions, and win exciting little prizes in Ochi Rooms.</p>
+            <button type="button" onClick={() => { localStorage.setItem('ochi_welcome_seen', 'true'); setShowWelcome(false); }} className="mt-5 h-12 w-full rounded-full bg-[var(--ochi-accent)] text-sm font-black text-white ring-1 ring-white/10">Explore Ochi</button>
+          </section>
+        </div>
+      ) : null}
 
       {activeCommentVideo ? (
         <div

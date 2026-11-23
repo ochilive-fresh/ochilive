@@ -4,11 +4,11 @@
 
 :root {
   color-scheme: dark;
-  --ochi-bg: #090a0d;
-  --ochi-surface: #111318;
-  --ochi-surface-raised: #191c23;
-  --ochi-accent: #c5e84c;
-  --ochi-accent-strong: #b7d93e;
+  --ochi-bg: #000000;
+  --ochi-surface: #1c1c1e;
+  --ochi-surface-raised: #252527;
+  --ochi-accent: #1c1c1e;
+  --ochi-accent-strong: #1c1c1e;
   --ochi-accent-light: #d8f57e;
   --ochi-accent-10: rgba(197, 232, 76, 0.1);
   --ochi-accent-15: rgba(197, 232, 76, 0.15);

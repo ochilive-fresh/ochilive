@@ -7,7 +7,7 @@ import { isAuthenticated } from '../utils/session';
 const navItems = [
   { label: 'Home', path: '/home', icon: 'home' },
   { label: 'Discover', path: '/discover', icon: 'search' },
-  { label: 'Create', path: '/upload', icon: 'plus' },
+  { label: 'Rooms', path: '/rooms', icon: 'activity' },
   { label: 'Activity', path: '/activity', icon: 'activity' },
   { label: 'Notifications', path: '/notifications', icon: 'bell' },
   { label: 'Profile', path: '/profile', icon: 'user' },
@@ -256,7 +256,7 @@ export default function DashboardShell({
                 to={item.path}
                 aria-label={item.path === '/notifications' ? 'Inbox and notifications' : item.label}
                 className={({ isActive }) =>
-                  `group relative ${item.path === '/activity' ? 'hidden lg:flex' : 'flex'} min-h-[56px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1.5 text-[10px] font-medium transition-colors sm:min-h-0 sm:flex-row sm:gap-1 sm:px-3 sm:py-2 sm:text-sm lg:min-h-11 lg:justify-start lg:gap-3 lg:px-3 lg:text-sm ${item.path === '/upload' ? 'lg:hidden' : ''} ${
+                  `group relative ${item.path === '/activity' ? 'hidden lg:flex' : 'flex'} min-h-[56px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1.5 text-[10px] font-medium transition-colors sm:min-h-[48px] sm:border sm:border-white/[0.07] sm:bg-white/[0.025] sm:flex-row sm:gap-1 sm:px-3 sm:py-2 sm:text-sm lg:min-h-11 lg:justify-start lg:gap-3 lg:px-3 lg:text-sm ${item.path === '/upload' ? 'lg:hidden' : ''} ${
                     isActive ? 'bg-white/[0.07] font-semibold text-white shadow-inner shadow-white/[0.02]' : 'text-slate-400 hover:bg-white/[0.035] hover:text-slate-100'
                   }`
                 }

@@ -21,6 +21,8 @@ import LiveViewerPage from '../pages/LiveViewerPage';
 import NotificationsPage from '../pages/NotificationsPage';
 import MessagesPage from '../pages/MessagesPage';
 import SettingsPage from '../pages/SettingsPage';
+import RoomsPage from '../pages/RoomsPage';
+import RoomPage from '../pages/RoomPage';
 import ProtectedRoute from './ProtectedRoute';
 
 function AppRoutes() {
@@ -35,6 +37,8 @@ function AppRoutes() {
       <Route path="/home" element={<HomePage />} />
       <Route path="/video/:videoId" element={<HomePage />} />
       <Route path="/discover" element={<DiscoverPage />} />
+      <Route path="/rooms" element={<RoomsPage />} />
+      <Route path="/rooms/:roomKey" element={<ProtectedRoute><RoomPage /></ProtectedRoute>} />
       <Route path="/discover/more-upcoming-shows" element={<MoreUpcomingShowsPage />} />
       <Route path="/discover/more-popular-clips" element={<MorePopularClipsPage />} />
       <Route path="/activity" element={<ActivityPage />} />

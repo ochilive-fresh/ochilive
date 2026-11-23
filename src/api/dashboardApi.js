@@ -70,6 +70,11 @@ export const deleteVideoPost = async (id) => {
   return data;
 };
 
+export const updateVideoPost = async (id, caption) => {
+  const { data } = await videoApi.patch(`/videos/${encodeURIComponent(id)}`, { caption });
+  return data;
+};
+
 export const likeVideo = async (id) => {
   const { data } = await videoApi.post(`/videos/${id}/like`);
   return data;
@@ -236,6 +241,31 @@ export const markAllNotificationsRead = async () => {
 
 export const getActivityFeed = async () => {
   const { data } = await api.get('/dashboard/activity');
+  return data;
+};
+
+export const getRooms = async () => {
+  const { data } = await api.get('/rooms');
+  return data;
+};
+
+export const getRoomPosts = async (roomKey) => {
+  const { data } = await api.get(`/rooms/${encodeURIComponent(roomKey)}/posts`);
+  return data;
+};
+
+export const createRoomPost = async (roomKey, payload) => {
+  const { data } = await api.post(`/rooms/${encodeURIComponent(roomKey)}/posts`, payload);
+  return data;
+};
+
+export const likeRoomPost = async (postId) => {
+  const { data } = await api.post(`/rooms/posts/${encodeURIComponent(postId)}/like`);
+  return data;
+};
+
+export const commentRoomPost = async (postId, text) => {
+  const { data } = await api.post(`/rooms/posts/${encodeURIComponent(postId)}/comments`, { text });
   return data;
 };
 

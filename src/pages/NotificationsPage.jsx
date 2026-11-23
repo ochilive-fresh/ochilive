@@ -180,6 +180,18 @@ function NotificationsPage() {
           </span>
           <span className="text-sm font-medium text-[var(--ochi-accent-light)]">Open <span aria-hidden="true">→</span></span>
         </button>
+        <button
+          type="button"
+          onClick={() => setFilter('all')}
+          className="flex w-full items-center gap-3 border-b border-slate-800 bg-white/[0.025] px-4 py-4 text-left transition hover:bg-white/[0.06] sm:px-6"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-slate-200" aria-hidden="true">!</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-white">Alerts</span>
+            <span className="mt-0.5 block text-xs text-slate-400">Important Ochi updates and account alerts</span>
+          </span>
+          <span className="text-sm font-medium text-[var(--ochi-accent-light)]">View <span aria-hidden="true">→</span></span>
+        </button>
 
         <div className="flex flex-col gap-3 px-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
