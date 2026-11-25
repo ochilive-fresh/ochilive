@@ -240,14 +240,14 @@ export default function DashboardShell({
                 to={item.path}
                 aria-label={item.path === '/notifications' ? 'Inbox and notifications' : item.label}
                 className={({ isActive }) =>
-                  `group pointer-events-auto relative inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-transparent bg-transparent text-white/80 shadow-none transition hover:-translate-y-0.5 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 lg:h-auto lg:min-h-12 lg:w-full lg:justify-start lg:gap-3 lg:rounded-xl lg:border-white/[0.07] lg:bg-white/[0.025] lg:px-3 lg:py-2.5 lg:text-sm lg:shadow-none lg:hover:translate-y-0 lg:hover:bg-white/[0.06] lg:hover:drop-shadow-none ${
-                    isActive ? 'text-white lg:bg-white/[0.08] lg:font-semibold' : 'lg:text-slate-400'
+                  `group pointer-events-auto relative inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] border border-white/[0.12] bg-white/[0.09] text-white shadow-[0_8px_22px_rgba(0,0,0,0.34)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-white/[0.2] hover:bg-white/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)] lg:h-auto lg:min-h-12 lg:w-full lg:justify-start lg:gap-3 lg:rounded-xl lg:border-white/[0.07] lg:bg-white/[0.025] lg:px-3 lg:py-2.5 lg:text-sm lg:shadow-none lg:backdrop-blur-none lg:hover:translate-y-0 lg:hover:bg-white/[0.06] ${
+                    isActive ? 'border-[var(--ochi-accent-40)] bg-white/[0.17] text-white shadow-[0_10px_26px_rgba(0,0,0,0.4)] lg:bg-white/[0.08] lg:font-semibold' : 'lg:text-slate-400'
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <span className={`inline-flex shrink-0 items-center justify-center ${isActive ? 'text-white lg:text-[var(--ochi-accent-light)]' : 'text-white/80 lg:text-slate-400'}`}>
+                    <span className={`inline-flex shrink-0 items-center justify-center ${isActive ? 'text-[var(--ochi-accent-light)] lg:text-[var(--ochi-accent-light)]' : 'text-white lg:text-slate-400'}`}>
                       <Icon name={item.icon} className="h-7 w-7 transition-transform group-active:scale-90 lg:h-5 lg:w-5" />
                     </span>
                     <span className="sr-only truncate leading-4 lg:not-sr-only lg:text-sm">{item.label}</span>

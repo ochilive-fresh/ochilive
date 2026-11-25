@@ -516,6 +516,14 @@ function HomePage() {
     setActiveTab(tabKey);
   };
 
+  const handleOpenLive = (video) => {
+    if (!getStoredSession().token) {
+      requireAccount('watch and join live streams');
+      return;
+    }
+    navigate(`/live/${video.id}`);
+  };
+
   const handleToggleLike = async (id) => {
     if (!getStoredSession().token) {
       requireAccount('like posts');
@@ -556,7 +564,7 @@ function HomePage() {
   const handleVideoTap = (event, video) => {
     event.stopPropagation();
     if (video.type === 'live') {
-      navigate(`/live/${video.id}`);
+      handleOpenLive(video);
       return;
     }
 
@@ -917,6 +925,29 @@ function HomePage() {
       </button>
     </nav>
   ) : null;
+  const homeHeaderAction = !videoId ? (
+    getStoredSession().token ? (
+      <button
+        type="button"
+        onClick={() => navigate('/upload')}
+        aria-label="Create a post"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--ochi-accent-strong)] text-white transition hover:bg-[var(--ochi-accent)] sm:h-10 sm:w-auto sm:gap-2 sm:px-4"
+      >
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        <span className="hidden text-sm font-semibold sm:inline">Upload</span>
+      </button>
+    ) : (
+      <button
+        type="button"
+        onClick={() => requireAccount('create and share posts')}
+        aria-label="Sign up to create a post"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--ochi-accent-strong)] text-white transition hover:bg-[var(--ochi-accent)] sm:h-10 sm:w-auto sm:gap-2 sm:px-4"
+      >
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        <span className="hidden text-sm font-semibold sm:inline">Upload</span>
+      </button>
+    )
+  ) : null;
 
   return (
     <>
@@ -926,6 +957,7 @@ function HomePage() {
         showBack={Boolean(videoId)}
         backFallback="/home"
         homeHeaderCenter={homeHeaderCenter}
+        homeHeaderAction={homeHeaderAction}
       >
       <style>{`
         @keyframes feed-heart-burst {
@@ -980,7 +1012,7 @@ function HomePage() {
                 className="w-full overflow-hidden sm:rounded-[30px] sm:border sm:border-white/[0.09] sm:bg-[#101114] sm:shadow-[0_30px_90px_rgba(0,0,0,0.45)]"
                 onClick={() => {
                   if (video.type === 'live') {
-                    navigate(`/live/${video.id}`);
+                    handleOpenLive(video);
                   } else {
                   }
                 }}
@@ -1024,7 +1056,7 @@ function HomePage() {
                     alt={video.title}
                     className="h-full w-full object-contain"
                     onClick={(event) => {
-                      if (video.type === 'live') navigate(`/live/${video.id}`);
+                      if (video.type === 'live') handleOpenLive(video);
                       else handlePhotoTap(event, video);
                     }}
                   />
