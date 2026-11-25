@@ -7,8 +7,6 @@ import { isAuthenticated } from '../utils/session';
 const navItems = [
   { label: 'Home', path: '/home', icon: 'home' },
   { label: 'Discover', path: '/discover', icon: 'search' },
-  { label: 'Rooms', path: '/rooms', icon: 'activity' },
-  { label: 'Activity', path: '/activity', icon: 'activity' },
   { label: 'Notifications', path: '/notifications', icon: 'bell' },
   { label: 'Profile', path: '/profile', icon: 'user' },
 ];
@@ -18,14 +16,14 @@ function Icon({ name, className }) {
     case 'home':
       return (
         <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-          <path d="M3 11.5L12 3l9 8.5V20a1 1 0 0 1-1 1h-5v-5H9v5H4a1 1 0 0 1-1-1v-8.5Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M3 11.5L12 3l9 8.5V20a1 1 0 0 1-1 1h-5v-5H9v5H4a1 1 0 0 1-1-1v-8.5Z" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
     case 'search':
       return (
         <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-          <circle cx="10" cy="10" r="6.25" stroke="currentColor" strokeWidth="2.2" />
-          <path d="M15.4 15.4l3.2 3.2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          <circle cx="10" cy="10" r="6.25" stroke="currentColor" strokeWidth="2.8" />
+          <path d="M15.4 15.4l3.2 3.2" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" />
           <path d="M14.5 10a4.5 4.5 0 1 0-9 0 4.5 4.5 0 0 0 9 0Z" stroke="none" fill="currentColor" fillOpacity="0.04" />
         </svg>
       );
@@ -52,8 +50,8 @@ function Icon({ name, className }) {
     case 'user':
       return (
         <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-          <circle cx="12" cy="9" r="4" stroke="currentColor" strokeWidth="2.2" />
-          <path d="M6 20c0-3.333 2.667-6 6-6s6 2.667 6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          <circle cx="12" cy="9" r="4" stroke="currentColor" strokeWidth="2.8" />
+          <path d="M6 20c0-3.333 2.667-6 6-6s6 2.667 6 6" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" />
         </svg>
       );
     case 'activity':
@@ -79,8 +77,8 @@ function Icon({ name, className }) {
     case 'bell':
       return (
         <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-          <path d="M18 8a6 6 0 0 0-12 0c0 3.73-1.5 6-3 6h18c-1.5 0-3-2.27-3-6Z" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+          <path d="M18 8a6 6 0 0 0-12 0c0 3.73-1.5 6-3 6h18c-1.5 0-3-2.27-3-6Z" stroke="currentColor" strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="2.7" strokeLinecap="round" />
         </svg>
       );
     default:
@@ -229,46 +227,36 @@ export default function DashboardShell({
         <div className="mx-auto w-full max-w-[1360px] space-y-5 px-1 sm:space-y-7 sm:px-2 lg:px-10">{children}</div>
       </main>
 
-      <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/[0.08] bg-[#0b0c0f]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl lg:bottom-0 lg:left-0 lg:right-auto lg:top-0 lg:w-64 lg:border-r lg:border-t-0 lg:bg-[#0b0c0f]/90 lg:pb-0">
-        <div className="mx-auto grid max-w-6xl grid-cols-5 items-stretch px-1 py-1.5 sm:flex sm:items-center sm:justify-center sm:gap-6 sm:px-6 sm:py-1.5 lg:flex lg:h-full lg:flex-col lg:items-stretch lg:justify-start lg:gap-1 lg:px-5 lg:py-7">
+      <nav aria-label="Main navigation" className="pointer-events-none fixed inset-x-0 bottom-0 z-30 bg-transparent pb-[env(safe-area-inset-bottom)] lg:pointer-events-auto lg:inset-y-0 lg:left-0 lg:right-auto lg:w-64 lg:border-r lg:border-white/[0.08] lg:bg-[#0b0c0f]/90 lg:pb-0">
+        <div className="mx-auto flex max-w-6xl items-center justify-center gap-3 px-4 pb-4 pt-3 sm:gap-4 lg:flex lg:h-full lg:flex-col lg:items-stretch lg:justify-start lg:gap-3 lg:px-5 lg:py-7">
           <Link to="/home" className="mb-7 hidden items-center gap-3 rounded-2xl px-3 py-2 lg:flex" aria-label="Ochi Live home">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--ochi-accent)] text-lg font-black tracking-tighter text-white">O.</span>
           </Link>
           <p className="mb-2 hidden px-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-600 lg:block">Your space</p>
           {navItems.map((item) => {
-            const colorMap = {
-              home: 'text-slate-400',
-              search: 'text-slate-400',
-              upload: 'text-slate-400',
-              plus: 'text-slate-400',
-              bell: 'text-slate-400',
-              user: 'text-slate-400',
-              activity: 'text-slate-400',
-            };
-
             return (
               <NavLink
                 key={item.path}
                 to={item.path}
                 aria-label={item.path === '/notifications' ? 'Inbox and notifications' : item.label}
                 className={({ isActive }) =>
-                  `group relative ${item.path === '/activity' ? 'hidden lg:flex' : 'flex'} min-h-[64px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl border border-white/[0.07] bg-white/[0.025] px-0.5 py-1.5 text-[9px] font-medium transition-colors sm:min-h-[56px] sm:gap-1 sm:px-3 sm:py-2 sm:text-sm lg:min-h-11 lg:flex-row lg:justify-start lg:gap-3 lg:border-transparent lg:bg-transparent lg:px-3 lg:text-sm ${
-                    isActive ? 'border-white/[0.16] bg-white/[0.08] font-semibold text-white shadow-inner shadow-white/[0.02]' : 'text-slate-400 hover:bg-white/[0.06] hover:text-slate-100'
+                  `group pointer-events-auto relative inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-transparent bg-transparent text-white/80 shadow-none transition hover:-translate-y-0.5 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 lg:h-auto lg:min-h-12 lg:w-full lg:justify-start lg:gap-3 lg:rounded-xl lg:border-white/[0.07] lg:bg-white/[0.025] lg:px-3 lg:py-2.5 lg:text-sm lg:shadow-none lg:hover:translate-y-0 lg:hover:bg-white/[0.06] lg:hover:drop-shadow-none ${
+                    isActive ? 'text-white lg:bg-white/[0.08] lg:font-semibold' : 'lg:text-slate-400'
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] ${isActive ? 'bg-white/[0.08] text-[var(--ochi-accent-light)]' : colorMap[item.icon]}`}>
-                      <Icon name={item.icon} className="h-5 w-5 transition-transform group-active:scale-90" />
+                    <span className={`inline-flex shrink-0 items-center justify-center ${isActive ? 'text-white lg:text-[var(--ochi-accent-light)]' : 'text-white/80 lg:text-slate-400'}`}>
+                      <Icon name={item.icon} className="h-7 w-7 transition-transform group-active:scale-90 lg:h-5 lg:w-5" />
                     </span>
-                    <span className="truncate leading-4 lg:text-sm">{item.label}</span>
+                    <span className="sr-only truncate leading-4 lg:not-sr-only lg:text-sm">{item.label}</span>
+                    {isActive && <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-[var(--ochi-accent-light)] lg:hidden" aria-hidden="true" />}
                     {item.path === '/notifications' && inboxUnreadCount > 0 && (
-                      <span className="absolute right-1 top-0 inline-flex min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-bold text-white ring-2 ring-slate-950 sm:right-0">
+                      <span className="absolute -right-1 -top-1 inline-flex min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-bold text-white ring-2 ring-[#0b0c0f] lg:right-3 lg:top-1/2 lg:-translate-y-1/2">
                         {inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}
                       </span>
                     )}
-                    <span className={`absolute bottom-0 h-0.5 rounded-full bg-[var(--ochi-accent)] transition-all duration-200 sm:hidden ${isActive ? 'w-5 opacity-100' : 'w-0 opacity-0'}`} />
                   </>
                 )}
               </NavLink>
