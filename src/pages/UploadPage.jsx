@@ -36,18 +36,6 @@ const VideoIcon = (p) => (
   />
 );
 
-const PhotoIcon = (p) => (
-  <Icon
-    {...p}
-    path={
-      <>
-        <path d="M3 8.5A2.5 2.5 0 015.5 6h1.2a1.5 1.5 0 001.3-.75l.6-1a1.5 1.5 0 011.3-.75h4.2a1.5 1.5 0 011.3.75l.6 1A1.5 1.5 0 0017.3 6h1.2A2.5 2.5 0 0121 8.5v8A2.5 2.5 0 0118.5 19h-13A2.5 2.5 0 013 16.5z" />
-        <circle cx="12" cy="12.5" r="3.4" />
-      </>
-    }
-  />
-);
-
 const GalleryIcon = (p) => (
   <Icon
     {...p}
@@ -56,19 +44,6 @@ const GalleryIcon = (p) => (
         <rect x="3" y="5" width="18" height="14" rx="3" />
         <circle cx="8.5" cy="10" r="1.6" />
         <path d="M4 17l5-4.5 4 3.5 2.5-2L20 17" />
-      </>
-    }
-  />
-);
-
-const LiveIcon = (p) => (
-  <Icon
-    {...p}
-    path={
-      <>
-        <circle cx="12" cy="12" r="2.6" />
-        <path d="M7.5 7.5a6.4 6.4 0 000 9M16.5 16.5a6.4 6.4 0 000-9" />
-        <path d="M4.5 4.5a10.6 10.6 0 000 15M19.5 19.5a10.6 10.6 0 000-15" />
       </>
     }
   />
@@ -136,13 +111,6 @@ const UsersIcon = (p) => (
   />
 );
 const ChevronIcon = (p) => <Icon {...p} path={<path d="M9 6l6 6-6 6" />} />;
-
-const options = [
-  { key: 'video', label: 'Video', hint: 'Record', Glyph: VideoIcon },
-  { key: 'photo', label: 'Photo', hint: 'Capture', Glyph: PhotoIcon },
-  { key: 'gallery', label: 'Upload', hint: 'From device', Glyph: GalleryIcon },
-  { key: 'live', label: 'Go live', hint: 'Stream', Glyph: LiveIcon },
-];
 
 const privacyOptions = [
   { key: 'public', label: 'Everyone', Glyph: GlobeIcon },
@@ -504,17 +472,6 @@ function UploadPage() {
       setSourcePickerOpen(false);
       setScreen('gallery');
       fileInputRef.current?.click();
-      return;
-    }
-    if (key === 'live') {
-      setSourcePickerOpen(false);
-      if (!comedian) {
-        setStatus('Complete Try Comedy on your profile before going live.');
-        navigate('/profile');
-        return;
-      }
-      setScreen('live');
-      setStatus('Live ready.');
       return;
     }
     setScreen('camera');
@@ -887,7 +844,7 @@ function UploadPage() {
         }
       `}</style>
 
-      <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[var(--ochi-bg)] text-[var(--ochi-text)]">
+      <div className={`${sourcePickerOpen ? 'hidden' : 'fixed'} inset-0 z-50 flex flex-col overflow-hidden bg-[var(--ochi-bg)] text-[var(--ochi-text)]`}>
         {/* ambient depth */}
         <div className="pointer-events-none absolute inset-0 opacity-80">
           <div className="absolute -left-24 top-[-10%] h-72 w-72 rounded-full bg-[var(--ochi-accent-10)] blur-3xl" />
@@ -982,35 +939,6 @@ function UploadPage() {
 
         {/* ---------------- Body ---------------- */}
         <main className="relative z-10 flex min-h-0 flex-1 flex-col lg:mx-auto lg:grid lg:w-full lg:max-w-[1320px] lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-[auto_minmax(0,1fr)] lg:items-center lg:gap-x-8 lg:gap-y-5 lg:p-6 xl:gap-x-10 xl:p-8">
-          <aside className="hidden lg:col-span-2 lg:flex lg:items-center lg:justify-center lg:pb-1" aria-label="Create mode">
-            <div className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.035] p-1">
-            {options.filter((option) => comedian || option.key !== 'live').map((option) => {
-              const active = activeTab === option.key;
-              const { Glyph } = option;
-              return (
-                <button
-                  key={option.key}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => handleOption(option.key)}
-                  className={`group relative flex min-h-10 min-w-[118px] items-center justify-center gap-2 rounded-full px-3.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)] ${
-                    active
-                      ? 'bg-[var(--ochi-accent)] text-white'
-                      : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-                  }`}
-                >
-                  <Glyph
-                    className={`h-5 w-5 shrink-0 ${active ? 'text-[var(--ochi-accent-light)]' : ''}`}
-                  />
-                  <span className="min-w-0">
-                    <span className="block text-xs font-bold">{option.label}</span>
-                  </span>
-                </button>
-              );
-            })}
-            </div>
-          </aside>
-
           {/* Stage */}
           <section
             onDragOver={(e) => {
@@ -1138,36 +1066,8 @@ function UploadPage() {
 
           {/* Controls / details */}
           <section className={`up-scroll ${screen !== 'preview' ? 'up-capture-controls' : ''} pointer-events-auto absolute inset-x-0 bottom-0 z-20 min-h-0 touch-manipulation overflow-y-auto overscroll-contain px-3 pb-[calc(.65rem+env(safe-area-inset-bottom))] pt-2 sm:px-6 lg:relative lg:inset-auto lg:col-start-2 lg:row-start-2 lg:max-h-[calc(100dvh-10rem)] lg:w-full lg:self-stretch lg:rounded-2xl lg:border lg:border-white/[0.07] lg:bg-[var(--ochi-surface)] lg:px-5 lg:py-5 lg:shadow-[var(--ochi-shadow-card)] ${liveStarted && screen === 'live' ? 'max-h-none bg-transparent' : `rounded-t-2xl border-t border-white/15 bg-[var(--ochi-bg)]/95 ${screen === 'live' ? 'max-h-[34dvh] sm:max-h-[42dvh]' : 'max-h-[44dvh]'}`} ${screen !== 'live' ? 'lg:bg-[var(--ochi-surface)]' : ''}`}>
-            {/* mobile mode switcher */}
-            <div
-              role="tablist"
-              aria-label="Upload mode"
-              className={`grid gap-0.5 rounded-xl border border-white/10 bg-white/5 p-0.5 lg:hidden ${comedian ? 'grid-cols-4' : 'grid-cols-3'} ${liveStarted ? 'hidden' : ''}`}
-            >
-              {options.filter((option) => comedian || option.key !== 'live').map((option) => {
-                const active = activeTab === option.key;
-                const { Glyph } = option;
-                return (
-                  <button
-                    key={option.key}
-                    role="tab"
-                    aria-selected={active}
-                    type="button"
-                    onClick={() => handleOption(option.key)}
-                    className={`group flex flex-row items-center justify-center gap-1.5 rounded-lg px-1.5 py-2 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ochi-accent-light)] sm:flex-col sm:gap-1.5 sm:py-2.5 ${
-                      active ? 'bg-[var(--ochi-accent)] text-white shadow-lg shadow-black/30' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-                    }`}
-                  >
-                    <Glyph className={`h-4 w-4 shrink-0 transition-transform duration-300 sm:h-5 sm:w-5 ${active ? 'scale-110' : 'group-hover:scale-105'}`} />
-                    <span className="text-[10px] font-semibold tracking-tight sm:text-[11px]">{option.label}</span>
-                    <span className={`hidden h-0.5 w-5 rounded-full bg-white transition-all duration-300 sm:block ${active ? 'opacity-100' : 'opacity-0'}`} />
-                  </button>
-                );
-              })}
-            </div>
-
             {/* contextual panel */}
-            <div className="mt-4 lg:mt-0 pointer-events-auto">
+            <div className="pointer-events-auto">
               {screen === 'preview' ? (
                 <div key="p-preview" className="space-y-3">
                   {/* caption */}
@@ -1495,7 +1395,7 @@ function UploadPage() {
       </div>
 
       {sourcePickerOpen ? (
-        <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/75 p-3 backdrop-blur-sm sm:items-center sm:p-6">
+        <div className="fixed inset-0 z-[90] flex items-end justify-center bg-[var(--ochi-bg)] p-3 pb-[calc(.75rem+env(safe-area-inset-bottom))] sm:items-center sm:p-6">
           <section role="dialog" aria-modal="true" aria-labelledby="upload-source-title" className="w-full max-w-md rounded-[28px] border border-white/10 bg-[var(--ochi-surface-raised)] p-5 shadow-2xl sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>

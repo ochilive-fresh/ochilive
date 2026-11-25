@@ -412,7 +412,7 @@ function HomePage() {
           if (savedPosition && Number.isFinite(savedPosition) && video.duration && savedPosition < video.duration - 0.5) {
             video.currentTime = savedPosition;
           }
-          video.muted = mutedVideos[id] ?? false;
+          video.muted = mutedVideos[id] ?? true;
           video.play().catch(() => {
             if (!video.muted) {
               video.muted = true;
@@ -444,7 +444,7 @@ function HomePage() {
       const element = videoRefs.current[video.id];
       if (element?.tagName === 'VIDEO') {
         element.dataset.videoId = video.id;
-        element.muted = mutedVideos[video.id] ?? false;
+        element.muted = mutedVideos[video.id] ?? true;
         element.playsInline = true;
         observer.observe(element);
       }
@@ -496,6 +496,21 @@ function HomePage() {
 
   const setVideoState = (id, updater) => {
     setVideos((current) => current.map((video) => (video.id === id ? updater(video) : video)));
+  };
+
+  const handleToggleMute = (event, id) => {
+    event.stopPropagation();
+    const video = videoRefs.current[id];
+    const nextMuted = !(mutedVideos[id] ?? true);
+    if (video) video.muted = nextMuted;
+    setMutedVideos((current) => ({ ...current, [id]: nextMuted }));
+    if (!nextMuted && video) {
+      video.play().catch(() => {
+        video.muted = true;
+        setMutedVideos((current) => ({ ...current, [id]: true }));
+        showMessage('Sound could not start. Tap the video and try again.');
+      });
+    }
   };
 
   const showMessage = (text) => {
@@ -1028,7 +1043,7 @@ function HomePage() {
                     }}
                     data-media-src={video.mediaUrl || video.thumbnailUrl}
                     poster={video.thumbnailUrl || video.mediaUrl}
-                    muted={mutedVideos[video.id] ?? false}
+                    muted={mutedVideos[video.id] ?? true}
                     autoPlay
                     playsInline
                     preload="none"
@@ -1068,6 +1083,20 @@ function HomePage() {
                   <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
                     <span className="h-9 w-9 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-label="Loading video" />
                   </div>
+                ) : null}
+                {isVideoType(video) ? (
+                  <button
+                    type="button"
+                    onClick={(event) => handleToggleMute(event, video.id)}
+                    aria-label={mutedVideos[video.id] ?? true ? 'Unmute video' : 'Mute video'}
+                    aria-pressed={!(mutedVideos[video.id] ?? true)}
+                    className="absolute right-3 top-3 z-20 inline-flex min-h-10 items-center gap-2 rounded-full border border-white/20 bg-black/55 px-3 text-xs font-semibold text-white shadow-lg backdrop-blur-md transition hover:bg-black/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      {(mutedVideos[video.id] ?? true) ? <><path d="M11 5 6 9H3v6h3l5 4V5Z" /><path d="m16 9 5 6m0-6-5 6" /></> : <><path d="M11 5 6 9H3v6h3l5 4V5Z" /><path d="M15.5 8.5a5 5 0 0 1 0 7m3-10a9 9 0 0 1 0 13" /></>}
+                    </svg>
+                    <span>{(mutedVideos[video.id] ?? true) ? 'Unmute' : 'Sound on'}</span>
+                  </button>
                 ) : null}
 
                 {isVideoType(video) && videoLoadState[video.id] === 'error' ? (

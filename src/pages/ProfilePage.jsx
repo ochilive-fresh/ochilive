@@ -25,22 +25,18 @@ const fallbackProfile = {
 };
 
 const getSessionProfile = () => {
-  try {
-    const sessionUser = JSON.parse(sessionStorage.getItem('ochi_user') || 'null');
-    if (!sessionUser) return fallbackProfile;
+  const sessionUser = getStoredSession().user;
+  if (!sessionUser) return fallbackProfile;
 
-    return {
-      ...fallbackProfile,
-      user: {
-        ...fallbackProfile.user,
-        ...sessionUser,
-        username: sessionUser.username || sessionUser.email?.split('@')[0] || fallbackProfile.user.username,
-      },
-      relationship: { isOwnProfile: true, isFollowing: false, accountType: sessionUser.accountType || 'creator' },
-    };
-  } catch {
-    return fallbackProfile;
-  }
+  return {
+    ...fallbackProfile,
+    user: {
+      ...fallbackProfile.user,
+      ...sessionUser,
+      username: sessionUser.username || sessionUser.email?.split('@')[0] || fallbackProfile.user.username,
+    },
+    relationship: { isOwnProfile: true, isFollowing: false, accountType: sessionUser.accountType || 'creator' },
+  };
 };
 
 function ProfilePage() {
@@ -82,13 +78,7 @@ function ProfilePage() {
   const openLogin = () => navigate('/login', { state: { from: location } });
 
   useEffect(() => {
-    const sessionUser = (() => {
-      try {
-        return JSON.parse(sessionStorage.getItem('ochi_user') || 'null');
-      } catch {
-        return null;
-      }
-    })();
+    const sessionUser = getStoredSession().user;
 
     const rawSessionUsername = sessionUser?.username || sessionUser?.email?.split('@')[0] || '';
     const normalizedRouteUsername = String(routeUsername || '').trim();
